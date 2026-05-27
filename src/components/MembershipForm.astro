@@ -1,0 +1,36 @@
+---
+import Button from '~/components/Button.astro';
+---
+<form id="membership-form" class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-4" novalidate>
+  <input type="hidden" name="form-source" value="membership" />
+  <div class="grid md:grid-cols-2 gap-4">
+    <div>
+      <label for="mf-name" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your name</label>
+      <input id="mf-name" name="name" type="text" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+    </div>
+    <div>
+      <label for="mf-email" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Email</label>
+      <input id="mf-email" name="email" type="email" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+    </div>
+  </div>
+  <div>
+    <label class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">I'm interested in being a</label>
+    <div class="flex gap-3">
+      <label class="flex items-center gap-2 text-sm"><input type="radio" name="member-type" value="regular" required /> Regular member</label>
+      <label class="flex items-center gap-2 text-sm"><input type="radio" name="member-type" value="associate" /> Associate member</label>
+      <label class="flex items-center gap-2 text-sm"><input type="radio" name="member-type" value="not-sure" /> Not sure</label>
+    </div>
+  </div>
+  <div>
+    <label for="mf-affiliation" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your connection to ISAT U or our community</label>
+    <input id="mf-affiliation" name="affiliation" type="text" placeholder="e.g. Faculty since 2018, alumna 2010, child of member …" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+  </div>
+  <div>
+    <label for="mf-message" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Anything to add?</label>
+    <textarea id="mf-message" name="message" required rows="4" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm"></textarea>
+  </div>
+  <div class="cf-turnstile" data-sitekey="REPLACE_BEFORE_DEPLOY"></div>
+  <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll email you the PMES schedule and application form.</div>
+  <Button type="submit" variant="primary" size="md" showArrow>Submit application</Button>
+  <div id="mf-result" class="hidden p-3 rounded text-sm" role="status" aria-live="polite"></div>
+</form>

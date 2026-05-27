@@ -37,6 +37,8 @@ const localBusinessSchema = buildLocalBusinessSchema();
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema)} />
   {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   <!-- CF Web Analytics injected post-deploy via CF dashboard -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script src="/forms.js" defer></script>
 </head>
 <body class="font-body text-ink antialiased">
   <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-navy focus:text-white focus:px-4 focus:py-2 focus:rounded">Skip to main content</a>
