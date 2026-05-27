@@ -1,0 +1,30 @@
+---
+import { ArrowRight } from 'lucide-astro';
+interface Props {
+  href?: string;
+  variant?: 'primary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  showArrow?: boolean;
+  className?: string;
+  type?: 'button' | 'submit';
+}
+const { href, variant = 'primary', size = 'md', showArrow = false, className = '', type = 'button' } = Astro.props;
+
+const base = 'inline-flex items-center gap-2 font-display font-bold tracking-wide rounded-lg transition focus-visible:ring-2 focus-visible:ring-orange focus-visible:ring-offset-2';
+const sizes = {
+  sm: 'px-3 py-1.5 text-xs',
+  md: 'px-5 py-3 text-sm',
+  lg: 'px-7 py-4 text-base',
+};
+const variants = {
+  primary: 'bg-orange text-white hover:bg-orange/90 active:bg-orange/80',
+  outline: 'border-2 border-navy text-navy hover:bg-navy hover:text-white',
+  ghost: 'text-navy hover:bg-navy/5',
+};
+const classes = `${base} ${sizes[size]} ${variants[variant]} ${className}`;
+const Tag = href ? 'a' : 'button';
+---
+<Tag class={classes} href={href} type={!href ? type : undefined}>
+  <slot />
+  {showArrow && <ArrowRight class="w-4 h-4" />}
+</Tag>
