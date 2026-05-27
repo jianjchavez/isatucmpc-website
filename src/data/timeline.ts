@@ -21,7 +21,7 @@ export const TIMELINE: TimelineEntry[] = [
     body: 'Certificate of Registration of Amendments issued 10 April 2017 (Amendment No. 9520-06008210-1) by CDA Chairman Orlando R. Ravanera.',
   },
   {
-    year: 2026,
+    year: new Date().getFullYear(),
     title: 'Today',
     body: 'Ten registered cooperative services, a 9-member Board of Directors, NATCCO Member in Good Standing, and a growing community of Ilonggos building a stronger future together.',
   },
