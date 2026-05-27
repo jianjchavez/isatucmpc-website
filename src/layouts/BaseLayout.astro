@@ -10,7 +10,7 @@ interface Props {
   jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, ogImage = '/og-default.png', noIndex = false, jsonLd } = Astro.props;
+const { title, description, ogImage = '/og-default.svg', noIndex = false, jsonLd } = Astro.props;
 const fullTitle = title === 'ISATUCMPC' ? title : `${title} · ISATUCMPC`;
 const canonical = new URL(Astro.url.pathname, Astro.site).toString();
 const orgSchema = buildOrgSchema();
