@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#010066"/>
+  <circle cx="100" cy="100" r="300" fill="url(#g)" opacity="0.25"/>
+  <defs><radialGradient id="g"><stop offset="0%" stop-color="#FFC001"/><stop offset="100%" stop-color="#FE9900" stop-opacity="0"/></radialGradient></defs>
+  <text x="100" y="290" font-family="Montserrat, sans-serif" font-weight="700" font-size="22" fill="#FE9900" letter-spacing="6">ILOILO · SINCE 1964</text>
+  <text x="100" y="380" font-family="Montserrat, sans-serif" font-weight="800" font-size="90" fill="white">ISATUCMPC</text>
+  <text x="100" y="445" font-family="Open Sans, sans-serif" font-weight="400" font-size="32" fill="white" opacity="0.85">Iloilo Science and Technology University and</text>
+  <text x="100" y="485" font-family="Open Sans, sans-serif" font-weight="400" font-size="32" fill="white" opacity="0.85">Community Multi-Purpose Cooperative</text>
+  <rect x="100" y="540" width="1000" height="3" fill="url(#rule)"/>
+  <defs><linearGradient id="rule" x1="0" x2="1"><stop offset="0%" stop-color="#010066"/><stop offset="50%" stop-color="#FE9900"/><stop offset="100%" stop-color="#FFC001"/></linearGradient></defs>
+  <text x="100" y="585" font-family="Open Sans, sans-serif" font-weight="400" font-size="20" fill="white" opacity="0.6">isatucmpc.coop</text>
+</svg>

@@ -1,0 +1,21 @@
+---
+import Button from '~/components/Button.astro';
+---
+<form id="contact-form" class="bg-white border-t-[3px] border-navy rounded-b-lg p-6 md:p-8 space-y-4" novalidate>
+  <input type="hidden" name="form-source" value="contact" />
+  <div>
+    <label for="cf-name" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your name</label>
+    <input id="cf-name" name="name" type="text" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+  </div>
+  <div>
+    <label for="cf-email" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Email</label>
+    <input id="cf-email" name="email" type="email" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+  </div>
+  <div>
+    <label for="cf-message" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">How can we help?</label>
+    <textarea id="cf-message" name="message" required rows="5" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm"></textarea>
+  </div>
+  <div class="cf-turnstile" data-sitekey="REPLACE_BEFORE_DEPLOY"></div>
+  <Button type="submit" variant="primary" size="md" showArrow>Send message</Button>
+  <div id="cf-result" class="hidden p-3 rounded text-sm" role="status" aria-live="polite"></div>
+</form>

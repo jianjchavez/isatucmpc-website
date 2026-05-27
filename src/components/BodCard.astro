@@ -1,0 +1,12 @@
+---
+import type { BoardMember } from '~/data/board';
+interface Props { member: BoardMember; }
+const { member } = Astro.props;
+---
+<article class="border-t-[3px] border-navy bg-white rounded-b-lg p-5 text-center">
+  <div class="w-20 h-20 rounded-full mx-auto bg-navy/5 flex items-center justify-center mb-3">
+    {member.photo ? <img src={member.photo} alt={member.name} class="w-20 h-20 rounded-full object-cover" /> : <span class="font-display font-extrabold text-navy text-2xl">{member.name === '—' ? '?' : member.name.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>}
+  </div>
+  <div class="font-display font-semibold text-navy">{member.name === '—' ? 'To be announced' : member.name}</div>
+  <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mt-1">{member.role}</div>
+</article>

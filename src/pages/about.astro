@@ -1,0 +1,94 @@
+---
+import PageLayout from '~/layouts/PageLayout.astro';
+import Eyebrow from '~/components/Eyebrow.astro';
+import Button from '~/components/Button.astro';
+import GradientOrb from '~/components/GradientOrb.astro';
+import Timeline from '~/components/Timeline.astro';
+import BodCard from '~/components/BodCard.astro';
+import { BOARD } from '~/data/board';
+---
+<PageLayout title="About" description="Serving Iloilo since 1964 — our history, our cooperative goals, and the governance that keeps us accountable to our members.">
+  <!-- HERO -->
+  <section class="relative bg-navy text-white overflow-hidden">
+    <GradientOrb position="top-right" size="md" intensity={0.2} />
+    <div class="container-page py-16 md:py-24 relative">
+      <Eyebrow color="orange">Our story</Eyebrow>
+      <h1 class="mt-4 text-4xl md:text-5xl text-white max-w-3xl">Serving Iloilo since 1964.</h1>
+      <p class="mt-4 text-lg md:text-xl text-white/85 max-w-2xl font-light">Born from the spirit of cooperation among the ISAT U community, ISATUCMPC has grown into a registered multi-purpose cooperative serving members across credit, savings, and on-campus services — guided always by the principle of service over and above profit.</p>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="container-page py-20">
+    <Eyebrow>Our journey</Eyebrow>
+    <h2 class="mt-3 text-3xl md:text-4xl">Six decades of cooperation</h2>
+    <div class="mt-12">
+      <Timeline />
+    </div>
+  </section>
+
+  <!-- GOALS -->
+  <section class="bg-brand-bg">
+    <div class="container-page py-20">
+      <Eyebrow>Goals & purpose</Eyebrow>
+      <h2 class="mt-3 text-3xl md:text-4xl max-w-2xl">To help improve the quality of life of our members.</h2>
+      <p class="mt-4 text-slate max-w-2xl">From our Articles of Cooperation, Article III — the nine aims that guide everything we do.</p>
+      <ol class="mt-10 grid md:grid-cols-2 gap-5 list-decimal list-inside">
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Attain increased income, savings, productivity, and purchasing power through economies of scale and equitable distribution of net surplus.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Provide optimum social and economic benefits to our members.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Teach members efficient ways of doing things in a cooperative manner.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Propagate cooperative practices and new ideas in business and management.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Allow lower-income and less-privileged groups to increase their ownership in the wealth of the nation.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Actively support government and people-oriented organizations in promoting cooperatives as a path to sustainable socio-economic development.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Institutionalize savings mobilization and capital build-up to sustain our developmental activities.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Implement transparent policies that ensure equitable access to resources and services.</li>
+        <li class="bg-white border-t-[3px] border-navy rounded-b-lg p-5 text-sm">Adopt other plans that foster the welfare of our members, their families, and the community.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- GOVERNANCE -->
+  <section class="container-page py-20">
+    <Eyebrow>How we're governed</Eyebrow>
+    <h2 class="mt-3 text-3xl md:text-4xl">Board of Directors</h2>
+    <p class="mt-4 text-slate max-w-2xl">A 9-member board elected by members through secret ballot at the Annual General Assembly. Directors serve 2-year terms. Appointed officers and management leadership round out our governance.</p>
+    <div class="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {BOARD.map(m => <BodCard member={m} />)}
+    </div>
+  </section>
+
+  <!-- AFFILIATIONS -->
+  <section class="bg-brand-bg">
+    <div class="container-page py-16">
+      <Eyebrow>Where we belong</Eyebrow>
+      <h2 class="mt-3 text-3xl md:text-4xl">Affiliations & credentials</h2>
+      <div class="mt-10 grid md:grid-cols-3 gap-6">
+        <div class="bg-white border-t-[3px] border-navy rounded-b-lg p-6">
+          <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-2">CDA</div>
+          <div class="font-display font-bold text-navy">Cooperative Development Authority</div>
+          <p class="mt-2 text-sm text-slate">Registration No. 9520-06008210 · Member in Good Standing</p>
+        </div>
+        <div class="bg-white border-t-[3px] border-navy rounded-b-lg p-6">
+          <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-2">NATCCO</div>
+          <div class="font-display font-bold text-navy">National Confederation of Cooperatives</div>
+          <p class="mt-2 text-sm text-slate">MIGS — Member in Good Standing</p>
+        </div>
+        <div class="bg-white border-t-[3px] border-navy rounded-b-lg p-6">
+          <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-2">BIR</div>
+          <div class="font-display font-bold text-navy">Bureau of Internal Revenue</div>
+          <p class="mt-2 text-sm text-slate">Cooperative tax-exempt status · Form 2303 registered</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-orange text-white">
+    <div class="container-page py-16 text-center">
+      <h2 class="text-3xl md:text-4xl text-white">Be part of our story.</h2>
+      <div class="mt-6 flex justify-center gap-3 flex-wrap">
+        <Button href="/membership" variant="outline" size="lg" showArrow className="!border-white !text-white hover:!bg-white hover:!text-orange">Apply to Join</Button>
+      </div>
+    </div>
+  </section>
+</PageLayout>

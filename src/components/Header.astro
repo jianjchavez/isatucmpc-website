@@ -1,0 +1,74 @@
+---
+import Button from '~/components/Button.astro';
+import { Menu } from 'lucide-astro';
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/about', label: 'About' },
+  { href: '/services', label: 'Services' },
+  { href: '/membership', label: 'Membership' },
+  { href: '/news', label: 'News' },
+  { href: '/contact', label: 'Contact' },
+];
+const path = Astro.url.pathname;
+const isActive = (href: string) => href === '/' ? path === '/' : path.startsWith(href);
+---
+<header class="sticky top-0 z-40 bg-white border-b-[3px]" style={`border-image: linear-gradient(to right, #010066, #FE9900, #FFC001) 1`}>
+  <div class="container-page flex items-center justify-between gap-4 py-4">
+    <a href="/" class="flex items-center gap-3 no-underline" aria-label="ISATUCMPC home">
+      <img src="/logo.svg" alt="" class="h-10 w-10" />
+      <div class="leading-tight">
+        <div class="font-display font-extrabold text-navy text-sm">ISATUCMPC</div>
+        <div class="text-[10px] text-slate uppercase tracking-widest">Since 1964</div>
+      </div>
+    </a>
+
+    <nav class="hidden lg:flex items-center gap-7" aria-label="Primary">
+      {navLinks.map(l => (
+        <a href={l.href} aria-current={isActive(l.href) ? 'page' : undefined} class={`text-sm font-display font-semibold no-underline transition ${isActive(l.href) ? 'text-orange underline underline-offset-4 decoration-2' : 'text-ink hover:text-navy'}`}>
+          {l.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="hidden lg:flex items-center gap-3">
+      <Button href="https://app.isatucmpc.coop" variant="outline" size="sm">Member Login</Button>
+      <Button href="/membership" variant="primary" size="sm" showArrow>Apply to Join</Button>
+    </div>
+
+    <button id="mobile-menu-toggle" class="lg:hidden p-2 -mr-2" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+      <Menu class="w-6 h-6 text-navy" />
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="lg:hidden hidden border-t border-rule bg-white" role="dialog" aria-modal="true" aria-label="Mobile menu">
+    <div class="container-page py-6 flex flex-col gap-4">
+      <Button href="/membership" variant="primary" size="md" showArrow className="w-full justify-center">Apply to Join</Button>
+      {navLinks.map(l => (
+        <a href={l.href} aria-current={isActive(l.href) ? 'page' : undefined} class={`text-base font-display font-semibold no-underline py-2 ${isActive(l.href) ? 'text-orange underline underline-offset-4 decoration-2' : 'text-ink'}`}>{l.label}</a>
+      ))}
+      <Button href="https://app.isatucmpc.coop" variant="outline" size="md" className="w-full justify-center">Member Login</Button>
+    </div>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById('mobile-menu-toggle');
+  const menu = document.getElementById('mobile-menu');
+  function setOpen(open: boolean) {
+    btn?.setAttribute('aria-expanded', String(open));
+    btn?.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    menu?.classList.toggle('hidden', !open);
+  }
+  btn?.addEventListener('click', () => {
+    const isOpen = btn.getAttribute('aria-expanded') === 'true';
+    setOpen(!isOpen);
+    if (!isOpen) (menu?.querySelector('a, button') as HTMLElement | null)?.focus();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && btn?.getAttribute('aria-expanded') === 'true') {
+      setOpen(false);
+      btn.focus();
+    }
+  });
+</script>

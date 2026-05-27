@@ -1,0 +1,14 @@
+<div id="contact-map" class="w-full h-[400px] rounded-lg border-2 border-rule" aria-label="Map showing ISATUCMPC office at Burgos St., La Paz, Iloilo City"></div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script>
+  import L from 'leaflet';
+  // Burgos St., La Paz, Iloilo City coordinates
+  const lat = 10.7186;
+  const lng = 122.5681;
+  const map = L.map('contact-map', { scrollWheelZoom: false }).setView([lat, lng], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors',
+  }).addTo(map);
+  L.marker([lat, lng]).addTo(map).bindPopup('ISATUCMPC<br>Burgos St., La Paz, Iloilo City').openPopup();
+</script>

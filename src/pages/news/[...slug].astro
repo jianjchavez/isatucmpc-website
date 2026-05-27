@@ -1,0 +1,35 @@
+---
+import PageLayout from '~/layouts/PageLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('news');
+  return posts.map(post => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const formatted = post.data.date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+const catLabel = post.data.category.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+---
+<PageLayout title={post.data.title} description={post.data.excerpt}>
+  <article class="container-page py-16 md:py-24">
+    <a href="/news" class="text-sm text-link no-underline hover:underline">← Back to news</a>
+    <div class="max-w-2xl mt-8">
+      <div class="flex items-center gap-3 text-[11px] font-display font-bold uppercase tracking-widest">
+        <span class="text-orange">{catLabel}</span>
+        <span class="text-slate">·</span>
+        <time class="text-slate" datetime={post.data.date.toISOString()}>{formatted}</time>
+      </div>
+      <h1 class="mt-4 text-3xl md:text-5xl">{post.data.title}</h1>
+      <p class="mt-4 text-lg text-slate">{post.data.excerpt}</p>
+    </div>
+    <div class="max-w-2xl mt-10 prose prose-lg">
+      <Content />
+    </div>
+    <div class="max-w-2xl mt-12 pt-6 border-t border-rule flex justify-between text-sm">
+      <a href="/news" class="text-link no-underline hover:underline">← All news</a>
+      <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(new URL(Astro.url.pathname, 'https://isatucmpc.coop').toString())}`} target="_blank" rel="noopener" class="text-link no-underline hover:underline">Share on Facebook</a>
+    </div>
+  </article>
+</PageLayout>

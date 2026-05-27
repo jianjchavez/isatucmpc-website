@@ -1,0 +1,23 @@
+---
+interface Props {
+  position?: 'top-right' | 'bottom-left' | 'center';
+  size?: 'sm' | 'md' | 'lg';
+  intensity?: number; // 0–1
+}
+const { position = 'top-right', size = 'lg', intensity = 0.25 } = Astro.props;
+const sizes = { sm: 200, md: 320, lg: 500 };
+const px = sizes[size];
+const positions = {
+  'top-right': { right: `-${px / 3}px`, top: `-${px / 3}px` },
+  'bottom-left': { left: `-${px / 3}px`, bottom: `-${px / 3}px` },
+  'center': { left: '50%', top: '50%', transform: 'translate(-50%,-50%)' },
+};
+const style = {
+  width: `${px}px`,
+  height: `${px}px`,
+  background: `radial-gradient(circle, rgba(255,192,1,${intensity}), rgba(254,153,0,${intensity * 0.6}), transparent 70%)`,
+  ...positions[position],
+};
+const styleString = Object.entries(style).map(([k, v]) => `${k.replace(/[A-Z]/g, m => '-' + m.toLowerCase())}:${v}`).join(';');
+---
+<div aria-hidden="true" class="pointer-events-none absolute rounded-full" style={styleString}></div>

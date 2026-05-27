@@ -1,0 +1,15 @@
+---
+interface Props { title: string; date: Date; excerpt: string; slug: string; category: string; featured?: boolean; }
+const { title, date, excerpt, slug, category, featured = false } = Astro.props;
+const formatted = date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+const catLabel = category.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase());
+---
+<a href={`/news/${slug}`} class={`block border-t-[3px] border-navy bg-white no-underline group ${featured ? 'p-8 md:p-10' : 'p-6'}`}>
+  <div class="flex items-center gap-3 mb-3 text-[10px] font-display font-bold uppercase tracking-wider">
+    <span class="text-orange">{catLabel}</span>
+    <span class="text-slate">·</span>
+    <time class="text-slate" datetime={date.toISOString()}>{formatted}</time>
+  </div>
+  <h3 class={`mb-2 text-ink group-hover:text-navy transition ${featured ? 'text-2xl' : 'text-lg'}`}>{title}</h3>
+  <p class="text-sm text-slate">{excerpt}</p>
+</a>
