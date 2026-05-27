@@ -36,7 +36,10 @@ const localBusinessSchema = buildLocalBusinessSchema();
   <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema)} />
   {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
-  <!-- CF Web Analytics injected post-deploy via CF dashboard -->
+  <!-- Cloudflare Web Analytics (auto-injected by CF Pages; manual fallback below if needed) -->
+  {import.meta.env.PROD && (
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "REPLACE_WITH_CF_TOKEN"}'></script>
+  )}
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="/forms.js" defer></script>
 </head>
