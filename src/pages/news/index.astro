@@ -1,8 +1,35 @@
 ---
 import PageLayout from '~/layouts/PageLayout.astro';
+import Eyebrow from '~/components/Eyebrow.astro';
+import GradientOrb from '~/components/GradientOrb.astro';
+import NewsCard from '~/components/NewsCard.astro';
+import { getCollection } from 'astro:content';
+
+const all = (await getCollection('news', ({ data }) => !data.draft)).sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const featured = all[0];
+const rest = all.slice(1);
 ---
 <PageLayout title="News" description="Announcements, events, and member stories from ISATUCMPC.">
-  <section class="container-page py-20">
-    <h1 class="text-4xl">News — placeholder</h1>
+  <section class="relative bg-navy text-white overflow-hidden">
+    <GradientOrb position="top-right" size="md" intensity={0.22} />
+    <div class="container-page py-16 md:py-20 relative">
+      <Eyebrow color="orange">News</Eyebrow>
+      <h1 class="mt-4 text-4xl md:text-5xl text-white max-w-3xl">What's happening at ISATUCMPC.</h1>
+      <p class="mt-4 text-lg text-white/85 max-w-2xl font-light">Announcements, events, and member stories from the cooperative.</p>
+    </div>
+  </section>
+
+  <section class="container-page py-16">
+    {all.length === 0 && <p class="text-slate text-center py-20">No posts yet. Check back soon.</p>}
+    {featured && (
+      <div class="mb-12">
+        <NewsCard featured title={featured.data.title} date={featured.data.date} excerpt={featured.data.excerpt} slug={featured.id} category={featured.data.category} />
+      </div>
+    )}
+    {rest.length > 0 && (
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {rest.map(p => <NewsCard title={p.data.title} date={p.data.date} excerpt={p.data.excerpt} slug={p.id} category={p.data.category} />)}
+      </div>
+    )}
   </section>
 </PageLayout>
