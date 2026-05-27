@@ -1,0 +1,91 @@
+---
+import Button from '~/components/Button.astro';
+---
+<div id="eligibility-check" class="bg-white border-t-[3px] border-navy rounded-b-lg p-6 md:p-10 shadow-sm">
+  <div class="font-display font-bold text-[11px] uppercase tracking-[0.2em] text-orange mb-3">Quick check</div>
+  <h3 class="text-2xl mb-6">Are you eligible to join?</h3>
+
+  <div class="space-y-5" data-step="1">
+    <fieldset>
+      <legend class="font-display font-semibold text-navy mb-2">1. Are you a regular employee of ISAT U or one of its satellite campuses?</legend>
+      <div class="flex gap-2">
+        <button class="elig-opt" data-answer="isatEmployee:yes">Yes</button>
+        <button class="elig-opt" data-answer="isatEmployee:no">No</button>
+      </div>
+    </fieldset>
+    <fieldset class="hidden" data-show-on="isatEmployee:no">
+      <legend class="font-display font-semibold text-navy mb-2">2. Are you an alumnus of ISAT U, or a parent/spouse/child of a current member?</legend>
+      <div class="flex gap-2">
+        <button class="elig-opt" data-answer="familyOrAlumni:yes">Yes</button>
+        <button class="elig-opt" data-answer="familyOrAlumni:no">No</button>
+      </div>
+    </fieldset>
+    <fieldset class="hidden" data-show-on="familyOrAlumni:no">
+      <legend class="font-display font-semibold text-navy mb-2">3. Do you reside or work in Iloilo Province or Iloilo City?</legend>
+      <div class="flex gap-2">
+        <button class="elig-opt" data-answer="residingInIloilo:yes">Yes</button>
+        <button class="elig-opt" data-answer="residingInIloilo:no">No</button>
+      </div>
+    </fieldset>
+  </div>
+
+  <div id="elig-result" class="hidden mt-6 p-5 rounded-lg" role="status" aria-live="polite"></div>
+</div>
+
+<style>
+  .elig-opt {
+    padding: 0.5rem 1.25rem;
+    border: 2px solid #010066;
+    color: #010066;
+    background: transparent;
+    border-radius: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .elig-opt:hover, .elig-opt.selected { background: #010066; color: white; }
+</style>
+
+<script>
+  import { evaluateEligibility, type EligibilityAnswers } from './eligibility-logic';
+
+  const answers: Partial<EligibilityAnswers> = {};
+  const root = document.getElementById('eligibility-check');
+  if (root) {
+    const result = document.getElementById('elig-result')!;
+    root.querySelectorAll<HTMLButtonElement>('.elig-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [key, value] = btn.dataset.answer!.split(':');
+        (answers as any)[key] = value;
+        // mark selected, unmark siblings
+        btn.parentElement?.querySelectorAll('.elig-opt').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        // reveal next fieldset if matching
+        root.querySelectorAll<HTMLElement>('[data-show-on]').forEach(el => {
+          const [k, v] = el.dataset.showOn!.split(':');
+          if ((answers as any)[k] === v) el.classList.remove('hidden');
+        });
+        // if we have all answers, evaluate
+        if (answers.isatEmployee && (answers.isatEmployee === 'yes' || (answers.familyOrAlumni && (answers.familyOrAlumni === 'yes' || answers.residingInIloilo)))) {
+          const res = evaluateEligibility(answers as EligibilityAnswers);
+          showResult(res, result);
+        }
+      });
+    });
+  }
+
+  function showResult(res: string, el: HTMLElement) {
+    const map = {
+      regular: { bg: 'background-color:#23CD63;color:white', body: '<strong>You qualify as a regular member!</strong> Regular employees of ISAT U have full voting rights in the cooperative. <a href="/membership#apply" style="color:white;font-weight:700">Start your application →</a>' },
+      associate: { bg: 'background-color:#FE9900;color:white', body: '<strong>You qualify as an associate member.</strong> Family of members and ISAT U alumni can join with full service access. <a href="/membership#apply" style="color:white;font-weight:700">Start your application →</a>' },
+      review: { bg: 'background-color:#0102FD;color:white', body: '<strong>Let\'s talk!</strong> You\'re in our area of operation. Our team can review your specific situation. <a href="/contact" style="color:white;font-weight:700">Contact us →</a>' },
+      ineligible: { bg: 'background-color:#6B7280;color:white', body: 'Based on these answers, membership may not fit your situation today. Our common bond is residential in the Iloilo area. <a href="/contact" style="color:white;font-weight:700">Contact us if you have questions →</a>' },
+    } as const;
+    const r = (map as any)[res];
+    el.setAttribute('style', `${r.bg};padding:1.25rem;border-radius:0.5rem`);
+    el.innerHTML = r.body;
+    el.classList.remove('hidden');
+  }
+</script>
