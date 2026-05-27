@@ -1,0 +1,8 @@
+---
+interface Props { color?: 'orange' | 'white'; }
+const { color = 'orange' } = Astro.props;
+const cls = color === 'white' ? 'text-white/70' : 'text-orange';
+---
+<div class={`font-display font-bold text-[11px] uppercase tracking-[0.2em] ${cls}`}>
+  <slot />
+</div>
