@@ -1,8 +1,114 @@
 ---
 import PageLayout from '~/layouts/PageLayout.astro';
+import Button from '~/components/Button.astro';
+import GradientOrb from '~/components/GradientOrb.astro';
+import Eyebrow from '~/components/Eyebrow.astro';
+import ServiceCard from '~/components/ServiceCard.astro';
+import NewsCard from '~/components/NewsCard.astro';
+import EligibilityCheck from '~/components/EligibilityCheck.astro';
+import { SERVICES } from '~/data/services';
+import { STATS } from '~/data/stats';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('news', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3);
 ---
-<PageLayout title="ISATUCMPC" description="Iloilo Science and Technology University and Community Multi-Purpose Cooperative. Serving Iloilo since 1964.">
+<PageLayout title="ISATUCMPC" description="Serving Iloilo since 1964. Iloilo Science and Technology University and Community Multi-Purpose Cooperative — credit, savings, and more for our members.">
+  <!-- HERO -->
+  <section class="relative bg-navy text-white overflow-hidden">
+    <GradientOrb position="top-right" size="lg" intensity={0.28} />
+    <div class="container-page py-20 md:py-28 relative">
+      <div class="max-w-3xl">
+        <Eyebrow color="orange">Iloilo City · Since 1964</Eyebrow>
+        <h1 class="mt-5 text-4xl md:text-6xl text-white">Mag-uswag kita upod.</h1>
+        <p class="mt-3 text-xl md:text-2xl text-white/85 font-body font-light">Let's grow together — through savings, credit, and a cooperative built by Ilonggos, for Ilonggos.</p>
+        <div class="mt-10 flex flex-wrap gap-3">
+          <Button href="/membership" variant="primary" size="lg" showArrow>Apply to Join</Button>
+          <Button href="/services" size="lg" className="!border-white/40 !text-white hover:!bg-white/10" variant="outline">I'm a member</Button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST STRIP -->
+  <section class="bg-brand-bg">
+    <div class="container-page grid grid-cols-1 md:grid-cols-3 gap-8 py-12">
+      {STATS.map(s => (
+        <div>
+          <div class="font-display font-extrabold text-navy text-4xl md:text-5xl">{s.value}</div>
+          <div class="text-xs font-display font-bold text-slate uppercase tracking-wider mt-1">{s.label}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- SERVICES SNAPSHOT -->
   <section class="container-page py-20">
-    <h1 class="text-4xl">Home — placeholder</h1>
+    <Eyebrow>What we offer</Eyebrow>
+    <h2 class="mt-3 text-3xl md:text-4xl">Ways we serve our members</h2>
+    <p class="mt-4 text-slate max-w-2xl">From credit and savings to convenience-store essentials, boarding house, and on-campus cafe — built around the cooperative principle of service over and above profit.</p>
+    <div class="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {SERVICES.map(s => <ServiceCard service={s} compact />)}
+    </div>
+    <div class="mt-10">
+      <Button href="/services" variant="ghost" showArrow>Explore all services</Button>
+    </div>
+  </section>
+
+  <!-- ELIGIBILITY -->
+  <section class="bg-brand-bg">
+    <div class="container-page py-20 grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <Eyebrow>Membership</Eyebrow>
+        <h2 class="mt-3 text-3xl md:text-4xl">Could you be a member?</h2>
+        <p class="mt-4 text-slate">ISATUCMPC is a residential cooperative serving Iloilo Province and Iloilo City. Membership extends to ISAT U employees, alumni, families of members, and the broader community we serve.</p>
+        <div class="mt-8">
+          <Button href="/membership" variant="primary" showArrow>See membership details</Button>
+        </div>
+      </div>
+      <EligibilityCheck />
+    </div>
+  </section>
+
+  <!-- SERVICE OVER PROFIT -->
+  <section class="bg-navy text-white relative overflow-hidden">
+    <GradientOrb position="bottom-left" size="md" intensity={0.18} />
+    <div class="container-page py-20 relative">
+      <div class="max-w-3xl">
+        <Eyebrow color="white">Our principle</Eyebrow>
+        <blockquote class="mt-5 font-display font-extrabold text-3xl md:text-5xl leading-tight text-white">
+          "Adhering to the principle of service over and above profit, the cooperative shall endeavor to provide quality goods and services to its members."
+        </blockquote>
+        <cite class="mt-6 block text-white/60 not-italic text-sm">— Articles of Cooperation, Article VIII Section 1</cite>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWS -->
+  {posts.length > 0 && (
+    <section class="container-page py-20">
+      <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
+        <div>
+          <Eyebrow>Latest</Eyebrow>
+          <h2 class="mt-3 text-3xl md:text-4xl">From the cooperative</h2>
+        </div>
+        <Button href="/news" variant="ghost" showArrow>All news</Button>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        {posts.map(p => <NewsCard title={p.data.title} date={p.data.date} excerpt={p.data.excerpt} slug={p.id} category={p.data.category} />)}
+      </div>
+    </section>
+  )}
+
+  <!-- BOTTOM CTA -->
+  <section class="bg-orange text-white">
+    <div class="container-page py-16 text-center">
+      <h2 class="text-3xl md:text-4xl text-white">Ready to join Iloilo's growing cooperative?</h2>
+      <p class="mt-3 text-white/90 text-lg">Become part of a cooperative that's served the community since 1964.</p>
+      <div class="mt-8">
+        <Button href="/membership" variant="outline" size="lg" showArrow className="!border-white !text-white hover:!bg-white hover:!text-orange">Apply to Join</Button>
+      </div>
+    </div>
   </section>
 </PageLayout>
