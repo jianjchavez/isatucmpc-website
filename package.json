@@ -1,0 +1,45 @@
+{
+  "name": "website",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint 'src/**/*.{ts,astro}'",
+    "format": "prettier --write 'src/**/*.{ts,astro,mdx,json}'",
+    "a11y": "pa11y-ci --config .pa11yci.json"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^5.0.6",
+    "@astrojs/sitemap": "^3.7.3",
+    "@fontsource/montserrat": "^5.2.8",
+    "@fontsource/open-sans": "^5.2.7",
+    "@tailwindcss/vite": "^4.3.0",
+    "astro": "^6.3.8",
+    "astro-seo": "^1.1.0",
+    "lucide-astro": "^0.556.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "pnpm": {
+    "allowBuild": [
+      "esbuild",
+      "sharp"
+    ]
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "eslint": "^10.4.0",
+    "eslint-plugin-astro": "^1.7.0",
+    "pa11y-ci": "^4.1.1",
+    "prettier": "^3.8.3",
+    "prettier-plugin-astro": "^0.14.1",
+    "vitest": "^4.1.7"
+  }
+}
