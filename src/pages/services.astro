@@ -1,8 +1,43 @@
 ---
 import PageLayout from '~/layouts/PageLayout.astro';
+import Eyebrow from '~/components/Eyebrow.astro';
+import Button from '~/components/Button.astro';
+import GradientOrb from '~/components/GradientOrb.astro';
+import ServiceCard from '~/components/ServiceCard.astro';
+import { SERVICES } from '~/data/services';
 ---
-<PageLayout title="Services" description="How ISATUCMPC serves its members: credit, savings, store, boarding house, food park, and more.">
-  <section class="container-page py-20">
-    <h1 class="text-4xl">Services — placeholder</h1>
+<PageLayout title="Services" description="Ten cooperative services for ISATUCMPC members — credit, savings, store, and more. All guided by the principle of service over and above profit.">
+  <!-- HERO -->
+  <section class="relative bg-navy text-white overflow-hidden">
+    <GradientOrb position="top-right" size="md" intensity={0.22} />
+    <div class="container-page py-16 md:py-24 relative">
+      <Eyebrow color="orange">What we offer</Eyebrow>
+      <h1 class="mt-4 text-4xl md:text-5xl text-white max-w-3xl">Ways we serve our members.</h1>
+      <p class="mt-4 text-lg md:text-xl text-white/85 max-w-2xl font-light">From credit and savings to community services — built around one principle: service over and above profit.</p>
+    </div>
+  </section>
+
+  <!-- TOC + content -->
+  <section class="container-page py-16 grid lg:grid-cols-[260px_1fr] gap-10">
+    <aside class="lg:sticky lg:top-24 self-start">
+      <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-3">Jump to</div>
+      <nav class="flex flex-col gap-2" aria-label="Services">
+        {SERVICES.map(s => <a href={`#${s.slug}`} class="text-sm font-display font-semibold text-navy no-underline hover:text-orange py-1">{s.name}</a>)}
+      </nav>
+    </aside>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {SERVICES.map(s => <ServiceCard service={s} />)}
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-orange text-white">
+    <div class="container-page py-16 text-center">
+      <h2 class="text-3xl md:text-4xl text-white">These benefits are for members.</h2>
+      <p class="mt-3 text-white/90 text-lg">Join today and start saving, borrowing, and growing with us.</p>
+      <div class="mt-8">
+        <Button href="/membership" variant="outline" size="lg" showArrow className="!border-white !text-white hover:!bg-white hover:!text-orange">Apply to Join</Button>
+      </div>
+    </div>
   </section>
 </PageLayout>
