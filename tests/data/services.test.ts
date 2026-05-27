@@ -17,4 +17,8 @@ describe('SERVICES data', () => {
       expect(['active', 'coming-soon', 'by-appointment']).toContain(s.status);
     }
   });
+  it('has unique slugs', () => {
+    const slugs = SERVICES.map(s => s.slug);
+    expect(new Set(slugs).size).toBe(slugs.length);
+  });
 });
