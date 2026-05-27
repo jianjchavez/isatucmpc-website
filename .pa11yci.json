@@ -2,7 +2,14 @@
   "defaults": {
     "standard": "WCAG2AA",
     "timeout": 30000,
-    "wait": 500
+    "viewport": { "width": 1280, "height": 800 }
   },
-  "urls": ["http://localhost:4321"]
+  "urls": [
+    "http://localhost:4321/",
+    "http://localhost:4321/about",
+    "http://localhost:4321/services",
+    "http://localhost:4321/membership",
+    "http://localhost:4321/news",
+    "http://localhost:4321/contact"
+  ]
 }
