@@ -29,9 +29,10 @@
     "tailwindcss": "^4.3.0"
   },
   "pnpm": {
-    "allowBuild": [
+    "onlyBuiltDependencies": [
       "esbuild",
-      "sharp"
+      "sharp",
+      "puppeteer"
     ]
   },
   "devDependencies": {
