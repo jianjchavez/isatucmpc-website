@@ -28,13 +28,6 @@
     "lucide-astro": "^0.556.0",
     "tailwindcss": "^4.3.0"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "sharp",
-      "puppeteer"
-    ]
-  },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "eslint": "^10.4.0",
