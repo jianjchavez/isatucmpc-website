@@ -1,8 +1,106 @@
 ---
 import PageLayout from '~/layouts/PageLayout.astro';
+import Eyebrow from '~/components/Eyebrow.astro';
+import Button from '~/components/Button.astro';
+import GradientOrb from '~/components/GradientOrb.astro';
+import BenefitCard from '~/components/BenefitCard.astro';
+import FaqAccordion from '~/components/FaqAccordion.astro';
+import MembershipForm from '~/components/MembershipForm.astro';
+import { BENEFITS } from '~/data/benefits';
+import { FAQ } from '~/data/faq';
+import { buildFaqSchema } from '~/lib/seo';
+
+const faqSchema = buildFaqSchema(FAQ);
 ---
-<PageLayout title="Join ISATUCMPC" description="Become a member of Iloilo's longest-running multi-purpose cooperative. Eligibility, benefits, and how to apply.">
+<PageLayout title="Join ISATUCMPC" description="Become a member of Iloilo's longest-running multi-purpose cooperative. See who can join, the benefits, and how to apply." jsonLd={faqSchema}>
+  <!-- HERO -->
+  <section class="relative bg-navy text-white overflow-hidden">
+    <GradientOrb position="top-right" size="lg" intensity={0.28} />
+    <div class="container-page py-20 md:py-24 relative">
+      <Eyebrow color="orange">Membership</Eyebrow>
+      <h1 class="mt-4 text-4xl md:text-6xl text-white max-w-3xl">Join ISATUCMPC.</h1>
+      <p class="mt-5 text-xl md:text-2xl text-white/90 max-w-2xl font-light">A community of Ilonggos saving together, borrowing together, and growing together — since 1964.</p>
+      <div class="mt-10">
+        <Button href="#apply" variant="primary" size="lg" showArrow>Start your application</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHO CAN JOIN -->
   <section class="container-page py-20">
-    <h1 class="text-4xl">Membership — placeholder</h1>
+    <Eyebrow>Who can join</Eyebrow>
+    <h2 class="mt-3 text-3xl md:text-4xl max-w-2xl">Two ways to belong.</h2>
+    <div class="mt-10 grid md:grid-cols-2 gap-6">
+      <div class="bg-white border-t-[3px] border-navy rounded-b-lg p-7">
+        <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-2">Regular member</div>
+        <h3 class="text-2xl mb-3">Full voting rights</h3>
+        <p class="text-slate mb-4">Open to <strong class="text-ink">regular employees of Iloilo Science and Technology University (ISAT U) and its satellite campuses</strong>, and <strong class="text-ink">regular employees of the cooperative</strong>.</p>
+        <ul class="text-sm space-y-2 text-ink">
+          <li>✓ Vote at the Annual General Assembly</li>
+          <li>✓ Seek elected positions in the cooperative</li>
+          <li>✓ Full access to all services and benefits</li>
+        </ul>
+      </div>
+      <div class="bg-white border-t-[3px] border-navy rounded-b-lg p-7">
+        <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-2">Associate member</div>
+        <h3 class="text-2xl mb-3">Full service access</h3>
+        <p class="text-slate mb-4">Open to <strong class="text-ink">alumni of ISAT U</strong>, <strong class="text-ink">parents, spouses, and children (of legal age) of regular members</strong>, and <strong class="text-ink">non-regular University employees</strong>.</p>
+        <ul class="text-sm space-y-2 text-ink">
+          <li>✓ Access to all cooperative services</li>
+          <li>✓ Earn savings and patronage refunds</li>
+          <li>✓ May convert to regular after 2 years</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENEFITS -->
+  <section class="bg-brand-bg">
+    <div class="container-page py-20">
+      <Eyebrow>What you get</Eyebrow>
+      <h2 class="mt-3 text-3xl md:text-4xl">Member benefits</h2>
+      <div class="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {BENEFITS.map(b => <BenefitCard benefit={b} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW TO APPLY -->
+  <section class="container-page py-20">
+    <Eyebrow>The process</Eyebrow>
+    <h2 class="mt-3 text-3xl md:text-4xl">How to apply</h2>
+    <ol class="mt-10 grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">1</div><div class="font-display font-bold text-navy mt-2">Attend PMES</div><p class="text-xs text-slate mt-1">Pre-Membership Education Seminar — half-day cooperative orientation.</p></li>
+      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">2</div><div class="font-display font-bold text-navy mt-2">Submit application</div><p class="text-xs text-slate mt-1">Fill out the membership form at the office or via the link below.</p></li>
+      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">3</div><div class="font-display font-bold text-navy mt-2">Pay fees</div><p class="text-xs text-slate mt-1">₱100 membership fee + 25 paid-up shares (₱1,250) of 50 subscribed (₱2,500).</p></li>
+      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">4</div><div class="font-display font-bold text-navy mt-2">BOD review</div><p class="text-xs text-slate mt-1">The Board of Directors acts on your application within 30 days.</p></li>
+      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">5</div><div class="font-display font-bold text-navy mt-2">Welcome aboard</div><p class="text-xs text-slate mt-1">Member benefits activate. Start saving, borrowing, and growing with us.</p></li>
+    </ol>
+  </section>
+
+  <!-- FAQ -->
+  <section class="bg-brand-bg">
+    <div class="container-page py-20">
+      <Eyebrow>Frequently asked</Eyebrow>
+      <h2 class="mt-3 text-3xl md:text-4xl">Questions members ask first</h2>
+      <div class="mt-10 max-w-3xl">
+        <FaqAccordion faqs={FAQ} />
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLY FORM -->
+  <section id="apply" class="container-page py-20 grid lg:grid-cols-[1fr_1.2fr] gap-10">
+    <div>
+      <Eyebrow>Ready when you are</Eyebrow>
+      <h2 class="mt-3 text-3xl md:text-4xl">Start your application</h2>
+      <p class="mt-4 text-slate">Fill out this form to begin. We'll review your information and email you the next steps — including the PMES schedule.</p>
+      <div class="mt-8 text-sm text-slate">
+        <div class="font-display font-bold text-navy mb-1">Prefer to talk?</div>
+        <div>📞 (033) 330-2586</div>
+        <div>✉ <a href="mailto:isatucmpc1964@gmail.com" class="text-link">isatucmpc1964@gmail.com</a></div>
+      </div>
+    </div>
+    <MembershipForm />
   </section>
 </PageLayout>
