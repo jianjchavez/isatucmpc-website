@@ -13,32 +13,36 @@ const year = new Date().getFullYear();
           Iloilo Science and Technology University<br />and Community Multi-Purpose Cooperative<br /><br />
           Burgos St., La Paz, Iloilo City<br />
           (033) 330-2586<br />
-          <a href="mailto:isatucmpc1964@gmail.com" class="text-white underline-offset-2">isatucmpc1964@gmail.com</a>
+          <a href="mailto:isatucmpc1964@gmail.com" class="text-white no-underline hover:underline underline-offset-2">isatucmpc1964@gmail.com</a>
         </p>
       </div>
 
       <div>
-        <div class="font-display font-bold text-[10px] uppercase tracking-widest text-orange mb-3">Explore</div>
-        <ul class="text-xs space-y-2 opacity-90">
-          <li><a href="/about" class="text-white no-underline hover:underline">About</a></li>
-          <li><a href="/services" class="text-white no-underline hover:underline">Services</a></li>
-          <li><a href="/membership" class="text-white no-underline hover:underline">Membership</a></li>
-          <li><a href="/news" class="text-white no-underline hover:underline">News</a></li>
-          <li><a href="/contact" class="text-white no-underline hover:underline">Contact</a></li>
-        </ul>
+        <div class="font-display font-bold text-xs uppercase tracking-widest text-orange mb-3">Explore</div>
+        <nav aria-label="Explore">
+          <ul class="text-xs space-y-2 opacity-90">
+            <li><a href="/about" class="text-white no-underline hover:underline">About</a></li>
+            <li><a href="/services" class="text-white no-underline hover:underline">Services</a></li>
+            <li><a href="/membership" class="text-white no-underline hover:underline">Membership</a></li>
+            <li><a href="/news" class="text-white no-underline hover:underline">News</a></li>
+            <li><a href="/contact" class="text-white no-underline hover:underline">Contact</a></li>
+          </ul>
+        </nav>
       </div>
 
       <div>
-        <div class="font-display font-bold text-[10px] uppercase tracking-widest text-orange mb-3">Members</div>
-        <ul class="text-xs space-y-2 opacity-90">
-          <li><a href="https://app.isatucmpc.coop" class="text-white no-underline hover:underline">Member Login</a></li>
-          <li><a href="/membership" class="text-white no-underline hover:underline">Apply to Join</a></li>
-          <li><a href="/news?category=announcement" class="text-white no-underline hover:underline">Announcements</a></li>
-        </ul>
+        <div class="font-display font-bold text-xs uppercase tracking-widest text-orange mb-3">Members</div>
+        <nav aria-label="Members">
+          <ul class="text-xs space-y-2 opacity-90">
+            <li><a href="https://app.isatucmpc.coop" target="_blank" rel="noopener noreferrer" class="text-white no-underline hover:underline">Member Login</a></li>
+            <li><a href="/membership" class="text-white no-underline hover:underline">Apply to Join</a></li>
+            <li><a href="/news?category=announcement" class="text-white no-underline hover:underline">Announcements</a></li>
+          </ul>
+        </nav>
       </div>
 
       <div>
-        <div class="font-display font-bold text-[10px] uppercase tracking-widest text-orange mb-3">Official</div>
+        <div class="font-display font-bold text-xs uppercase tracking-widest text-orange mb-3">Official</div>
         <p class="text-xs opacity-90 leading-relaxed">
           CDA Reg. No.<br />9520-06008210<br /><br />
           NATCCO Member<br />in Good Standing
@@ -48,7 +52,7 @@ const year = new Date().getFullYear();
 
     <div class="mt-12 pt-6 border-t border-white/15 flex flex-col md:flex-row justify-between gap-3 text-[11px] opacity-60">
       <span>© {year} ISATUCMPC · Service-driven since 1964</span>
-      <span><a href="https://www.facebook.com/isatu.cmpc" class="text-white no-underline hover:underline">facebook.com/isatu.cmpc</a></span>
+      <span><a href="https://www.facebook.com/isatu.cmpc" target="_blank" rel="noopener noreferrer" class="text-white no-underline hover:underline">facebook.com/isatu.cmpc</a></span>
     </div>
   </div>
 </footer>

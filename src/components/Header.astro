@@ -1,6 +1,6 @@
 ---
 import Button from '~/components/Button.astro';
-import { Menu, X } from 'lucide-astro';
+import { Menu } from 'lucide-astro';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -25,7 +25,7 @@ const isActive = (href: string) => href === '/' ? path === '/' : path.startsWith
 
     <nav class="hidden lg:flex items-center gap-7" aria-label="Primary">
       {navLinks.map(l => (
-        <a href={l.href} class={`text-sm font-display font-semibold no-underline transition ${isActive(l.href) ? 'text-orange' : 'text-ink hover:text-navy'}`}>
+        <a href={l.href} aria-current={isActive(l.href) ? 'page' : undefined} class={`text-sm font-display font-semibold no-underline transition ${isActive(l.href) ? 'text-orange underline underline-offset-4 decoration-2' : 'text-ink hover:text-navy'}`}>
           {l.label}
         </a>
       ))}
@@ -45,7 +45,7 @@ const isActive = (href: string) => href === '/' ? path === '/' : path.startsWith
     <div class="container-page py-6 flex flex-col gap-4">
       <Button href="/membership" variant="primary" size="md" showArrow className="w-full justify-center">Apply to Join</Button>
       {navLinks.map(l => (
-        <a href={l.href} class={`text-base font-display font-semibold no-underline py-2 ${isActive(l.href) ? 'text-orange' : 'text-ink'}`}>{l.label}</a>
+        <a href={l.href} aria-current={isActive(l.href) ? 'page' : undefined} class={`text-base font-display font-semibold no-underline py-2 ${isActive(l.href) ? 'text-orange underline underline-offset-4 decoration-2' : 'text-ink'}`}>{l.label}</a>
       ))}
       <Button href="https://app.isatucmpc.coop" variant="outline" size="md" className="w-full justify-center">Member Login</Button>
     </div>
@@ -55,9 +55,20 @@ const isActive = (href: string) => href === '/' ? path === '/' : path.startsWith
 <script>
   const btn = document.getElementById('mobile-menu-toggle');
   const menu = document.getElementById('mobile-menu');
+  function setOpen(open: boolean) {
+    btn?.setAttribute('aria-expanded', String(open));
+    btn?.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    menu?.classList.toggle('hidden', !open);
+  }
   btn?.addEventListener('click', () => {
-    const expanded = btn.getAttribute('aria-expanded') === 'true';
-    btn.setAttribute('aria-expanded', String(!expanded));
-    menu?.classList.toggle('hidden');
+    const isOpen = btn.getAttribute('aria-expanded') === 'true';
+    setOpen(!isOpen);
+    if (!isOpen) (menu?.querySelector('a, button') as HTMLElement | null)?.focus();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && btn?.getAttribute('aria-expanded') === 'true') {
+      setOpen(false);
+      btn.focus();
+    }
   });
 </script>
