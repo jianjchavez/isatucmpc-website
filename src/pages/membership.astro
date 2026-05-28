@@ -6,28 +6,12 @@ import GradientOrb from '~/components/GradientOrb.astro';
 import BenefitCard from '~/components/BenefitCard.astro';
 import FaqAccordion from '~/components/FaqAccordion.astro';
 import MembershipForm from '~/components/MembershipForm.astro';
+import MembershipProcess from '~/components/MembershipProcess.astro';
 import { BENEFITS } from '~/data/benefits';
 import { FAQ } from '~/data/faq';
 import { buildFaqSchema } from '~/lib/seo';
 
 const faqSchema = buildFaqSchema(FAQ);
-
-const STEPS: Array<{ title: string; body: string; icon: string }> = [
-  { title: 'Attend PMES', body: 'Pre-Membership Education Seminar — half-day cooperative orientation.', icon: 'graduation-cap' },
-  { title: 'Submit application', body: 'Fill out the membership form at the office or via the link below.', icon: 'file-text' },
-  { title: 'Pay fees', body: '₱500 membership fee + 25 paid-up shares (₱1,250) of 50 subscribed (₱2,500).', icon: 'wallet' },
-  { title: 'BOD review', body: 'The Board of Directors acts on your application within 30 days.', icon: 'users' },
-  { title: 'Welcome aboard', body: 'Member benefits activate. Start saving, borrowing, and growing with us.', icon: 'handshake' },
-];
-
-// Inline SVG paths so we don't pull a new icon dep. Each entry returns innards of a 24×24 viewBox.
-const ICONS: Record<string, string> = {
-  'graduation-cap': '<path d="M22 10v6"/><path d="M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c0 1.7 4 3 6 3s6-1.3 6-3v-5"/>',
-  'file-text': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
-  'wallet': '<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
-  'users': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  'handshake': '<path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/>',
-};
 ---
 <PageLayout title="Join ISATUCMPC" description="Become a member of Iloilo's longest-running multi-purpose cooperative. See who can join, the benefits, and how to apply." jsonLd={faqSchema}>
   <!-- HERO -->
@@ -91,68 +75,7 @@ const ICONS: Record<string, string> = {
   </section>
 
   <!-- HOW TO APPLY -->
-  <section class="container-page py-24">
-    <Eyebrow>The process</Eyebrow>
-    <h2 class="mt-3 text-3xl md:text-4xl">How to apply</h2>
-    <p class="mt-4 text-slate max-w-2xl">Five clear steps from interested to welcomed.</p>
-
-    <ol class="mt-16 grid grid-cols-1 lg:grid-cols-5 gap-x-4 gap-y-14">
-      {STEPS.map((step, i) => (
-        <li class="relative flex flex-col items-center text-center">
-          <!-- Numbered icon badge -->
-          <div class="relative inline-flex">
-            <div class="w-24 h-24 rounded-full bg-navy ring-4 ring-gold/40 shadow-lg shadow-navy/10 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FE9900" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICONS[step.icon]} />
-            </div>
-            <span class="absolute -top-1 -right-1 min-w-[34px] h-[26px] px-2 inline-flex items-center justify-center rounded-full bg-orange text-white font-display font-extrabold text-xs tracking-wide ring-2 ring-white">
-              {String(i + 1).padStart(2, '0')}
-            </span>
-          </div>
-
-          <!-- Step content -->
-          <h3 class="mt-6 font-display font-extrabold text-navy text-lg">{step.title}</h3>
-          <p class="mt-2 text-sm text-slate max-w-[210px]">{step.body}</p>
-
-          <!-- Desktop connector arc (curve to next step) -->
-          {i < STEPS.length - 1 && (
-            <svg
-              aria-hidden="true"
-              class="hidden lg:block absolute top-12 left-[calc(50%+3rem)] w-[calc(100%-2rem)] h-12 text-orange/70 pointer-events-none"
-              viewBox="0 0 100 24"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id={`stepArcGrad-${i}`} x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#FE9900" />
-                  <stop offset="100%" stop-color="#FFC001" />
-                </linearGradient>
-              </defs>
-              <path d="M 2 12 Q 50 0, 95 12" stroke={`url(#stepArcGrad-${i})`} stroke-width="2" fill="none" stroke-dasharray="3 4" stroke-linecap="round" />
-              <polyline points="89 8, 95 12, 89 16" stroke={`url(#stepArcGrad-${i})`} stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          )}
-
-          <!-- Mobile/tablet connector (vertical down between rows) -->
-          {i < STEPS.length - 1 && (
-            <svg
-              aria-hidden="true"
-              class="block lg:hidden mt-4 w-6 h-10 text-orange/70"
-              viewBox="0 0 24 40"
-            >
-              <defs>
-                <linearGradient id={`stepArcGradV-${i}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#FE9900" />
-                  <stop offset="100%" stop-color="#FFC001" />
-                </linearGradient>
-              </defs>
-              <line x1="12" y1="2" x2="12" y2="32" stroke={`url(#stepArcGradV-${i})`} stroke-width="2" stroke-dasharray="3 4" stroke-linecap="round" />
-              <polyline points="6 28, 12 34, 18 28" stroke={`url(#stepArcGradV-${i})`} stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          )}
-        </li>
-      ))}
-    </ol>
-  </section>
+  <MembershipProcess applyHref="#apply" />
 
   <!-- FAQ -->
   <section class="bg-brand-bg">
