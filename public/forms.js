@@ -1,6 +1,5 @@
 (() => {
-  const WORKER_URL = 'https://isatucmpc-forms.<your-account>.workers.dev/api/submit';
-  // ↑ Replace <your-account> with the actual Cloudflare account subdomain post-deploy, or set up a custom route.
+  const WORKER_URL = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/submit';
 
   function attach(formId, resultId) {
     const form = document.getElementById(formId);
