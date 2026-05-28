@@ -16,7 +16,8 @@ app.on(['GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'], '/api/submit', c =>
 
 app.post('/api/submit', async c => {
   const origin = c.req.header('origin');
-  if (origin !== c.env.SITE_ORIGIN) return c.json({ error: 'forbidden' }, 403);
+  const allowed = c.env.SITE_ORIGIN.split(',').map(o => o.trim()).filter(Boolean);
+  if (!origin || !allowed.includes(origin)) return c.json({ error: 'forbidden' }, 403);
 
   const body = await c.req.json<Record<string, string>>().catch(() => null);
   if (!body) return c.json({ error: 'invalid-body' }, 400);

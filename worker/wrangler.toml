@@ -3,7 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2026-05-27"
 
 [vars]
-SITE_ORIGIN = "https://isatucmpc.coop"
+# Comma-separated list of allowed Origin headers. Includes pages.dev for
+# pre-cutover (Task 27) and the custom domain for post-cutover.
+SITE_ORIGIN = "https://isatucmpc.coop,https://isatucmpc.pages.dev"
 TO_EMAIL = "isatucmpc1964@gmail.com"
 
 # Secrets to set with `wrangler secret put`:
