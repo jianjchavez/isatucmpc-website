@@ -1,0 +1,303 @@
+---
+/**
+ * MembershipProcess.astro
+ * ISATUCMPC — Membership application process section.
+ *
+ * Brand-aligned, fully responsive:
+ *   - Desktop (md+): single-ribbon SVG infographic snaking through the five steps.
+ *   - Mobile (< md): vertical stack of step cards.
+ *
+ * Ported from the React reference in Downloads/Membership_process/. Uses site
+ * CSS variables for the standard palette + inline literals for two
+ * decoration-only colors that aren't in the global theme.
+ */
+
+interface Props {
+  /** Where the "Start your application" CTA links to. */
+  applyHref?: string;
+  /** Section heading (right-side, bold). */
+  heading?: string;
+  /** Subheading shown under the eyebrow. */
+  subheading?: string;
+}
+
+const {
+  applyHref = '#apply',
+  heading = 'MEMBERSHIP',
+  subheading = 'Five clear steps from interested to welcomed.',
+} = Astro.props;
+
+type BrandKey = 'navy' | 'orange' | 'gold' | 'green';
+
+interface Step {
+  num: string;
+  title: string;
+  body: string;
+  color: BrandKey;
+  /** Inline SVG markup for the icon, sized for r50 inner node on desktop. */
+  iconSvg: string;
+}
+
+const ICON_DOC = `<g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M -30 -42 L 21 -42 L 39 -24 L 39 42 L -30 42 Z" /><path d="M 21 -42 L 21 -24 L 39 -24" /><path d="M -15 -3 H 24 M -15 15 H 24" /></g>`;
+const ICON_CAP = `<g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M -45 -9 L 0 -33 L 45 -9 L 0 15 Z" /><path d="M -24 3 L -24 27 Q 0 42 24 27 L 24 3" /><path d="M 45 -9 L 45 24" /></g>`;
+const ICON_WALLET = `<g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="-39" y="-27" width="78" height="54" rx="9" /><path d="M -39 -12 L -39 -27 L 27 -27" /><circle cx="21" cy="6" r="9" fill="#FFFFFF" stroke="none" /></g>`;
+const ICON_PEOPLE = `<g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="-21" cy="-12" r="15" /><circle cx="21" cy="-12" r="15" /><path d="M -48 30 Q -48 6 -21 6 Q 3 6 3 30" /><path d="M -3 30 Q -3 6 21 6 Q 48 6 48 30" /></g>`;
+const ICON_HANDSHAKE = `<g stroke="#FFFFFF" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M -45 -9 L -21 -24 L 0 -9 L 21 -24 L 45 -9" /><path d="M -21 -24 L -9 15 L 9 15 L 24 -21" /><path d="M -9 15 L 0 27 L 9 15" /></g>`;
+
+const STEPS: Step[] = [
+  { num: '01', title: 'Submit application', body: 'Fill out the membership form, in office or online.', color: 'navy',   iconSvg: ICON_DOC },
+  { num: '02', title: 'Attend PMES',         body: 'Pre-Membership Seminar, a half-day orientation.',     color: 'orange', iconSvg: ICON_CAP },
+  { num: '03', title: 'Pay fees',            body: '₱500 fee + 25 paid-up shares (₱1,250) of 50.',         color: 'gold',   iconSvg: ICON_WALLET },
+  { num: '04', title: 'BOD review',          body: 'The Board acts within thirty days of filing.',         color: 'navy',   iconSvg: ICON_PEOPLE },
+  { num: '05', title: 'Welcome aboard',      body: 'Benefits activate — save, borrow, and grow with us.',   color: 'green',  iconSvg: ICON_HANDSHAKE },
+];
+
+const COLOR_VAR: Record<BrandKey, string> = {
+  navy: 'var(--color-navy)',
+  orange: 'var(--color-orange)',
+  gold: 'var(--color-gold)',
+  green: 'var(--color-green)',
+};
+
+const SLATE = 'var(--color-slate)';
+const NAVY = 'var(--color-navy)';
+const ORANGE = 'var(--color-orange)';
+const GOLD = 'var(--color-gold)';
+const GREEN = 'var(--color-green)';
+const INK = 'var(--color-ink)';
+const RULE_DECO = '#B4B2A9';
+const CHROME = '#C9C9C9';
+
+interface NodeLayout {
+  cx: number;
+  cy: number;
+  numX: number;
+  textX: number;
+  baseY: number;
+}
+const NODE_LAYOUT: NodeLayout[] = [
+  { cx: 160, cy: 150, numX: 160, textX: 375,  baseY: 150 },
+  { cx: 820, cy: 150, numX: 820, textX: 1035, baseY: 150 },
+  { cx: 820, cy: 490, numX: 820, textX: 1035, baseY: 490 },
+  { cx: 160, cy: 490, numX: 160, textX: 375,  baseY: 490 },
+  { cx: 160, cy: 830, numX: 160, textX: 375,  baseY: 830 },
+];
+
+/** Splits a body string into ~25-char lines so it fits the SVG layout. */
+function splitBody(body: string): string[] {
+  const words = body.split(' ');
+  const lines: string[] = [];
+  let current = '';
+  for (const w of words) {
+    if ((current + ' ' + w).trim().length > 26 && current) {
+      lines.push(current.trim());
+      current = w;
+    } else {
+      current += ' ' + w;
+    }
+  }
+  if (current.trim()) lines.push(current.trim());
+  return lines.slice(0, 2);
+}
+---
+
+<section
+  aria-label="Membership application process"
+  class="w-full bg-white px-4 py-12 md:px-8 md:py-20"
+  style="font-family: var(--font-body);"
+>
+  <div class="mx-auto max-w-6xl">
+    {/* HEADER */}
+    <header class="mb-8 flex flex-col items-start justify-between gap-2 md:mb-10 md:flex-row md:items-end">
+      <div>
+        <div
+          class="text-xs uppercase md:text-sm"
+          style={`font-family: var(--font-display); font-weight: 700; letter-spacing: 0.18em; color: ${ORANGE};`}
+        >
+          How to join
+        </div>
+        <p class="mt-1 text-sm md:text-base" style={`color: ${SLATE};`}>
+          {subheading}
+        </p>
+      </div>
+      <div class="md:text-right">
+        <div
+          class="text-2xl md:text-3xl"
+          style={`font-family: var(--font-display); font-weight: 700; color: ${NAVY}; line-height: 1;`}
+        >
+          {heading}
+        </div>
+        <div
+          class="mt-1 text-xs md:text-sm"
+          style={`font-family: var(--font-display); font-weight: 400; letter-spacing: 0.4em; color: ${SLATE};`}
+        >
+          PROCESS
+        </div>
+      </div>
+    </header>
+
+    {/* Signature ISATUCMPC gradient rule */}
+    <div
+      class="mb-10 h-[3px] w-20"
+      style={`background: linear-gradient(to right, ${NAVY}, ${ORANGE}, ${GOLD});`}
+      aria-hidden="true"
+    ></div>
+
+    {/* DESKTOP RIBBON (md+) */}
+    <div class="hidden md:block">
+      <svg
+        viewBox="0 0 1500 1100"
+        class="w-full h-auto"
+        role="img"
+        aria-label="Membership process: submit application, attend PMES, pay fees, BOD review, welcome aboard"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <title>ISATUCMPC membership process ribbon</title>
+
+        {/* Black ribbon core */}
+        <path
+          d="M 160 150 H 1340 C 1450 150 1450 490 1340 490 H 140 C 30 490 30 830 140 830 H 900"
+          fill="none"
+          stroke={INK}
+          stroke-width="18"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+
+        {/* Colored segments centered on each node, on straight runs only */}
+        <path d="M 160 150 H 420" fill="none" stroke={NAVY}   stroke-width="32" stroke-linecap="round" />
+        <path d="M 660 150 H 980" fill="none" stroke={ORANGE} stroke-width="32" stroke-linecap="round" />
+        <path d="M 660 490 H 980" fill="none" stroke={GOLD}   stroke-width="32" stroke-linecap="round" />
+        <path d="M 140 490 H 360" fill="none" stroke={NAVY}   stroke-width="32" stroke-linecap="round" />
+        <path d="M 160 830 H 420" fill="none" stroke={GREEN}  stroke-width="32" stroke-linecap="round" />
+
+        {/* Chevron clusters tucked into the turn pockets */}
+        <g fill="none" stroke={CHROME} stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 1316 196 L 1330 212 L 1344 196" />
+          <path d="M 1316 224 L 1330 240 L 1344 224" />
+          <path d="M 1316 252 L 1330 268 L 1344 252" />
+        </g>
+        <g fill="none" stroke={CHROME} stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 210 612 L 226 626 L 210 640" />
+          <path d="M 238 612 L 254 626 L 238 640" />
+          <path d="M 266 612 L 282 626 L 266 640" />
+        </g>
+
+        {/* Nodes */}
+        {STEPS.map((step, i) => {
+          const layout = NODE_LAYOUT[i];
+          const fill = COLOR_VAR[step.color];
+          const bodyLines = splitBody(step.body);
+          return (
+            <g>
+              <circle cx={layout.cx} cy={layout.cy} r="66" fill="#FFFFFF" stroke={fill} stroke-width="7" />
+              <circle cx={layout.cx} cy={layout.cy} r="50" fill={fill} />
+              <g transform={`translate(${layout.cx},${layout.cy})`} set:html={step.iconSvg} />
+
+              {/* Ghost number */}
+              <text
+                x={layout.numX}
+                y={layout.baseY + 206}
+                font-family="Montserrat, sans-serif"
+                font-weight="700"
+                font-size="140"
+                fill={RULE_DECO}
+              >
+                {step.num}
+              </text>
+
+              {/* Title */}
+              <text
+                x={layout.textX}
+                y={layout.baseY + 126}
+                font-family="Montserrat, sans-serif"
+                font-weight="700"
+                font-size="28"
+                letter-spacing="0.4"
+                fill={NAVY}
+              >
+                {step.title.toUpperCase()}
+              </text>
+
+              {/* Body (up to 2 lines) */}
+              {bodyLines.map((line, lineIdx) => (
+                <text
+                  x={layout.textX}
+                  y={layout.baseY + 156 + lineIdx * 24}
+                  font-family="'Open Sans', sans-serif"
+                  font-size="20"
+                  fill={SLATE}
+                >
+                  {line}
+                </text>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+
+    {/* MOBILE STACK (< md) */}
+    <div class="md:hidden">
+      <ol class="space-y-8" role="list">
+        {STEPS.map((step, i) => {
+          const fill = COLOR_VAR[step.color];
+          return (
+            <li class="flex flex-col items-center text-center">
+              {/* Number + icon node */}
+              <div class="relative">
+                <div
+                  class="flex h-24 w-24 items-center justify-center rounded-full"
+                  style={`background-color: ${fill}; border: 4px solid #FFFFFF; box-shadow: 0 0 0 3px ${fill};`}
+                >
+                  <svg viewBox="-50 -50 100 100" class="h-12 w-12" aria-hidden="true" set:html={step.iconSvg}></svg>
+                </div>
+                <span
+                  class="absolute -right-2 -top-2 inline-flex h-7 min-w-[1.75rem] items-center justify-center rounded-full px-2 text-xs text-white"
+                  style={`background-color: ${ORANGE}; font-family: var(--font-display); font-weight: 700;`}
+                >
+                  {step.num}
+                </span>
+              </div>
+
+              {/* Title + body */}
+              <h3
+                class="mt-4 text-lg"
+                style={`font-family: var(--font-display); font-weight: 700; color: ${NAVY}; letter-spacing: 0.02em;`}
+              >
+                {step.title}
+              </h3>
+              <p class="mt-1 max-w-xs text-sm leading-relaxed" style={`color: ${SLATE};`}>
+                {step.body}
+              </p>
+
+              {/* Connector chevron between steps (not after the last) */}
+              {i < STEPS.length - 1 && (
+                <svg class="mt-4 h-4 w-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path
+                    d="M 3 6 L 8 11 L 13 6"
+                    stroke={ORANGE}
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+
+    {/* CTA */}
+    <div class="mt-10 flex justify-center md:mt-12">
+      <a
+        href={applyHref}
+        class="inline-block rounded-md px-8 py-3.5 text-white shadow-sm transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        style={`background-color: ${ORANGE}; font-family: var(--font-display); font-weight: 700; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase;`}
+      >
+        Start your application →
+      </a>
+    </div>
+  </div>
+</section>
