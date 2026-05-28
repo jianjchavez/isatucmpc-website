@@ -2,15 +2,18 @@
 import Button from '~/components/Button.astro';
 
 const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao'];
+const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', 'Others'];
 ---
-<form id="membership-form" class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-5" novalidate>
+<form id="membership-form" class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-6" novalidate>
   <input type="hidden" name="form-source" value="membership" />
   <input type="hidden" name="name" value="" />
   <input type="hidden" name="message" value="" />
 
+  <p class="text-xs text-slate -mt-2">Only fields marked <span class="text-orange" aria-hidden="true">*</span> are required. Fill what you can now — when you submit, we'll generate a pre-filled application form (PDF) for you to download, print, sign, and bring to the office for in-person verification.</p>
+
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">Your details</legend>
-    <div class="grid md:grid-cols-3 gap-4">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">1. Identity</legend>
+    <div class="grid md:grid-cols-4 gap-3">
       <div>
         <label for="mf-first" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">First name <span class="text-orange" aria-hidden="true">*</span></label>
         <input id="mf-first" data-field="firstName" type="text" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
@@ -23,36 +26,125 @@ const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao']
         <label for="mf-last" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Last name <span class="text-orange" aria-hidden="true">*</span></label>
         <input id="mf-last" data-field="lastName" type="text" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
+      <div>
+        <label for="mf-ext" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Extension</label>
+        <input id="mf-ext" data-field="extension" type="text" placeholder="Jr., III…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
     </div>
-    <div class="grid md:grid-cols-2 gap-4">
+
+    <div class="grid md:grid-cols-2 gap-3">
+      <div>
+        <label for="mf-dob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth <span class="text-orange" aria-hidden="true">*</span></label>
+        <input id="mf-dob" data-field="dob" type="date" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-pob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Place of birth</label>
+        <input id="mf-pob" data-field="placeOfBirth" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-3">
       <div>
         <label for="mf-email" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Email <span class="text-orange" aria-hidden="true">*</span></label>
         <input id="mf-email" name="email" type="email" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-phone" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact number <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-phone" data-field="phone" type="tel" required inputmode="tel" placeholder="09xx xxx xxxx" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-phone" data-field="contactNumber" type="tel" required inputmode="tel" placeholder="09xx xxx xxxx" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
+
     <div class="grid md:grid-cols-2 gap-4">
       <div>
-        <label for="mf-dob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-dob" data-field="dob" type="date" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Gender</span>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="gender" name="mf-gender" value="Male" /> Male</label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="gender" name="mf-gender" value="Female" /> Female</label>
+        </div>
+      </div>
+      <div>
+        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Civil status</span>
+        <div class="flex flex-wrap gap-4">
+          <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="civilStatus" name="mf-civil" value="Single" /> Single</label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="civilStatus" name="mf-civil" value="Married" /> Married</label>
+          <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="civilStatus" name="mf-civil" value="Separated" /> Separated</label>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-4">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">2. Address &amp; ID</legend>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div>
+        <label for="mf-paddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Present home address</label>
+        <input id="mf-paddr" data-field="presentHomeAddress" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-haddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Permanent home address</label>
+        <input id="mf-haddr" data-field="homeAddress" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div>
+        <label for="mf-tin" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">TIN number</label>
+        <input id="mf-tin" data-field="tinNumber" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-vid" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Valid ID number (presented)</label>
+        <input id="mf-vid" data-field="validIdNumber" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-4">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">3. Employment</legend>
+    <div>
+      <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Employment category</span>
+      <div class="flex flex-wrap gap-4">
+        {EMPLOYMENT_CATS.map(cat => (
+          <label class="flex items-center gap-2 text-sm">
+            <input type="radio" data-field="employmentCategory" name="mf-empcat" value={cat} />
+            {cat}
+          </label>
+        ))}
+      </div>
+    </div>
+    <div class="grid md:grid-cols-2 gap-3">
+      <div>
+        <label for="mf-empstatus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Status of employment</label>
+        <input id="mf-empstatus" data-field="statusOfEmployment" type="text" placeholder="Regular, Part-time, Contractual…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-prof" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Profession</label>
+        <input id="mf-prof" data-field="profession" type="text" placeholder="Faculty, Staff, etc." class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-4">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">4. Emergency contact</legend>
+    <div class="grid md:grid-cols-3 gap-3">
+      <div>
+        <label for="mf-eman" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Name</label>
+        <input id="mf-eman" data-field="emergencyName" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-emph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact number</label>
+        <input id="mf-emph" data-field="emergencyContact" type="tel" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-emrel" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship</label>
+        <input id="mf-emrel" data-field="emergencyRelationship" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
   </fieldset>
 
   <fieldset class="space-y-3">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">Membership type</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">5. Membership type <span class="text-orange" aria-hidden="true">*</span></legend>
     <div class="flex flex-wrap gap-4">
       <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="memberType" name="mf-membertype" value="Regular" required /> Regular member</label>
       <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="memberType" name="mf-membertype" value="Associate" /> Associate member</label>
-    </div>
-
-    <div id="mf-associate-block" class="hidden border-l-2 border-orange/40 pl-4">
-      <label for="mf-recommender" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Recommended by (regular member's name) <span class="text-orange" aria-hidden="true">*</span></label>
-      <input id="mf-recommender" data-field="recommender" type="text" placeholder="Full name of the regular member endorsing you" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-      <p class="mt-1 text-xs text-slate">Associate applications require a recommending regular member.</p>
     </div>
 
     <div id="mf-regular-block" class="hidden border-l-2 border-orange/40 pl-4 space-y-3">
@@ -62,16 +154,101 @@ const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao']
       </label>
       <div id="mf-campus-row" class="hidden">
         <label for="mf-campus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Campus assigned</label>
-        <select id="mf-campus" data-field="campus" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white">
+        <select id="mf-campus" data-field="campus" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white max-w-xs">
           <option value="">Select campus…</option>
           {CAMPUSES.map(c => <option value={c}>{c}</option>)}
         </select>
       </div>
     </div>
+
+    <div id="mf-associate-block" class="hidden border-l-2 border-orange/40 pl-4 space-y-4">
+      <div>
+        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Qualification</span>
+        <div class="space-y-2">
+          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="relationship" class="mt-1" /> <span>Relationship to a regular member</span></label>
+          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="integrity" class="mt-1" /> <span>Individual of proven integrity in the community</span></label>
+          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="organization" class="mt-1" /> <span>Member of an organization/group registered with SEC or other regulating agencies</span></label>
+        </div>
+      </div>
+      <div id="mf-assocorg-row" class="hidden">
+        <label for="mf-assocorg" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Please specify</label>
+        <input id="mf-assocorg" data-field="associateOrgSpecify" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div class="grid md:grid-cols-3 gap-3">
+        <div>
+          <label for="mf-recname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Recommended by <span class="text-orange" aria-hidden="true">*</span></label>
+          <input id="mf-recname" data-field="recommenderName" type="text" placeholder="Regular member's full name" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="mf-recrel" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship to that member</label>
+          <input id="mf-recrel" data-field="recommenderRelationship" type="text" placeholder="Parent, spouse, child, friend…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="mf-reccampus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">If they're ISAT U: campus/college</label>
+          <input id="mf-reccampus" data-field="recommenderCampus" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        </div>
+      </div>
+    </div>
   </fieldset>
 
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">A bit more</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">6. Family information</legend>
+    <div class="grid md:grid-cols-3 gap-3">
+      <div>
+        <label for="mf-spname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Spouse's name</label>
+        <input id="mf-spname" data-field="spouseName" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-spdob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
+        <input id="mf-spdob" data-field="spouseDob" type="date" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-spph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact no.</label>
+        <input id="mf-spph" data-field="spouseContact" type="tel" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+    </div>
+    <div class="grid md:grid-cols-3 gap-3">
+      <div>
+        <label for="mf-pname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Mother/father's name</label>
+        <input id="mf-pname" data-field="parentName" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-pdob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
+        <input id="mf-pdob" data-field="parentDob" type="date" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-pph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact no.</label>
+        <input id="mf-pph" data-field="parentContact" type="tel" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-3">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">7. Beneficiaries (up to 3)</legend>
+    {[1, 2, 3].map(i => (
+      <div class="grid grid-cols-2 md:grid-cols-[2fr_1.2fr_1.5fr_0.7fr] gap-2 items-end">
+        <div>
+          <label for={`mf-ben${i}-name`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">{`Beneficiary ${i} — name`}</label>
+          <input id={`mf-ben${i}-name`} data-field={`ben${i}Name`} type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+        </div>
+        <div>
+          <label for={`mf-ben${i}-dob`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
+          <input id={`mf-ben${i}-dob`} data-field={`ben${i}Dob`} type="date" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+        </div>
+        <div>
+          <label for={`mf-ben${i}-rel`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship</label>
+          <input id={`mf-ben${i}-rel`} data-field={`ben${i}Rel`} type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+        </div>
+        <div>
+          <label for={`mf-ben${i}-age`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Age</label>
+          <input id={`mf-ben${i}-age`} data-field={`ben${i}Age`} type="number" min="0" max="120" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+        </div>
+      </div>
+    ))}
+  </fieldset>
+
+  <fieldset class="space-y-4">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. A bit more</legend>
     <div>
       <label for="mf-affiliation" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your connection to ISAT U or our community</label>
       <input id="mf-affiliation" data-field="affiliation" type="text" placeholder="e.g. Faculty since 2018, alumna 2010, child of member …" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
@@ -83,63 +260,204 @@ const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao']
   </fieldset>
 
   <div class="cf-turnstile" data-sitekey="REPLACE_BEFORE_DEPLOY"></div>
-  <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll email you the PMES schedule and the full application form (PDF) for in-person signing at the cooperative office.</div>
-  <Button type="submit" variant="primary" size="md" showArrow>Submit application</Button>
+  <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll generate your pre-filled application form (PDF) for download. You'll still need to print, sign, and bring it to the cooperative office for verification and PMES scheduling.</div>
+  <Button type="submit" variant="primary" size="md" showArrow>Submit &amp; download my application</Button>
   <div id="mf-result" class="hidden p-3 rounded text-sm" role="status" aria-live="polite"></div>
+  <div id="mf-cooldown" class="hidden p-3 rounded text-sm bg-brand-bg border border-rule" role="status" aria-live="polite"></div>
 </form>
 
-<script is:inline>
-  (() => {
-    const form = document.getElementById('membership-form');
-    if (!form) return;
+<script>
+  import { fillApplicationPdf, triggerPdfDownload, type PdfFieldData } from '~/lib/pdf-fill';
 
+  const COOLDOWN_KEY = 'mf-last-submit-ts';
+  const COOLDOWN_MS = 60_000; // 1 minute
+
+  const form = document.getElementById('membership-form') as HTMLFormElement | null;
+  if (form) {
+    const submitBtn = form.querySelector('button[type=submit]') as HTMLButtonElement | null;
+    const cooldownEl = document.getElementById('mf-cooldown');
     const associate = document.getElementById('mf-associate-block');
     const regular = document.getElementById('mf-regular-block');
-    const isatuChk = document.getElementById('mf-isatu');
+    const isatuChk = document.getElementById('mf-isatu') as HTMLInputElement | null;
     const campusRow = document.getElementById('mf-campus-row');
-    const recommender = document.getElementById('mf-recommender');
+    const recommender = document.getElementById('mf-recname') as HTMLInputElement | null;
+    const assocOrgRow = document.getElementById('mf-assocorg-row');
+
+    function val(sel: string): string {
+      const el = form!.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+      return (el?.value ?? '').trim();
+    }
 
     function syncType() {
-      const t = form.querySelector('input[name="mf-membertype"]:checked')?.value;
+      const t = (form!.querySelector('input[name="mf-membertype"]:checked') as HTMLInputElement | null)?.value;
       const isAssoc = t === 'Associate';
       const isReg = t === 'Regular';
-      associate.classList.toggle('hidden', !isAssoc);
-      regular.classList.toggle('hidden', !isReg);
-      recommender.required = isAssoc;
-      if (!isReg) {
+      associate?.classList.toggle('hidden', !isAssoc);
+      regular?.classList.toggle('hidden', !isReg);
+      if (recommender) recommender.required = isAssoc;
+      if (!isReg && isatuChk) {
         isatuChk.checked = false;
-        campusRow.classList.add('hidden');
+        campusRow?.classList.add('hidden');
       }
     }
     form.querySelectorAll('input[name="mf-membertype"]').forEach(el => el.addEventListener('change', syncType));
-    isatuChk.addEventListener('change', () => campusRow.classList.toggle('hidden', !isatuChk.checked));
+    isatuChk?.addEventListener('change', () => campusRow?.classList.toggle('hidden', !isatuChk.checked));
+    form.querySelectorAll('input[name="mf-assocqual"]').forEach(el => el.addEventListener('change', () => {
+      const q = (form!.querySelector('input[name="mf-assocqual"]:checked') as HTMLInputElement | null)?.value;
+      // Show the "specify" textbox unless the user is in the SEC-registered-organization branch
+      // (PDF places the org name on its own labelled line; the "relationship" branch needs a specifier too).
+      assocOrgRow?.classList.toggle('hidden', !q || q === 'organization');
+    }));
 
-    // Pack data-field values into the worker's expected `name` + `message`
-    // shape just before forms.js's bubble-phase submit handler reads FormData.
+    // ---- cooldown lockout ----
+    function applyCooldown() {
+      if (!cooldownEl) return false;
+      const last = Number(localStorage.getItem(COOLDOWN_KEY) || '0');
+      const elapsed = Date.now() - last;
+      if (last && elapsed < COOLDOWN_MS) {
+        const seconds = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+        cooldownEl.textContent = `You submitted recently. Please wait ${seconds}s before submitting again. If your download didn't start, check your browser's downloads folder.`;
+        cooldownEl.classList.remove('hidden');
+        if (submitBtn) submitBtn.disabled = true;
+        setTimeout(applyCooldown, 1000);
+        return true;
+      }
+      cooldownEl.classList.add('hidden');
+      if (submitBtn) submitBtn.disabled = false;
+      return false;
+    }
+    applyCooldown();
+
+    // ---- capture-phase: pack hidden name + message before forms.js submit handler runs ----
     form.addEventListener('submit', () => {
-      const val = (sel) => form.querySelector(sel)?.value?.trim() || '';
       const first = val('[data-field="firstName"]');
       const middle = val('[data-field="middleName"]');
       const last = val('[data-field="lastName"]');
-      form.elements['name'].value = [first, middle, last].filter(Boolean).join(' ');
+      (form!.elements.namedItem('name') as HTMLInputElement).value = [first, middle, last].filter(Boolean).join(' ') || '(no name)';
 
-      const t = form.querySelector('input[name="mf-membertype"]:checked')?.value || '';
-      const isReg = t === 'Regular';
-      const isAssoc = t === 'Associate';
-      const isatu = isReg && isatuChk.checked;
-      const rows = [
-        ['Contact number', val('[data-field="phone"]')],
+      const memberType = (form!.querySelector('input[name="mf-membertype"]:checked') as HTMLInputElement | null)?.value || '';
+      const isReg = memberType === 'Regular';
+      const isAssoc = memberType === 'Associate';
+
+      const rows: Array<[string, string]> = [
+        ['Membership type', memberType],
+        ['Contact number', val('[data-field="contactNumber"]')],
         ['Date of birth', val('[data-field="dob"]')],
-        ['Membership type', t],
-        ['Recommending regular member', isAssoc ? val('[data-field="recommender"]') : ''],
-        ['ISAT U employee', isReg ? (isatu ? 'Yes' : 'No') : ''],
-        ['Campus', isatu ? val('[data-field="campus"]') : ''],
-        ['Connection to ISAT U / community', val('[data-field="affiliation"]')],
+        ['Place of birth', val('[data-field="placeOfBirth"]')],
+        ['Gender', (form!.querySelector('input[name="mf-gender"]:checked') as HTMLInputElement | null)?.value || ''],
+        ['Civil status', (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value || ''],
+        ['Present home address', val('[data-field="presentHomeAddress"]')],
+        ['Permanent home address', val('[data-field="homeAddress"]')],
+        ['TIN', val('[data-field="tinNumber"]')],
+        ['Valid ID number', val('[data-field="validIdNumber"]')],
+        ['Employment category', (form!.querySelector('input[name="mf-empcat"]:checked') as HTMLInputElement | null)?.value || ''],
+        ['Status of employment', val('[data-field="statusOfEmployment"]')],
+        ['Profession', val('[data-field="profession"]')],
+        ['Emergency contact', [val('[data-field="emergencyName"]'), val('[data-field="emergencyContact"]'), val('[data-field="emergencyRelationship"]')].filter(Boolean).join(' / ')],
+        ['ISAT U employee', isReg ? (isatuChk?.checked ? 'Yes' : 'No') : ''],
+        ['Campus', isReg && isatuChk?.checked ? val('[data-field="campus"]') : ''],
+        ['Associate qualification', isAssoc ? (form!.querySelector('input[name="mf-assocqual"]:checked') as HTMLInputElement | null)?.value || '' : ''],
+        ['Associate specify', isAssoc ? val('[data-field="associateOrgSpecify"]') : ''],
+        ['Recommender', isAssoc ? val('[data-field="recommenderName"]') : ''],
+        ['Recommender relationship', isAssoc ? val('[data-field="recommenderRelationship"]') : ''],
+        ['Recommender campus', isAssoc ? val('[data-field="recommenderCampus"]') : ''],
+        ['Spouse', [val('[data-field="spouseName"]'), val('[data-field="spouseDob"]'), val('[data-field="spouseContact"]')].filter(Boolean).join(' / ')],
+        ['Parent', [val('[data-field="parentName"]'), val('[data-field="parentDob"]'), val('[data-field="parentContact"]')].filter(Boolean).join(' / ')],
+        ['Beneficiary 1', [val('[data-field="ben1Name"]'), val('[data-field="ben1Dob"]'), val('[data-field="ben1Rel"]'), val('[data-field="ben1Age"]')].filter(Boolean).join(' / ')],
+        ['Beneficiary 2', [val('[data-field="ben2Name"]'), val('[data-field="ben2Dob"]'), val('[data-field="ben2Rel"]'), val('[data-field="ben2Age"]')].filter(Boolean).join(' / ')],
+        ['Beneficiary 3', [val('[data-field="ben3Name"]'), val('[data-field="ben3Dob"]'), val('[data-field="ben3Rel"]'), val('[data-field="ben3Age"]')].filter(Boolean).join(' / ')],
+        ['Connection', val('[data-field="affiliation"]')],
         ['Notes', val('[data-field="notes"]')],
-      ].filter(([, v]) => v);
-      form.elements['message'].value = rows.length
-        ? rows.map(([k, v]) => `${k}: ${v}`).join('\n')
-        : '(no additional details)';
-    }, true);  // capture phase: runs before forms.js bubble handler
-  })();
+      ];
+      const message = rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n') || '(no details)';
+      (form!.elements.namedItem('message') as HTMLInputElement).value = message;
+    }, true);  // capture phase
+
+    // ---- bubble-phase: after forms.js sends, also generate and download the PDF ----
+    form.addEventListener('submit', async (e) => {
+      // forms.js calls e.preventDefault() and handles the fetch; we just piggy-back
+      // on the same event to generate + download the filled PDF.
+      const variant = (form!.querySelector('input[name="mf-membertype"]:checked') as HTMLInputElement | null)?.value;
+      if (variant !== 'Regular' && variant !== 'Associate') return; // membership type is required, but be defensive
+
+      // Block multiple submits during cooldown
+      const last = Number(localStorage.getItem(COOLDOWN_KEY) || '0');
+      if (last && Date.now() - last < COOLDOWN_MS) { e.preventDefault(); applyCooldown(); return; }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('aria-busy', 'true');
+        submitBtn.textContent = 'Generating PDF…';
+      }
+
+      const bens = [1, 2, 3].map(i => ({
+        name: val(`[data-field="ben${i}Name"]`),
+        dob: val(`[data-field="ben${i}Dob"]`),
+        relationship: val(`[data-field="ben${i}Rel"]`),
+        age: val(`[data-field="ben${i}Age"]`),
+      })).filter(b => b.name);
+
+      const data: PdfFieldData = {
+        firstName: val('[data-field="firstName"]'),
+        middleName: val('[data-field="middleName"]'),
+        lastName: val('[data-field="lastName"]'),
+        extension: val('[data-field="extension"]'),
+        dob: val('[data-field="dob"]'),
+        placeOfBirth: val('[data-field="placeOfBirth"]'),
+        email: val('[name="email"]'),
+        contactNumber: val('[data-field="contactNumber"]'),
+        gender: (form!.querySelector('input[name="mf-gender"]:checked') as HTMLInputElement | null)?.value,
+        civilStatus: (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value,
+        presentHomeAddress: val('[data-field="presentHomeAddress"]'),
+        homeAddress: val('[data-field="homeAddress"]'),
+        tinNumber: val('[data-field="tinNumber"]'),
+        validIdNumber: val('[data-field="validIdNumber"]'),
+        employmentCategory: (form!.querySelector('input[name="mf-empcat"]:checked') as HTMLInputElement | null)?.value,
+        statusOfEmployment: val('[data-field="statusOfEmployment"]'),
+        profession: val('[data-field="profession"]'),
+        emergencyName: val('[data-field="emergencyName"]'),
+        emergencyContact: val('[data-field="emergencyContact"]'),
+        emergencyRelationship: val('[data-field="emergencyRelationship"]'),
+        isatuEmployee: !!isatuChk?.checked,
+        campus: val('[data-field="campus"]'),
+        associateQualification: (form!.querySelector('input[name="mf-assocqual"]:checked') as HTMLInputElement | null)?.value,
+        associateOrgSpecify: val('[data-field="associateOrgSpecify"]'),
+        recommenderName: val('[data-field="recommenderName"]'),
+        recommenderRelationship: val('[data-field="recommenderRelationship"]'),
+        recommenderCampus: val('[data-field="recommenderCampus"]'),
+        spouseName: val('[data-field="spouseName"]'),
+        spouseDob: val('[data-field="spouseDob"]'),
+        spouseContact: val('[data-field="spouseContact"]'),
+        parentName: val('[data-field="parentName"]'),
+        parentDob: val('[data-field="parentDob"]'),
+        parentContact: val('[data-field="parentContact"]'),
+        beneficiaries: bens,
+        dateAccomplished: new Date().toISOString().slice(0, 10),
+      };
+
+      try {
+        const bytes = await fillApplicationPdf(variant, data);
+        const safe = [data.lastName, data.firstName].filter(Boolean).join('_').replace(/[^a-zA-Z0-9_-]/g, '') || 'applicant';
+        triggerPdfDownload(bytes, `ISATUCMPC_${variant}_Application_${safe}.pdf`);
+        localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
+        applyCooldown();
+      } catch (err) {
+        console.error('PDF fill failed', err);
+        const resultEl = document.getElementById('mf-result');
+        if (resultEl) {
+          resultEl.style.background = '#FF3F00';
+          resultEl.style.color = 'white';
+          resultEl.textContent = "We couldn't generate the PDF. Your form has been submitted — please email isatucmpc1964@gmail.com to request the blank form.";
+          resultEl.classList.remove('hidden');
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.removeAttribute('aria-busy');
+          submitBtn.textContent = 'Submit & download my application';
+          // applyCooldown re-disables if still within window
+          applyCooldown();
+        }
+      }
+    });
+  }
 </script>
