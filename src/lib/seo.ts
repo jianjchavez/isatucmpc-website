@@ -29,7 +29,7 @@ export function buildLocalBusinessSchema() {
     image: 'https://isatucmpc.coop/og-default.png',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'Burgos St., La Paz',
+      streetAddress: 'Magdalo St., La Paz',
       addressLocality: 'Iloilo City',
       addressRegion: 'Iloilo',
       postalCode: '5000',
