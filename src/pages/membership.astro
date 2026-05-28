@@ -11,6 +11,14 @@ import { FAQ } from '~/data/faq';
 import { buildFaqSchema } from '~/lib/seo';
 
 const faqSchema = buildFaqSchema(FAQ);
+
+const STEPS = [
+  { title: 'Attend PMES', body: 'Pre-Membership Education Seminar — half-day cooperative orientation.' },
+  { title: 'Submit application', body: 'Fill out the membership form at the office or via the link below.' },
+  { title: 'Pay fees', body: '₱500 membership fee + 25 paid-up shares (₱1,250) of 50 subscribed (₱2,500).' },
+  { title: 'BOD review', body: 'The Board of Directors acts on your application within 30 days.' },
+  { title: 'Welcome aboard', body: 'Member benefits activate. Start saving, borrowing, and growing with us.' },
+];
 ---
 <PageLayout title="Join ISATUCMPC" description="Become a member of Iloilo's longest-running multi-purpose cooperative. See who can join, the benefits, and how to apply." jsonLd={faqSchema}>
   <!-- HERO -->
@@ -69,12 +77,20 @@ const faqSchema = buildFaqSchema(FAQ);
   <section class="container-page py-20">
     <Eyebrow>The process</Eyebrow>
     <h2 class="mt-3 text-3xl md:text-4xl">How to apply</h2>
-    <ol class="mt-10 grid md:grid-cols-2 lg:grid-cols-5 gap-4">
-      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">1</div><div class="font-display font-bold text-navy mt-2">Attend PMES</div><p class="text-xs text-slate mt-1">Pre-Membership Education Seminar — half-day cooperative orientation.</p></li>
-      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">2</div><div class="font-display font-bold text-navy mt-2">Submit application</div><p class="text-xs text-slate mt-1">Fill out the membership form at the office or via the link below.</p></li>
-      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">3</div><div class="font-display font-bold text-navy mt-2">Pay fees</div><p class="text-xs text-slate mt-1">₱100 membership fee + 25 paid-up shares (₱1,250) of 50 subscribed (₱2,500).</p></li>
-      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">4</div><div class="font-display font-bold text-navy mt-2">BOD review</div><p class="text-xs text-slate mt-1">The Board of Directors acts on your application within 30 days.</p></li>
-      <li class="bg-white border-t-[3px] border-orange rounded-b-lg p-5"><div class="font-display font-extrabold text-orange text-3xl">5</div><div class="font-display font-bold text-navy mt-2">Welcome aboard</div><p class="text-xs text-slate mt-1">Member benefits activate. Start saving, borrowing, and growing with us.</p></li>
+    <ol class="mt-10 grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-3">
+      {STEPS.map((step, i) => (
+        <li class="relative bg-white border-t-[3px] border-orange rounded-b-lg p-5">
+          <div class="font-display font-extrabold text-orange text-3xl">{i + 1}</div>
+          <div class="font-display font-bold text-navy mt-2">{step.title}</div>
+          <p class="text-xs text-slate mt-1">{step.body}</p>
+          {i < STEPS.length - 1 && (
+            <>
+              <span aria-hidden="true" class="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 h-8 w-8 items-center justify-center text-orange text-2xl bg-brand-bg rounded-full ring-2 ring-orange/30 font-bold z-10">›</span>
+              <span aria-hidden="true" class="flex lg:hidden absolute left-1/2 -bottom-3 -translate-x-1/2 h-8 w-8 items-center justify-center text-orange text-2xl bg-brand-bg rounded-full ring-2 ring-orange/30 font-bold z-10 rotate-90">›</span>
+            </>
+          )}
+        </li>
+      ))}
     </ol>
   </section>
 
