@@ -13,6 +13,39 @@ describe('forms worker', () => {
     const res = await worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', { method: 'GET' }), env, {} as any);
     expect(res.status).toBe(405);
   });
+  it('answers CORS preflight from allowed origin with 204 + ACAO', async () => {
+    const res = await worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
+      method: 'OPTIONS',
+      headers: {
+        'origin': 'https://isatucmpc.pages.dev',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+    }), env, {} as any);
+    expect(res.status).toBe(204);
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://isatucmpc.pages.dev');
+    expect(res.headers.get('access-control-allow-methods')).toContain('POST');
+  });
+  it('CORS preflight from disallowed origin returns no ACAO', async () => {
+    const res = await worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
+      method: 'OPTIONS',
+      headers: {
+        'origin': 'https://evil.example.com',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+    }), env, {} as any);
+    expect(res.headers.get('access-control-allow-origin')).toBeNull();
+  });
+  it('actual POST response includes ACAO for allowed origin', async () => {
+    const res = await worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
+      method: 'POST',
+      headers: { 'origin': 'https://isatucmpc.pages.dev', 'content-type': 'application/json' },
+      body: JSON.stringify({ name: '' }),
+    }), env, {} as any);
+    expect(res.status).toBe(400);
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://isatucmpc.pages.dev');
+  });
   it('rejects cross-origin requests', async () => {
     const res = await worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
       method: 'POST',

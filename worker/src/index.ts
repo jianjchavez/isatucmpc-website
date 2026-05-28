@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 
 type Env = {
   SITE_ORIGIN: string;
@@ -9,8 +10,18 @@ type Env = {
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Explicit 405 for other methods on this route
-app.on(['GET', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'], '/api/submit', c =>
+app.use('/api/submit', cors({
+  origin: (origin, c) => {
+    const allowed = (c.env.SITE_ORIGIN as string).split(',').map(o => o.trim()).filter(Boolean);
+    return allowed.includes(origin) ? origin : null;
+  },
+  allowMethods: ['POST', 'OPTIONS'],
+  allowHeaders: ['content-type'],
+  maxAge: 86400,
+}));
+
+// Explicit 405 for other methods on this route (OPTIONS handled by cors() above)
+app.on(['GET', 'PUT', 'DELETE', 'PATCH', 'HEAD'], '/api/submit', c =>
   c.json({ error: 'method-not-allowed' }, 405),
 );
 
