@@ -58,76 +58,143 @@ const PAGE_HEIGHT = 842;
 
 type Coord = { x: number; top: number; size?: number; maxWidth?: number };
 
-// Shared layout (both Regular and Associate share the same form template).
-const SHARED: Record<string, Coord> = {
-  firstName:           { x: 50,  top: 268 },
-  middleName:          { x: 195, top: 268 },
-  lastName:            { x: 335, top: 268 },
-  extension:           { x: 470, top: 268 },
+// NOTE: the two application PDFs are NOT the same template. The Associate form
+// adds a "Qualification" block at the top that pushes Personal Data down ~62pt
+// and uses checkboxes (not write-ins) for gender/civil status. Each variant
+// therefore has its own fully-calibrated coordinate map below.
+//
+// All `top` values calibrated 2026-05-29 from each template's real label
+// coordinates (extracted via `pdftotext -bbox`). Both forms share 3 layouts:
+//   - Personal Data: label sits above its cell, value goes ~19pt below the label
+//   - Family info:   label sits inline, value goes to the RIGHT on the same line
+//   - Beneficiaries: table; values sit in rows under the column headers
+const REGULAR_COORDS: Record<string, Coord> = {
+  // Names row — labels at top≈183
+  firstName:           { x: 42,  top: 202, size: 9, maxWidth: 140 },
+  middleName:          { x: 189, top: 202, size: 9, maxWidth: 125 },
+  lastName:            { x: 321, top: 202, size: 9, maxWidth: 118 },
+  extension:           { x: 445, top: 202, size: 9, maxWidth: 110 },
 
-  dob:                 { x: 50,  top: 305, size: 9 },
-  placeOfBirth:        { x: 130, top: 305, size: 9 },
-  email:               { x: 250, top: 305, size: 9 },
-  contactNumber:       { x: 405, top: 305, size: 9 },
+  // DOB / Place / Email / Contact / Gender / Civil — labels at top≈213
+  dob:                 { x: 42,  top: 232, size: 8, maxWidth: 68 },
+  placeOfBirth:        { x: 116, top: 232, size: 8, maxWidth: 68 },
+  email:               { x: 189, top: 232, size: 8, maxWidth: 125 },
+  contactNumber:       { x: 321, top: 232, size: 8, maxWidth: 118 },
+  // Gender / Civil Status are write-in fields (no checkboxes on the form)
+  gender:              { x: 445, top: 232, size: 8, maxWidth: 48 },
+  civilStatus:         { x: 496, top: 232, size: 8, maxWidth: 62 },
 
-  // Gender / Civil Status checkboxes — we just write text labels next to them
-  gender:              { x: 475, top: 305, size: 9 },
-  civilStatus:         { x: 525, top: 305, size: 9 },
+  // Addresses — labels at top≈240
+  presentHomeAddress:  { x: 42,  top: 259, size: 8, maxWidth: 262 },
+  homeAddress:         { x: 321, top: 259, size: 8, maxWidth: 232 },
 
-  presentHomeAddress:  { x: 50,  top: 345, size: 9, maxWidth: 240 },
-  homeAddress:         { x: 305, top: 345, size: 9, maxWidth: 240 },
-
-  tinNumber:           { x: 50,  top: 390, size: 9 },
-  validIdNumber:       { x: 195, top: 390, size: 9 },
+  // TIN / Valid ID — labels at top≈266
+  tinNumber:           { x: 42,  top: 286, size: 9, maxWidth: 140 },
+  validIdNumber:       { x: 189, top: 286, size: 9, maxWidth: 125 },
   // membership type column is pre-printed (REGULAR or ASSOCIATE) — skip
   // employment category checkboxes — see drawCheckmark()
 
-  statusOfEmployment:  { x: 50,  top: 430, size: 9, maxWidth: 130 },
-  profession:          { x: 195, top: 430, size: 9, maxWidth: 130 },
-  emergencyName:       { x: 340, top: 430, size: 9, maxWidth: 110 },
-  emergencyContactRel: { x: 460, top: 430, size: 9, maxWidth: 100 },
+  // Status / Profession / Emergency — labels at top≈296 (left two wrap to 303)
+  statusOfEmployment:  { x: 42,  top: 318, size: 8, maxWidth: 140 },
+  profession:          { x: 189, top: 318, size: 8, maxWidth: 125 },
+  emergencyName:       { x: 321, top: 318, size: 8, maxWidth: 118 },
+  emergencyContactRel: { x: 445, top: 318, size: 8, maxWidth: 112 },
 
-  // Family
-  spouseName:          { x: 50,  top: 520, size: 9, maxWidth: 220 },
-  spouseDob:           { x: 285, top: 520, size: 9 },
-  spouseContact:       { x: 395, top: 520, size: 9 },
+  // Family — inline labels; value to the RIGHT on the same baseline
+  spouseName:          { x: 92,  top: 368, size: 8, maxWidth: 150 },
+  spouseDob:           { x: 300, top: 368, size: 8, maxWidth: 78 },
+  spouseContact:       { x: 423, top: 368, size: 8, maxWidth: 90 },
 
-  parentName:          { x: 50,  top: 555, size: 9, maxWidth: 220 },
-  parentDob:           { x: 285, top: 555, size: 9 },
-  parentContact:       { x: 395, top: 555, size: 9 },
+  parentName:          { x: 115, top: 390, size: 8, maxWidth: 128 },
+  parentDob:           { x: 300, top: 390, size: 8, maxWidth: 78 },
+  parentContact:       { x: 423, top: 390, size: 8, maxWidth: 90 },
 
-  // Beneficiaries — 3 rows
-  ben1Name:            { x: 50,  top: 605, size: 9, maxWidth: 200 },
-  ben1Dob:             { x: 265, top: 605, size: 9 },
-  ben1Rel:             { x: 365, top: 605, size: 9, maxWidth: 130 },
-  ben1Age:             { x: 510, top: 605, size: 9 },
+  // Beneficiaries — column headers at top≈421; 3 data rows below (~13pt pitch)
+  ben1Name:            { x: 40,  top: 437, size: 8, maxWidth: 210 },
+  ben1Dob:             { x: 262, top: 437, size: 8, maxWidth: 120 },
+  ben1Rel:             { x: 393, top: 437, size: 8, maxWidth: 110 },
+  ben1Age:             { x: 512, top: 437, size: 8 },
 
-  ben2Name:            { x: 50,  top: 630, size: 9, maxWidth: 200 },
-  ben2Dob:             { x: 265, top: 630, size: 9 },
-  ben2Rel:             { x: 365, top: 630, size: 9, maxWidth: 130 },
-  ben2Age:             { x: 510, top: 630, size: 9 },
+  ben2Name:            { x: 40,  top: 450, size: 8, maxWidth: 210 },
+  ben2Dob:             { x: 262, top: 450, size: 8, maxWidth: 120 },
+  ben2Rel:             { x: 393, top: 450, size: 8, maxWidth: 110 },
+  ben2Age:             { x: 512, top: 450, size: 8 },
 
-  ben3Name:            { x: 50,  top: 655, size: 9, maxWidth: 200 },
-  ben3Dob:             { x: 265, top: 655, size: 9 },
-  ben3Rel:             { x: 365, top: 655, size: 9, maxWidth: 130 },
-  ben3Age:             { x: 510, top: 655, size: 9 },
+  ben3Name:            { x: 40,  top: 463, size: 8, maxWidth: 210 },
+  ben3Dob:             { x: 262, top: 463, size: 8, maxWidth: 120 },
+  ben3Rel:             { x: 393, top: 463, size: 8, maxWidth: 110 },
+  ben3Age:             { x: 512, top: 463, size: 8 },
 
-  // Signature row
-  dateAccomplished:    { x: 105, top: 710, size: 9 },
-  printedNameLine:     { x: 380, top: 720, size: 9, maxWidth: 180 },
+  // Signature line — caption "DATE ACCOMPLISHED / APPLICANT'S SIGNATURE" at top≈501
+  dateAccomplished:    { x: 100, top: 508, size: 9 },
+  printedNameLine:     { x: 415, top: 496, size: 9, maxWidth: 150 },
 };
 
-// Regular variant additions: ISATU campus row + employment-category area.
-const REGULAR_ONLY: Record<string, Coord> = {
-  // campus checkmarks drawn next to labels at top ~470 (see drawCheckmark)
-};
+// Associate form: full map. Personal Data sits ~62pt lower than Regular because
+// of the Qualification block (top≈165-210). Gender/Civil are checkboxes here,
+// not write-ins (see ASSOCIATE_GENDER_BOXES / ASSOCIATE_CIVIL_BOXES).
+const ASSOCIATE_COORDS: Record<string, Coord> = {
+  // Qualification block — write-in beside the "(PLEASE SPECIFY):" label (top≈188)
+  associateOrgSpecify:    { x: 98,  top: 195, size: 8, maxWidth: 250 },
+  // Recommender block — labels at top≈203; values on the line below
+  recommenderName:        { x: 42,  top: 221, size: 8, maxWidth: 165 },
+  recommenderRelationship:{ x: 178, top: 221, size: 8, maxWidth: 110 },
+  recommenderCampus:      { x: 445, top: 210, size: 8, maxWidth: 112 },
 
-// Associate variant additions: qualification block at top of page.
-const ASSOCIATE_ONLY: Record<string, Coord> = {
-  associateOrgSpecify:    { x: 80,  top: 195, size: 9, maxWidth: 130 },
-  recommenderName:        { x: 55,  top: 235, size: 9, maxWidth: 175 },
-  recommenderRelationship:{ x: 250, top: 235, size: 9, maxWidth: 130 },
-  recommenderCampus:      { x: 410, top: 235, size: 9, maxWidth: 150 },
+  // Names row — labels at top≈245
+  firstName:           { x: 42,  top: 264, size: 9, maxWidth: 140 },
+  middleName:          { x: 189, top: 264, size: 9, maxWidth: 125 },
+  lastName:            { x: 321, top: 264, size: 9, maxWidth: 118 },
+  extension:           { x: 445, top: 264, size: 9, maxWidth: 110 },
+
+  // DOB / Place / Email / Contact — labels at top≈275 (gender/civil are checkboxes)
+  dob:                 { x: 42,  top: 294, size: 8, maxWidth: 68 },
+  placeOfBirth:        { x: 116, top: 294, size: 8, maxWidth: 68 },
+  email:               { x: 189, top: 294, size: 8, maxWidth: 125 },
+  contactNumber:       { x: 321, top: 294, size: 8, maxWidth: 118 },
+
+  // Addresses — labels at top≈301.8
+  presentHomeAddress:  { x: 42,  top: 321, size: 8, maxWidth: 262 },
+  homeAddress:         { x: 321, top: 321, size: 8, maxWidth: 232 },
+
+  // TIN / Valid ID — labels at top≈328.4
+  tinNumber:           { x: 42,  top: 348, size: 9, maxWidth: 140 },
+  validIdNumber:       { x: 189, top: 348, size: 9, maxWidth: 125 },
+
+  // Status / Profession / Emergency — labels at top≈358.2 (left two wrap to 365)
+  statusOfEmployment:  { x: 42,  top: 380, size: 8, maxWidth: 140 },
+  profession:          { x: 189, top: 380, size: 8, maxWidth: 125 },
+  emergencyName:       { x: 321, top: 380, size: 8, maxWidth: 118 },
+  emergencyContactRel: { x: 445, top: 380, size: 8, maxWidth: 112 },
+
+  // Family — inline labels at top≈403.3 / 425.2; value to the RIGHT
+  spouseName:          { x: 92,  top: 411, size: 8, maxWidth: 150 },
+  spouseDob:           { x: 300, top: 411, size: 8, maxWidth: 78 },
+  spouseContact:       { x: 423, top: 411, size: 8, maxWidth: 90 },
+
+  parentName:          { x: 115, top: 433, size: 8, maxWidth: 128 },
+  parentDob:           { x: 300, top: 433, size: 8, maxWidth: 78 },
+  parentContact:       { x: 423, top: 433, size: 8, maxWidth: 90 },
+
+  // Beneficiaries — column headers at top≈463.2; 3 data rows below (~13pt pitch)
+  ben1Name:            { x: 40,  top: 479, size: 8, maxWidth: 210 },
+  ben1Dob:             { x: 262, top: 479, size: 8, maxWidth: 120 },
+  ben1Rel:             { x: 393, top: 479, size: 8, maxWidth: 110 },
+  ben1Age:             { x: 512, top: 479, size: 8 },
+
+  ben2Name:            { x: 40,  top: 492, size: 8, maxWidth: 210 },
+  ben2Dob:             { x: 262, top: 492, size: 8, maxWidth: 120 },
+  ben2Rel:             { x: 393, top: 492, size: 8, maxWidth: 110 },
+  ben2Age:             { x: 512, top: 492, size: 8 },
+
+  ben3Name:            { x: 40,  top: 505, size: 8, maxWidth: 210 },
+  ben3Dob:             { x: 262, top: 505, size: 8, maxWidth: 120 },
+  ben3Rel:             { x: 393, top: 505, size: 8, maxWidth: 110 },
+  ben3Age:             { x: 512, top: 505, size: 8 },
+
+  // Signature line — "DATE ACCOMPLISHED" at top≈533.3; signature caption at top≈547.7
+  dateAccomplished:    { x: 100, top: 540, size: 9 },
+  printedNameLine:     { x: 408, top: 543, size: 9, maxWidth: 150 },
 };
 
 function drawText(
@@ -148,30 +215,51 @@ function drawText(
   page.drawText(str, { x: coord.x, y: PAGE_HEIGHT - coord.top, size, font });
 }
 
-// Employment category checkbox approximate positions (next to the printed labels).
-// All on the same row at top ~390.
-const EMPLOYMENT_CHECKBOXES: Record<string, { x: number; top: number }> = {
-  Employed:       { x: 348, top: 388 },
-  'Self-Employed':{ x: 412, top: 388 },
-  Retired:        { x: 491, top: 388 },
-  Unemployed:     { x: 348, top: 400 },
-  Others:         { x: 412, top: 400 },
+// Employment category checkbox positions, per variant (the ☐ glyphs sit on a
+// 2-row grid). Regular: row1 top≈275 / row2 top≈284. Associate: shifted down
+// with the rest of Personal Data — row1 top≈337 / row2 top≈346.
+const EMPLOYMENT_CHECKBOXES_REGULAR: Record<string, { x: number; top: number }> = {
+  Employed:       { x: 444, top: 282 },
+  'Self-Employed':{ x: 483, top: 282 },
+  Retired:        { x: 527, top: 282 },
+  Unemployed:     { x: 444, top: 291 },
+  Others:         { x: 484, top: 291 },
+};
+const EMPLOYMENT_CHECKBOXES_ASSOCIATE: Record<string, { x: number; top: number }> = {
+  Employed:       { x: 444, top: 343 },
+  'Self-Employed':{ x: 483, top: 343 },
+  Retired:        { x: 527, top: 343 },
+  Unemployed:     { x: 444, top: 352 },
+  Others:         { x: 484, top: 352 },
 };
 
-// Campus checkboxes (regular only). Approximate positions.
+// Campus checkboxes (Regular only). The ☐ glyphs sit at top≈329.
 const CAMPUS_CHECKBOXES: Record<string, { x: number; top: number }> = {
-  'Main La Paz':  { x: 195, top: 470 },
-  'Dumangas':     { x: 280, top: 470 },
-  'Barotac Nuevo':{ x: 355, top: 470 },
-  'Leon':         { x: 450, top: 470 },
-  'Miag-ao':      { x: 495, top: 470 },
+  'Main La Paz':  { x: 162, top: 336 },
+  'Dumangas':     { x: 222, top: 336 },
+  'Barotac Nuevo':{ x: 277, top: 336 },
+  'Leon':         { x: 344, top: 336 },
+  'Miag-ao':      { x: 376, top: 336 },
 };
 
-// Associate qualification radio positions.
+// Associate qualification shade-boxes — sit just left of each option label
+// (labels at top≈181: relationship@52, integrity@217, organization@375).
 const ASSOCIATE_QUAL_BOXES: Record<string, { x: number; top: number }> = {
-  relationship:   { x: 50,  top: 185 },
-  integrity:      { x: 220, top: 185 },
-  organization:   { x: 395, top: 185 },
+  relationship:   { x: 41,  top: 188 },
+  integrity:      { x: 206, top: 188 },
+  organization:   { x: 363, top: 188 },
+};
+
+// Associate gender/civil-status checkboxes (☐ glyphs extracted at top≈283.5,
+// with SEPARATED on the second sub-row at top≈289.8).
+const ASSOCIATE_GENDER_BOXES: Record<string, { x: number; top: number }> = {
+  Male:   { x: 444, top: 290 },
+  Female: { x: 464, top: 290 },
+};
+const ASSOCIATE_CIVIL_BOXES: Record<string, { x: number; top: number }> = {
+  Single:    { x: 496, top: 290 },
+  Married:   { x: 523, top: 290 },
+  Separated: { x: 504, top: 296 },
 };
 
 function drawCheckmark(
@@ -180,7 +268,8 @@ function drawCheckmark(
   coord: { x: number; top: number },
 ) {
   // Use an X for visibility — checkmark glyph isn't in StandardFonts.
-  page.drawText('X', { x: coord.x, y: PAGE_HEIGHT - coord.top, size: 10, font });
+  // Size 8 fits inside the small ☐ boxes on the form.
+  page.drawText('X', { x: coord.x, y: PAGE_HEIGHT - coord.top, size: 8, font });
 }
 
 export async function fillApplicationPdf(
@@ -199,10 +288,11 @@ export async function fillApplicationPdf(
   const page = pdf.getPage(0);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
 
-  const coords: Record<string, Coord> = {
-    ...SHARED,
-    ...(variant === 'Regular' ? REGULAR_ONLY : ASSOCIATE_ONLY),
-  };
+  const isRegular = variant === 'Regular';
+  const coords: Record<string, Coord> = isRegular ? REGULAR_COORDS : ASSOCIATE_COORDS;
+  const employmentBoxes = isRegular
+    ? EMPLOYMENT_CHECKBOXES_REGULAR
+    : EMPLOYMENT_CHECKBOXES_ASSOCIATE;
 
   // Identity block
   drawText(page, font, data.firstName, coords.firstName);
@@ -213,16 +303,28 @@ export async function fillApplicationPdf(
   drawText(page, font, data.placeOfBirth, coords.placeOfBirth);
   drawText(page, font, data.email, coords.email);
   drawText(page, font, data.contactNumber, coords.contactNumber);
-  drawText(page, font, data.gender, coords.gender);
-  drawText(page, font, data.civilStatus, coords.civilStatus);
+
+  // Gender / Civil Status: Regular form has write-in blanks; Associate has checkboxes.
+  if (isRegular) {
+    drawText(page, font, data.gender, coords.gender);
+    drawText(page, font, data.civilStatus, coords.civilStatus);
+  } else {
+    if (data.gender && ASSOCIATE_GENDER_BOXES[data.gender]) {
+      drawCheckmark(page, font, ASSOCIATE_GENDER_BOXES[data.gender]);
+    }
+    if (data.civilStatus && ASSOCIATE_CIVIL_BOXES[data.civilStatus]) {
+      drawCheckmark(page, font, ASSOCIATE_CIVIL_BOXES[data.civilStatus]);
+    }
+  }
+
   drawText(page, font, data.presentHomeAddress, coords.presentHomeAddress);
   drawText(page, font, data.homeAddress, coords.homeAddress);
   drawText(page, font, data.tinNumber, coords.tinNumber);
   drawText(page, font, data.validIdNumber, coords.validIdNumber);
 
   // Employment
-  if (data.employmentCategory && EMPLOYMENT_CHECKBOXES[data.employmentCategory]) {
-    drawCheckmark(page, font, EMPLOYMENT_CHECKBOXES[data.employmentCategory]);
+  if (data.employmentCategory && employmentBoxes[data.employmentCategory]) {
+    drawCheckmark(page, font, employmentBoxes[data.employmentCategory]);
   }
   drawText(page, font, data.statusOfEmployment, coords.statusOfEmployment);
   drawText(page, font, data.profession, coords.profession);
@@ -230,7 +332,7 @@ export async function fillApplicationPdf(
   drawText(page, font, [data.emergencyContact, data.emergencyRelationship].filter(Boolean).join(' / '), coords.emergencyContactRel);
 
   // Variant-specific blocks
-  if (variant === 'Regular') {
+  if (isRegular) {
     if (data.isatuEmployee && data.campus && CAMPUS_CHECKBOXES[data.campus]) {
       drawCheckmark(page, font, CAMPUS_CHECKBOXES[data.campus]);
     }
@@ -238,10 +340,10 @@ export async function fillApplicationPdf(
     if (data.associateQualification && ASSOCIATE_QUAL_BOXES[data.associateQualification]) {
       drawCheckmark(page, font, ASSOCIATE_QUAL_BOXES[data.associateQualification]);
     }
-    drawText(page, font, data.associateOrgSpecify, ASSOCIATE_ONLY.associateOrgSpecify);
-    drawText(page, font, data.recommenderName, ASSOCIATE_ONLY.recommenderName);
-    drawText(page, font, data.recommenderRelationship, ASSOCIATE_ONLY.recommenderRelationship);
-    drawText(page, font, data.recommenderCampus, ASSOCIATE_ONLY.recommenderCampus);
+    drawText(page, font, data.associateOrgSpecify, coords.associateOrgSpecify);
+    drawText(page, font, data.recommenderName, coords.recommenderName);
+    drawText(page, font, data.recommenderRelationship, coords.recommenderRelationship);
+    drawText(page, font, data.recommenderCampus, coords.recommenderCampus);
   }
 
   // Family
