@@ -45,7 +45,7 @@ export const SERVICES: Service[] = [
     name: 'In-store Credit',
     icon: 'store',
     description:
-      'Buy now, pay later at the cooperative store — members in good standing can charge everyday essentials to their account, conveniently settled through payroll or savings.',
+      'Buy now, pay later at the cooperative store — members in good standing can charge everyday essentials to their account, conveniently settled through payroll or over-the-counter payment.',
     whoCanUse: 'Members in good standing.',
     howToAccess: [
       'Be a member in good standing.',
