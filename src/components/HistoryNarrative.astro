@@ -1,0 +1,40 @@
+---
+// The cooperative's brief history, adapted from the article presented at the
+// Annual General Assembly. Facts, names, dates, and registration numbers are
+// preserved as recorded; figures are framed as of December 2019.
+import Eyebrow from '~/components/Eyebrow.astro';
+
+const FOUNDERS = [
+  'Marcelo B. Trabado', 'Alfredo Libutaque', 'Wilfredo Lena', 'Jesus Dideles',
+  'Ramon Villacrucis', 'Teresita Perono-Gellekanao', 'Ireneo Soloveres',
+  'Lelis S. Alabado', 'Andres Gamosa', 'Dan S. Velasco', 'Amadeo Sollano',
+  'Renato V. Alba', 'Romeo Fabila',
+];
+---
+<div class="container-page py-20">
+  <Eyebrow>Our history</Eyebrow>
+  <h2 class="mt-3 text-3xl md:text-4xl max-w-3xl">A brief history of ISAT U &amp; Community MPC</h2>
+  <p class="mt-3 text-sm text-slate italic">From the article presented at our Annual General Assembly.</p>
+
+  <div class="mt-8 max-w-2xl space-y-5 text-base md:text-lg text-ink leading-relaxed">
+    <p>The cooperative credit union first took shape in the middle of the 19th century, organised to address a variety of socio-economic needs and to bring stability and shared gain to its members. From these beginnings the cooperative movement spread across the globe, in time becoming a worldwide phenomenon that eventually reached Philippine shores. By the start of the 21st century, well over 2,000 such organisations were operating in our country.</p>
+
+    <p>During the school year 1963–1964, the Iloilo School of Arts and Trades Alumni, Teachers and Employees Cooperative was organised. On 6 January 1964, the completed Articles of Incorporation and By-Laws of the ISAT Alumni, Teachers and Employees Cooperative Credit Union, Inc. were sent to the Cooperatives Administration Office under the Department of Commerce and Industry; on 7 January 1964 the cooperative was sealed as duly registered there by then Director Cecilio Montemayor.</p>
+
+    <p>On 15 March 1976, the credit union was registered as the Iloilo School of Arts and Trades Credit Union, Inc. under the provisions of Presidential Decree No. 175 and Letter of Implementation No. 23, with Certificate of Registration No. P-369 RR issued by the Department of Local Government and Community Development (DLGCD), Bureau of Cooperatives Development, through Undersecretary Orlando J. Sacay. It carried Confirmation No. ILO-C-265 issued by the Cooperative Development Authority in Iloilo City.</p>
+
+    <p>Like any growing organisation, and to better serve its constituents, the cooperative amended its Articles of Cooperation and By-Laws to change its name to the Western Visayas College of Science and Technology Multi-Purpose Cooperative (WVCST MPC). The Cooperative Development Authority in Iloilo City approved the amendments on 17 May 1995, under the provisions of Republic Act No. 6938.</p>
+
+    <p>When WVCST was elevated from a college to a university and renamed the Iloilo Science and Technology University (ISAT U), the cooperative followed suit. Its name was amended from the Western Visayas College of Science and Technology Multi-Purpose Cooperative to the Iloilo Science and Technology University (ISAT U) and Community Multipurpose Cooperative — approved by the CDA on 10 April 2017 under Amendment No. 9520-06008210.</p>
+
+    <p>From its humble beginnings, ISAT U &amp; C MPC has grown into what it is today. More than 56 years after its founding, it held total assets of ₱131 million and served over 800 bonafide members (as of December 2019), supported by a staff of eighteen permanent personnel. From a core business of lending, it has expanded into dormitories, convenience stores, laundromats, and a copy center. As its members&rsquo; needs grow, ISAT U &amp; C MPC continues to find new ways to serve them — always guided by cooperative principles and by a clear vision and mission.</p>
+  </div>
+
+  <!-- FOUNDING COOPERATORS -->
+  <div class="mt-10 max-w-2xl bg-brand-bg border-l-[3px] border-orange rounded-r-lg p-6">
+    <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-3">The 13 founding cooperators</div>
+    <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-ink">
+      {FOUNDERS.map(name => <li>{name}</li>)}
+    </ul>
+  </div>
+</div>
