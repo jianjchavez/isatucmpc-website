@@ -1,43 +1,59 @@
-# Astro Starter Kit: Minimal
+# ISATUCMPC Public Website
+
+Public-facing website for the **Iloilo Science and Technology University and Community Multi-Purpose Cooperative (ISATUCMPC)**.
+
+- **Live:** https://isatucmpc.pages.dev (custom domain `isatucmpc.coop` pending DotCoop `.coop` eligibility — see `docs/T27-DNS-CUTOVER.md`)
+- **Stack:** Astro 6 + Tailwind 4 + MDX, deployed on Cloudflare Pages. Form submissions go to a Cloudflare Worker (`worker/`) + Resend, protected by Turnstile.
+- **Deploy:** automatic on push to `main` via GitHub Actions → Cloudflare Pages.
+
+> This is a **standalone git repo** nested under the CoopSuite pnpm workspace. It is **not** part of the monorepo and must be worked on with the flags below.
+
+## Local development
+
+Run everything from the repo root (`~/Code/CoopSuite/Website`):
 
 ```sh
-pnpm create astro@latest -- --template minimal
+# install deps (the flags matter — see Gotchas)
+pnpm install --ignore-workspace --ignore-scripts
+
+# local dev server with hot reload  → http://localhost:4321
+./node_modules/.bin/astro dev
+
+# type-check + production build → ./dist/
+./node_modules/.bin/astro check
+./node_modules/.bin/astro build
+
+# serve the built ./dist/ locally (what deploys) → http://localhost:4321
+./node_modules/.bin/astro preview
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## ⚠️ Gotchas (read before installing or running tools)
 
-## 🚀 Project Structure
+1. **Always use the install flags:** `pnpm install --ignore-workspace --ignore-scripts`.
+   This repo is nested inside the monorepo's pnpm workspace; without `--ignore-workspace`
+   pnpm tries to resolve workspace siblings, and pnpm v11's strict-builds policy turns
+   ignored postinstalls into a hard error without `--ignore-scripts`.
+2. **Run binaries via `./node_modules/.bin/<tool>`** (e.g. `./node_modules/.bin/astro`,
+   `./node_modules/.bin/wrangler`). `pnpm dlx` / `pnpm exec` silently fail to compile
+   esbuild/workerd under pnpm v11 and exit without running.
+3. **No `timeout` on macOS** — don't wrap verification commands in `timeout`; they no-op.
 
-Inside of your Astro project, you'll see the following folders and files:
+## Project structure
 
 ```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+src/
+├── pages/          # routes (index, about, services, membership, contact, news/…)
+├── components/     # Astro components (Header, Footer, ContactMap, forms, cards…)
+├── data/           # content data (services, board, faq, timeline, goals, principles, stats)
+├── content/news/   # MDX news/announcement articles (content collection)
+├── layouts/        # BaseLayout, PageLayout
+└── lib/            # pdf-fill (membership PDF generation), seo, brand
+worker/             # Cloudflare Worker handling form submissions (Resend + Turnstile)
+public/             # static assets, downloadable PDF forms, icons
+docs/               # operational runbooks (e.g. T27 DNS cutover)
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Deploy
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Push to `main` → GitHub Actions builds and deploys to Cloudflare Pages automatically.
+For the custom-domain (`isatucmpc.coop`) cutover, follow `docs/T27-DNS-CUTOVER.md`.
