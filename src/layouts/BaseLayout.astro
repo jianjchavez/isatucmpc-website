@@ -44,7 +44,24 @@ const localBusinessSchema = buildLocalBusinessSchema();
   {import.meta.env.PROD && (
     <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "REPLACE_WITH_CF_TOKEN"}'></script>
   )}
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <!-- Turnstile: explicit render so local dev/preview can fall back to Cloudflare's
+       test sitekey (the real widget rejects localhost with "Unable to connect").
+       Production uses each widget's real data-sitekey unchanged. -->
+  <script is:inline>
+    window.onloadTurnstileCallback = function () {
+      if (!window.turnstile) return;
+      var isLocal = ['localhost', '127.0.0.1', '[::1]'].indexOf(location.hostname) !== -1;
+      document.querySelectorAll('.cf-turnstile').forEach(function (el) {
+        if (el.dataset.rendered) return;
+        el.dataset.rendered = '1';
+        window.turnstile.render(el, {
+          // 1x00000000000000000000AA = CF's official "always passes" test key (localhost only)
+          sitekey: isLocal ? '1x00000000000000000000AA' : el.dataset.sitekey,
+        });
+      });
+    };
+  </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback" async defer></script>
   <script src="/forms.js" defer></script>
 </head>
 <body class="font-body text-ink antialiased">
