@@ -27,6 +27,34 @@ export const SERVICES: Service[] = [
     status: 'active',
   },
   {
+    slug: 'sm-credit',
+    name: 'SM Credit',
+    icon: 'credit-card',
+    description:
+      'A member purchase-credit facility for buying goods, appliances, and other big-ticket needs — payable in convenient installments at member-friendly terms.',
+    whoCanUse: 'Members in good standing.',
+    howToAccess: [
+      'Be a member in good standing.',
+      'Apply at the cooperative office.',
+      'Purchase approved on credit and settled per agreed installment terms.',
+    ],
+    status: 'active',
+  },
+  {
+    slug: 'in-store-credit',
+    name: 'In-store Credit',
+    icon: 'store',
+    description:
+      'Buy now, pay later at the cooperative store — members in good standing can charge everyday essentials to their account, conveniently settled through payroll or over-the-counter payment.',
+    whoCanUse: 'Members in good standing.',
+    howToAccess: [
+      'Be a member in good standing.',
+      'Present membership at the cooperative store.',
+      'Charge eligible purchases to your account, settled per agreed terms.',
+    ],
+    status: 'active',
+  },
+  {
     slug: 'savings',
     name: 'Savings & Time Deposits',
     icon: 'piggy-bank',
