@@ -139,7 +139,7 @@ const ASSOCIATE_COORDS: Record<string, Coord> = {
   // Recommender block — labels at top≈203; values on the line below
   recommenderName:        { x: 42,  top: 221, size: 8, maxWidth: 165 },
   recommenderRelationship:{ x: 178, top: 221, size: 8, maxWidth: 110 },
-  recommenderCampus:      { x: 445, top: 210, size: 8, maxWidth: 112 },
+  recommenderCampus:      { x: 445, top: 221, size: 8, maxWidth: 112 },
 
   // Names row — labels at top≈245
   firstName:           { x: 42,  top: 264, size: 9, maxWidth: 140 },
