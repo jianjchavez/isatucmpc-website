@@ -30,9 +30,8 @@ export const SERVICES: Service[] = [
     slug: 'sm-credit',
     name: 'SM Credit',
     icon: 'credit-card',
-    // TODO(operator): confirm wording — placeholder description pending exact product details.
     description:
-      'A member purchase-credit facility for buying goods and appliances, payable in convenient installments at member-friendly terms.',
+      'A member purchase-credit facility for buying goods, appliances, and other big-ticket needs — payable in convenient installments at member-friendly terms.',
     whoCanUse: 'Members in good standing.',
     howToAccess: [
       'Be a member in good standing.',
@@ -45,9 +44,8 @@ export const SERVICES: Service[] = [
     slug: 'in-store-credit',
     name: 'In-store Credit',
     icon: 'store',
-    // TODO(operator): confirm wording — placeholder description pending exact product details.
     description:
-      'Buy now, pay later at the cooperative store — qualified members can purchase essentials on credit, settled through payroll or savings.',
+      'Buy now, pay later at the cooperative store — members in good standing can charge everyday essentials to their account, conveniently settled through payroll or savings.',
     whoCanUse: 'Members in good standing.',
     howToAccess: [
       'Be a member in good standing.',
