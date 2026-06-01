@@ -40,10 +40,10 @@ const localBusinessSchema = buildLocalBusinessSchema();
   <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
   <script type="application/ld+json" set:html={JSON.stringify(localBusinessSchema)} />
   {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
-  <!-- Cloudflare Web Analytics (auto-injected by CF Pages; manual fallback below if needed) -->
-  {import.meta.env.PROD && (
-    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "REPLACE_WITH_CF_TOKEN"}'></script>
-  )}
+  <!-- Cloudflare Web Analytics is injected automatically by Cloudflare Pages.
+       Enable it once in the dashboard: Pages project → Web Analytics → Enable.
+       No beacon token belongs in this repo (the old hardcoded placeholder was a
+       no-op). CSP already allows static.cloudflareinsights.com. -->
   <!-- Turnstile: explicit render so local dev/preview can fall back to Cloudflare's
        test sitekey (the real widget rejects localhost with "Unable to connect").
        Production uses each widget's real data-sitekey unchanged. -->
