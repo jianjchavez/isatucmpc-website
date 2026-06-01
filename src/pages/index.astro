@@ -33,13 +33,20 @@ const posts = (await getCollection('news', ({ data }) => !data.draft))
 
   <!-- TRUST STRIP -->
   <section class="bg-brand-bg">
-    <div class="container-page grid grid-cols-1 md:grid-cols-3 gap-8 py-12">
+    <div class="container-page grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 pb-8">
       {STATS.map(s => (
         <div>
           <div class="font-display font-extrabold text-navy text-4xl md:text-5xl">{s.value}</div>
           <div class="text-xs font-display font-bold text-slate uppercase tracking-wider mt-1">{s.label}</div>
         </div>
       ))}
+    </div>
+    {/* TODO: swap this text badge for the official COOP Marque logo once DotCoop sends the asset (requested via identity.coop/claim-your-marque). */}
+    <div class="container-page pb-12">
+      <div class="inline-flex items-center gap-2 rounded-full border border-navy/15 bg-white px-4 py-2 text-xs font-display font-bold text-navy uppercase tracking-wider">
+        <span class="text-orange" aria-hidden="true">✓</span>
+        Verified .coop cooperative
+      </div>
     </div>
   </section>
 
