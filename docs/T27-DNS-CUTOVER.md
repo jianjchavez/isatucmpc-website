@@ -1,14 +1,31 @@
 # T27 — DNS Cutover Runbook (`isatucmpc.coop` → Cloudflare)
 
-**Status as of 2026-05-30:** ⛔ BLOCKED — waiting on DotCoop `.coop` eligibility approval.
-Domain `isatucmpc.coop` is registered at Gandi (created 2026-05-25, WHOIS `ACTIVE`, no hold),
-but DotCoop has not yet emailed an eligibility approval. A status inquiry was sent 2026-05-30.
+**Status: ✅ COMPLETE — executed 2026-06-01 (late) / verified 2026-06-02.**
+DotCoop emailed `.coop` eligibility approval 2026-06-01 8:30 PM (from `verification@identity.coop`,
+SPF/DKIM/DMARC all PASS — verified genuine). Cutover executed same night following this runbook.
 
-**Do not start this runbook until** you have an explicit eligibility-approval email from DotCoop
-(or the Gandi dashboard shows the domain's eligibility/verification as cleared). Cutting nameservers
-over before approval risks the domain being suspended mid-flight.
+Final verified state (2026-06-02):
+- Nameservers switched at Gandi → `darwin.ns.cloudflare.com` / `luciana.ns.cloudflare.com`; **propagated**.
+- All 18 Gandi records recreated in Cloudflare (the scan missed the 3 `gm{1,2,3}._domainkey` GandiMail
+  DKIM CNAMEs — added by hand; `webmail` CNAME flipped to DNS-only). Mail records all preserved DNS-only.
+- Apex + `www` are CNAME → `isatucmpc.pages.dev` (proxied); old Gandi web records (`@` A `217.70.184.38`,
+  `www` → `webredir.vip.gandi.net`) auto-replaced by the Pages custom-domain flow.
+- **`https://isatucmpc.coop` + `https://www.isatucmpc.coop` LIVE** — valid Google Trust Services certs
+  (issued ~Jun 1 14:06 UTC, exp Aug 30 2026), serving the real site (`<title>ISATUCMPC</title>`).
+- **Resend domain `isatucmpc.coop` still Verified**; contact-form test delivered end-to-end
+  (auto-ack from `noreply@isatucmpc.coop` landed in `isatucmpc1964@gmail.com` inbox, not spam).
+- DNSSEC was Inactive at Gandi (no DS-record removal needed). Gandi DNS backup saved before cutover.
 
-Estimated execution time once unblocked: **~15 minutes of clicks + up to a few hours DNS propagation.**
+Notes for the historical record: the apex cert lagged `www` by a few minutes (each Pages custom domain
+gets its own cert); HTTP (port 80) served `200` immediately while HTTPS waited on cert issuance.
+
+The step-by-step below is retained as the executed procedure / rollback reference.
+
+---
+
+**(Original pre-execution status, for reference)** ⛔ was BLOCKED on DotCoop approval; domain registered
+at Gandi 2026-05-25 (WHOIS `ACTIVE`). Estimated execution: ~15 min clicks + DNS propagation — actual
+propagation was fast; total wall-clock ~dominated by cert issuance.
 
 ---
 
