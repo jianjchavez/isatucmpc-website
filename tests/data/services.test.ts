@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { SERVICES } from '~/data/services';
 
 describe('SERVICES data', () => {
-  it('has all 8 operating services in operating order', () => {
-    expect(SERVICES).toHaveLength(8);
+  it('has all 10 operating services in operating order', () => {
+    expect(SERVICES).toHaveLength(10);
     expect(SERVICES.map(s => s.slug)).toEqual([
-      'credit', 'savings', 'convenience-store', 'laundry',
-      'boarding-house', 'copy-center', 'food-park', 'ucafe',
+      'credit', 'sm-credit', 'in-store-credit', 'savings',
+      'convenience-store', 'laundry', 'boarding-house',
+      'copy-center', 'food-park', 'ucafe',
     ]);
   });
   it('every service has the required fields', () => {
