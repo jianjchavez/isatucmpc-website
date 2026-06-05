@@ -7,7 +7,7 @@ export const BOARD: BoardMember[] = [
   { name: 'Ana V. Ancheta', role: 'Member', photo: '/board/ancheta.jpg' },
   { name: 'Novelita J. Belmes', role: 'Member', photo: '/board/belmes.jpg' },
   { name: 'Jogie E. Cubar', role: 'Member', photo: '/board/cubar.jpg' },
-  { name: 'Adelfa S. Fontonalgo', role: 'Member', photo: '/board/fontanalgo.jpg' },
+  { name: 'Adelfa S. Fontonalgo', role: 'Member', photo: '/board/fontonalgo.jpg' },
   { name: 'Pacifico N. Senador', role: 'Member', photo: '/board/senador.jpg' },
   { name: 'Luis M. Sorolla Jr.', role: 'Member', photo: '/board/sorolla.jpg' },
   { name: 'Noel S. Quidato', role: 'Member', photo: '/board/quidato.jpg' },
