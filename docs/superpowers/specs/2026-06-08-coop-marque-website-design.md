@@ -99,9 +99,18 @@ Behaviour:
    Replace the ".COOP" text eyebrow with the **orange marque**. Card retains its
    title + description. Generous clear space inside the card.
 
-4. **About → 7 Cooperative Principles** (`src/pages/about.astro`, navy section)
-   Add the white **key-message 1 lockup** ("People together are stronger") as a
-   featured identity statement within/near the section, with clear space.
+4. **About → identity band after 7 Principles** (`src/pages/about.astro`)
+   A light `bg-brand-bg` band with the **black key-message 1 lockup** ("People
+   together are stronger"), centered, with clear space, as a coda to the
+   principles/identity block.
+
+   > **Asset bug (discovered during implementation):** the ICA
+   > `English_key_messages` zip ships a mislabeled `coop_white_message1_en.png`
+   > that actually contains the spring-green artwork (not white). The genuine
+   > white master for message 1 is missing (messages 2–7 white masters are
+   > correct). Rather than recolor (forbidden), message 1 is placed in **black on
+   > a light background** — fully compliant — instead of white on the navy
+   > principles section. Report the mislabeled file to DotCoop / identity.coop.
 
 ## Out of scope (YAGNI)
 
