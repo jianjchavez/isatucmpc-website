@@ -171,16 +171,13 @@ function splitBody(body: string): string[] {
         <path d="M 140 490 H 360" fill="none" stroke={NAVY}   stroke-width="32" stroke-linecap="round" />
         <path d="M 160 830 H 420" fill="none" stroke={GREEN}  stroke-width="32" stroke-linecap="round" />
 
-        {/* Chevron clusters tucked into the turn pockets */}
+        {/* Chevron cluster tucked into the top-right turn pocket (open space).
+            The left turn's inner pocket is occupied by the "04" ghost number,
+            so no decorative cluster is placed there — it would overlap. */}
         <g fill="none" stroke={CHROME} stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M 1316 196 L 1330 212 L 1344 196" />
           <path d="M 1316 224 L 1330 240 L 1344 224" />
           <path d="M 1316 252 L 1330 268 L 1344 252" />
-        </g>
-        <g fill="none" stroke={CHROME} stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M 210 612 L 226 626 L 210 640" />
-          <path d="M 238 612 L 254 626 L 238 640" />
-          <path d="M 266 612 L 282 626 L 266 640" />
         </g>
 
         {/* Nodes */}
