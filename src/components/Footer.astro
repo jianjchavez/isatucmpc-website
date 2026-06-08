@@ -51,13 +51,13 @@ const year = new Date().getFullYear();
         </p>
         {/* Verified .coop cooperative credential — leading dot + marque (".coop"),
             framed by VERIFIED / COOPERATIVE. White dot reversed for the navy bg. */}
-        <div class="mt-5 inline-flex flex-col items-center gap-2" role="img" aria-label="Verified .coop cooperative">
-          <span class="font-display font-bold text-[10px] leading-none tracking-[0.34em] text-white/85 uppercase" aria-hidden="true">Verified</span>
-          <span class="inline-flex items-center gap-2" aria-hidden="true">
-            <span class="inline-block rounded-full bg-white" style="width:11px;height:11px;"></span>
+        <div class="mt-5 flex flex-col gap-2 w-[115px]" role="img" aria-label="Verified .coop cooperative">
+          <span class="flex justify-between font-display font-bold text-[10px] leading-none text-white/85 uppercase" aria-hidden="true">{'VERIFIED'.split('').map(c => <span>{c}</span>)}</span>
+          <span class="flex items-center gap-2" aria-hidden="true">
+            <span class="inline-block rounded-full bg-white shrink-0" style="width:11px;height:11px;"></span>
             <CoopMarque variant="marque" color="orange" width={96} clearSpace={false} alt="" />
           </span>
-          <span class="font-display font-bold text-[10px] leading-none tracking-[0.28em] text-white/85 uppercase" aria-hidden="true">Cooperative</span>
+          <span class="flex justify-between font-display font-bold text-[10px] leading-none text-white/85 uppercase" aria-hidden="true">{'COOPERATIVE'.split('').map(c => <span>{c}</span>)}</span>
         </div>
       </div>
     </div>
