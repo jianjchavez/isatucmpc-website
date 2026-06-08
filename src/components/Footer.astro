@@ -49,8 +49,15 @@ const year = new Date().getFullYear();
           Member: NATCCO · WVAC<br />
           Partner: CLIMBS
         </p>
-        <div class="mt-4">
-          <CoopMarque variant="marque" color="orange" width={104} alt="Verified .coop cooperative" />
+        {/* Verified .coop cooperative credential — leading dot + marque (".coop"),
+            framed by VERIFIED / COOPERATIVE. White dot reversed for the navy bg. */}
+        <div class="mt-5 inline-flex flex-col items-center gap-2" role="img" aria-label="Verified .coop cooperative">
+          <span class="font-display font-bold text-[10px] leading-none tracking-[0.34em] text-white/85 uppercase" aria-hidden="true">Verified</span>
+          <span class="inline-flex items-center gap-2" aria-hidden="true">
+            <span class="inline-block rounded-full bg-white" style="width:11px;height:11px;"></span>
+            <CoopMarque variant="marque" color="orange" width={96} clearSpace={false} alt="" />
+          </span>
+          <span class="font-display font-bold text-[10px] leading-none tracking-[0.28em] text-white/85 uppercase" aria-hidden="true">Cooperative</span>
         </div>
       </div>
     </div>
