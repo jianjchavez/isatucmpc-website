@@ -6,6 +6,7 @@ import GradientOrb from '~/components/GradientOrb.astro';
 import Timeline from '~/components/Timeline.astro';
 import HistoryNarrative from '~/components/HistoryNarrative.astro';
 import BodCard from '~/components/BodCard.astro';
+import CoopMarque from '~/components/CoopMarque.astro';
 import { BOARD } from '~/data/board';
 import { PRINCIPLES } from '~/data/principles';
 import { GOALS } from '~/data/goals';
@@ -105,6 +106,9 @@ const MissionIcon = Lucide.Target;
           );
         })}
       </div>
+      <div class="mt-14 pt-10 border-t border-white/15 flex justify-center">
+        <CoopMarque variant="message" message={1} color="white" width={280} alt="Co-operative Marque: People together are stronger" />
+      </div>
     </div>
   </section>
 
@@ -149,9 +153,8 @@ const MissionIcon = Lucide.Target;
           <div class="font-display font-bold text-navy">CLIMBS Life and General Insurance Cooperative</div>
           <p class="mt-2 text-sm text-slate">Partner — cooperative insurance provider</p>
         </div>
-        {/* TODO: swap the ".COOP" label for the official COOP Marque logo once DotCoop sends the asset (requested via identity.coop/claim-your-marque). */}
         <div class="bg-white border-t-[3px] border-navy rounded-b-lg p-6">
-          <div class="text-xs font-display font-bold text-orange uppercase tracking-wider mb-2">.COOP</div>
+          <div class="mb-2"><CoopMarque variant="marque" color="orange" width={84} alt="" /></div>
           <div class="font-display font-bold text-navy">Verified .coop Cooperative</div>
           <p class="mt-2 text-sm text-slate">Identity verified by DotCoop per the ICA Statement of Cooperative Identity</p>
         </div>
