@@ -4,16 +4,22 @@ import Eyebrow from '~/components/Eyebrow.astro';
 import Button from '~/components/Button.astro';
 import GradientOrb from '~/components/GradientOrb.astro';
 import ServiceCard from '~/components/ServiceCard.astro';
+import CoopMarque from '~/components/CoopMarque.astro';
 import { SERVICES } from '~/data/services';
 ---
 <PageLayout title="Services" description="Ten cooperative services for ISATUCMPC members — credit, savings, store, and more. All guided by the principle of service over and above profit.">
   <!-- HERO -->
   <section class="relative bg-navy text-white overflow-hidden">
     <GradientOrb position="top-right" size="md" intensity={0.22} />
-    <div class="container-page py-16 md:py-24 relative">
-      <Eyebrow color="orange">What we offer</Eyebrow>
-      <h1 class="mt-4 text-4xl md:text-5xl text-white max-w-3xl">Ways we serve our members.</h1>
-      <p class="mt-4 text-lg md:text-xl text-white/85 max-w-2xl font-light">From credit and savings to community services — built around one principle: service over and above profit.</p>
+    <div class="container-page py-16 md:py-24 relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
+      <div class="max-w-2xl">
+        <Eyebrow color="orange">What we offer</Eyebrow>
+        <h1 class="mt-4 text-4xl md:text-5xl text-white max-w-3xl">Ways we serve our members.</h1>
+        <p class="mt-4 text-lg md:text-xl text-white/85 max-w-2xl font-light">From credit and savings to community services — built around one principle: service over and above profit.</p>
+      </div>
+      <div class="shrink-0">
+        <CoopMarque variant="slogan" color="white" width={280} alt="Co-operative Marque with slogan: Co-operative enterprises build a better world" />
+      </div>
     </div>
   </section>
 
