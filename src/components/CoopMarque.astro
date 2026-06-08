@@ -1,0 +1,79 @@
+---
+/**
+ * CoopMarque — the official ICA Co-operative Marque, rendered in a
+ * guideline-compliant way. This is the ONLY place the marque should be
+ * emitted; never reference a /coop-marque/*.png file directly elsewhere.
+ *
+ * Guidelines (ICA "A guide for users", v2.0): use an unaltered master file,
+ * one of the seven signature colours (never plum), white/reversed on dark
+ * backgrounds, honour the exclusion zone (clear space >= half the "c" height),
+ * never distort, rotate, crop, or box the marque.
+ */
+type Variant = 'marque' | 'slogan' | 'message';
+type Color = 'orange' | 'white' | 'blk';
+
+interface Props {
+  variant?: Variant;
+  color?: Color;
+  message?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  /** Displayed width in px. Height is derived to preserve aspect ratio. */
+  width?: number;
+  /** Reserve the exclusion zone as clear-space padding. Default true. */
+  clearSpace?: boolean;
+  /** Accessible label. Pass '' to mark decorative (adjacent text conveys it). */
+  alt?: string;
+  class?: string;
+}
+
+const {
+  variant = 'marque',
+  color = 'orange',
+  message = 1,
+  width = 140,
+  clearSpace = true,
+  alt,
+  class: className = '',
+} = Astro.props;
+
+// Intrinsic dimensions of the master PNGs, used only to preserve aspect ratio
+// and to size the exclusion zone — the image itself is never scaled non-uniformly.
+const INTRINSIC: Record<Variant, { w: number; h: number }> = {
+  marque: { w: 518, h: 217 },
+  slogan: { w: 922, h: 217 },
+  message: { w: 822, h: 218 },
+};
+
+const FILE: Record<Variant, string> = {
+  marque: `coop_${color}.png`,
+  slogan: `coop_${color}_slogan_en.png`,
+  message: `coop_${color}_message${message}_en.png`,
+};
+
+const intrinsic = INTRINSIC[variant];
+const height = Math.round((width * intrinsic.h) / intrinsic.w);
+// Exclusion zone = half the height of the "c", which is ~the marque height.
+const zone = clearSpace ? Math.round(height / 2) : 0;
+const src = `/coop-marque/${FILE[variant]}`;
+
+const DEFAULT_ALT: Record<Variant, string> = {
+  marque: 'Co-operative Marque — verified .coop cooperative',
+  slogan: 'Co-operative Marque — Co-operative enterprises build a better world',
+  message: 'Co-operative Marque',
+};
+const resolvedAlt = alt ?? DEFAULT_ALT[variant];
+---
+
+<span
+  class:list={['inline-block', className]}
+  style={`padding:${zone}px`}
+>
+  <img
+    src={src}
+    alt={resolvedAlt}
+    width={width}
+    height={height}
+    style={`width:${width}px;height:auto;display:block;object-fit:contain`}
+    loading="lazy"
+    decoding="async"
+  />
+</span>
