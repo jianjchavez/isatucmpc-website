@@ -9,11 +9,11 @@
 #           unpkg.com              → leaflet.css
 #   img     *.tile.openstreetmap   → map tiles;  unpkg → Leaflet marker icons;  data: → inlined assets
 #   connect workers.dev            → contact/membership form POSTs;  Turnstile + CF beacon callbacks
-#   frame   challenges.cloudflare  → Turnstile widget iframe
+#   frame   'self'                 → MemberFolio how-to iframe;  challenges.cloudflare → Turnstile widget iframe
 # If you add a new third-party (font CDN, video embed, analytics), extend the matching directive.
 
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; font-src 'self' data:; connect-src 'self' https://isatucmpc-forms.jianjchavez.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://isatucmpc-forms.jianjchavez.workers.dev; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; font-src 'self' data:; connect-src 'self' https://isatucmpc-forms.jianjchavez.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://isatucmpc-forms.jianjchavez.workers.dev; object-src 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
