@@ -4,7 +4,7 @@
 > site's architecture. Whenever you change the stack, hosting, build/deploy,
 > site structure, components/data, integrations, or security configuration,
 > **update the relevant section here in the same change** (see `CLAUDE.md`).
-> Last verified against the codebase: 2026-06-08.
+> Last verified against the codebase: 2026-06-20.
 
 ---
 
@@ -75,10 +75,12 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 /404               src/pages/404.astro
 ```
 
+**Public assets (non-page):** `public/memberfolio-howto.html` — embedded how-to slide deck (13 slides) served as a static asset and loaded inside the `MemberLoginModal` iframe. It is not a routed page; the modal is mounted globally in `PageLayout.astro`.
+
 ## 7. Components, layouts & data
 
 - **Layouts:** `BaseLayout.astro` (head, SEO tags, Turnstile explicit-render loader), `PageLayout.astro`.
-- **Components (`src/components/`):** Header, Footer, Button, Eyebrow, GradientOrb, ServiceCard, BenefitCard, BodCard, NewsCard, Timeline, HistoryNarrative, MembershipProcess, MembershipForm, ContactForm, ContactMap, EligibilityCheck, FaqAccordion, CoopMarque (+ `eligibility-logic.ts`).
+- **Components (`src/components/`):** Header, Footer, Button, Eyebrow, GradientOrb, ServiceCard, BenefitCard, BodCard, NewsCard, Timeline, HistoryNarrative, MembershipProcess, MembershipForm, ContactForm, ContactMap, EligibilityCheck, FaqAccordion, CoopMarque (+ `eligibility-logic.ts`), `MemberLoginModal.astro` (global MemberFolio access pop-up — gateway link + how-to iframe — mounted in `PageLayout.astro`; interaction logic in `memberfolio-modal-logic.ts`).
 - **Co-operative Marque (`CoopMarque.astro` + `public/coop-marque/`):** the official ICA Co-operative Marque, used as an *alignment device* per the ICA marque guidelines (no dependency added; PNG masters served statically). `CoopMarque.astro` is the **single compliant chokepoint** — it picks the correct unaltered master file by `variant` (marque / slogan / message) and `color`, prevents distortion (`object-contain`, derived height), reserves the exclusion-zone clear space, and emits alt text. Placed in the footer (white slogan lockup on navy), home trust strip + About affiliations (orange marque on light), and a light identity band after the About principles section (black key-message 1, "People together are stronger"). Light-bg colour = orange/black; dark/navy = white/reversed. (Note: the ICA `English_key_messages` zip ships a mislabeled `coop_white_message1_en.png` — it is actually the spring-green artwork, not white — so message 1 is used in black on a light background. Messages 2–7 white masters are correct.) **Never** recolor, stretch, box, or use plum. Design spec: `docs/superpowers/specs/2026-06-08-coop-marque-website-design.md`.
 - **Data (`src/data/`, typed TS):** `services` (10), `benefits`, `board`, `faq`, `goals` (9), `principles` (7), `stats`, `timeline`. `stats` and `timeline` auto-compute from the 1964 founding year.
 - **Content collection:** `src/content/news/` (MDX articles).
@@ -105,7 +107,7 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 
 Applied to every route by Cloudflare Pages:
 
-- **Content-Security-Policy** — `default-src 'self'`; scripts allow `'unsafe-inline'` + `challenges.cloudflare.com` (Turnstile) + `static.cloudflareinsights.com`; styles allow `'unsafe-inline'` + `unpkg.com` (Leaflet); img allows OpenStreetMap tiles + unpkg + `data:`; connect allows the forms Worker + Turnstile + CF Insights; frame allows Turnstile; `frame-ancestors 'none'`; `form-action 'self'` + forms Worker; `object-src 'none'`; `upgrade-insecure-requests`.
+- **Content-Security-Policy** — `default-src 'self'`; scripts allow `'unsafe-inline'` + `challenges.cloudflare.com` (Turnstile) + `static.cloudflareinsights.com`; styles allow `'unsafe-inline'` + `unpkg.com` (Leaflet); img allows OpenStreetMap tiles + unpkg + `data:`; connect allows the forms Worker + Turnstile + CF Insights; `frame-src` allows `'self'` (same-origin how-to iframe in `MemberLoginModal`) + `challenges.cloudflare.com` (Turnstile widget); `frame-ancestors 'none'`; `form-action 'self'` + forms Worker; `object-src 'none'`; `upgrade-insecure-requests`.
 - **Strict-Transport-Security** `max-age=31536000`
 - **X-Frame-Options** `DENY`, **X-Content-Type-Options** `nosniff`
 - **Referrer-Policy** `strict-origin-when-cross-origin`
