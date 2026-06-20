@@ -1,0 +1,398 @@
+---
+import { PORTAL_URL } from '~/components/memberfolio-modal-logic';
+const FEATURES = [
+  'Capital shares & dividends', 'Loans & balances', 'Loan calculator', 'Loan applications',
+  'Statements & certificates', 'Classifications', 'Welfare fund', 'Two-factor security',
+];
+---
+<dialog id="mfDialog" class="mf-dialog" aria-labelledby="mfTitle">
+  <div class="mf-head">
+    <div>
+      <h2 id="mfTitle" class="mf-title">Access MemberFolio</h2>
+      <p class="mf-sub">Already an ISATUCMPC member? Set up your online access to your capital shares, loans, statements and more &mdash; anytime.</p>
+    </div>
+    <button type="button" class="mf-x" aria-label="Close" data-mf-close>&times;</button>
+  </div>
+  <div class="mf-rule" aria-hidden="true"></div>
+
+  <!-- Gateway view -->
+  <div class="mf-gateway" id="mf-gateway">
+    <div class="mf-features">
+      <p class="mf-feat-title">Everything in one member portal</p>
+      <ul class="mf-feat-grid">
+        {FEATURES.map(f => <li>{f}</li>)}
+      </ul>
+    </div>
+    <div class="mf-choices">
+      <div class="mf-choice">
+        <div class="mf-ico mf-ico-in">&rarr;</div>
+        <span class="mf-tag">Existing member</span>
+        <h3 class="mf-choice-title">Sign in</h3>
+        <p class="mf-choice-desc">Already have your online account? Go straight to the portal.</p>
+        <a class="mf-btn" href={PORTAL_URL}>Sign in</a>
+      </div>
+      <div class="mf-choice mf-recommended">
+        <div class="mf-ico mf-ico-up">+</div>
+        <span class="mf-tag">First time here</span>
+        <h3 class="mf-choice-title">Sign up</h3>
+        <p class="mf-choice-desc">New to MemberFolio? See how to create your online account.</p>
+        <button type="button" class="mf-btn mf-btn-primary" id="mf-show-howto">Show me how &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- How-to view -->
+  <div class="mf-howto" id="mf-howto">
+    <div class="mf-bar">
+      <button type="button" class="mf-back" id="mf-back">&larr; Back</button>
+      <strong class="mf-bar-title">How to create your account &amp; sign in</strong>
+      <span style="width:3rem"></span>
+    </div>
+    <iframe id="mf-frame" title="MemberFolio how-to guide" loading="lazy"></iframe>
+    <div class="mf-foot">
+      <button type="button" class="mf-btn mf-btn-ghost" data-mf-close>Close</button>
+      <a class="mf-btn mf-btn-primary" href={PORTAL_URL}>Continue to MemberFolio &rarr;</a>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  /* ---- Dialog shell ---- */
+  .mf-dialog {
+    border: none;
+    border-radius: 1rem;
+    padding: 0;
+    width: min(44rem, 95vw);
+    max-height: 92vh;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(1, 1, 40, 0.32);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+  }
+  .mf-dialog::backdrop {
+    background: rgba(1, 1, 40, 0.55);
+    backdrop-filter: blur(2px);
+  }
+
+  /* ---- Header ---- */
+  .mf-head {
+    background: var(--color-navy);
+    color: #fff;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .mf-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.2rem;
+    margin: 0;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .mf-sub {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.78);
+    margin: 0.2rem 0 0;
+    line-height: 1.45;
+  }
+  .mf-x {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.4rem;
+    flex: 0 0 auto;
+  }
+  .mf-x:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  /* ---- Brand rule ---- */
+  .mf-rule {
+    height: 3px;
+    background: var(--brand-gradient);
+  }
+
+  /* ---- Gateway view ---- */
+  .mf-gateway {
+    padding: 1.4rem 1.25rem 1.5rem;
+  }
+  .mf-gateway.is-hidden {
+    display: none;
+  }
+
+  /* Feature pills */
+  .mf-features {
+    margin-bottom: 1.3rem;
+  }
+  .mf-feat-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--color-navy);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.6rem;
+    text-align: center;
+  }
+  .mf-feat-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+  }
+  .mf-feat-grid li {
+    font-size: 0.78rem;
+    color: var(--color-ink);
+    background: #F3F4FF;
+    border: 1px solid #E2E3FF;
+    border-radius: 999px;
+    padding: 0.32rem 0.72rem;
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    line-height: 1;
+  }
+  .mf-feat-grid li::before {
+    content: "\2713";
+    color: var(--color-orange);
+    font-weight: 800;
+  }
+
+  /* Choices grid */
+  .mf-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .mf-choice {
+    border: 1px solid var(--color-rule);
+    border-radius: 0.8rem;
+    padding: 1.2rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .mf-choice.mf-recommended {
+    border-color: var(--color-orange);
+    box-shadow: 0 6px 18px rgba(254, 153, 0, 0.12);
+  }
+  .mf-ico {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.1rem;
+  }
+  .mf-ico-in {
+    background: var(--color-navy);
+  }
+  .mf-ico-up {
+    background: var(--color-orange);
+  }
+  .mf-choice-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--color-navy);
+    font-size: 1.02rem;
+    margin: 0.1rem 0 0;
+  }
+  .mf-choice-desc {
+    margin: 0;
+    color: var(--color-slate);
+    font-size: 0.82rem;
+    line-height: 1.45;
+    min-height: 2.4rem;
+  }
+  .mf-tag {
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-orange);
+  }
+
+  /* ---- Shared button styles ---- */
+  .mf-btn {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    border: 2px solid var(--color-navy);
+    color: var(--color-navy);
+    background: #fff;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.9rem;
+    transition: background 0.15s, color 0.15s;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+  }
+  .mf-btn:hover {
+    background: var(--color-navy);
+    color: #fff;
+  }
+  .mf-btn-ghost {
+    border-color: var(--color-rule);
+    color: var(--color-slate);
+    width: auto;
+  }
+  .mf-btn-ghost:hover {
+    background: #f0f0f0;
+    color: var(--color-ink);
+  }
+  .mf-btn-primary {
+    background: var(--color-orange);
+    border-color: var(--color-orange);
+    color: #fff;
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: center;
+  }
+  .mf-btn-primary:hover {
+    background: #e88900;
+    border-color: #e88900;
+    color: #fff;
+  }
+
+  /* ---- How-to view ---- */
+  .mf-howto {
+    display: none;
+    flex-direction: column;
+    height: min(82vh, 720px);
+  }
+  .mf-howto.is-active {
+    display: flex;
+  }
+  .mf-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--color-rule);
+    background: #fff;
+  }
+  .mf-bar-title {
+    font-family: var(--font-display);
+    color: var(--color-navy);
+    font-size: 0.9rem;
+  }
+  .mf-back {
+    background: none;
+    border: none;
+    color: var(--color-navy);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+  .mf-back:hover {
+    color: var(--color-orange);
+  }
+  .mf-howto iframe {
+    border: 0;
+    width: 100%;
+    flex: 1 1 auto;
+    background: #fff;
+  }
+  .mf-foot {
+    border-top: 1px solid var(--color-rule);
+    padding: 0.8rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    background: #fff;
+    flex-wrap: wrap;
+  }
+  .mf-foot .mf-btn-primary {
+    width: auto;
+  }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 560px) {
+    .mf-dialog {
+      width: 100vw;
+      height: 100vh;
+      max-height: 100vh;
+      border-radius: 0;
+    }
+    .mf-choices {
+      grid-template-columns: 1fr;
+    }
+    .mf-howto {
+      height: calc(100vh - 5rem);
+    }
+  }
+
+  /* ---- Open animation ---- */
+  @media (prefers-reduced-motion: no-preference) {
+    .mf-dialog[open] {
+      animation: mf-pop 0.18s ease;
+    }
+  }
+  @keyframes mf-pop {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+</style>
+
+<script>
+  import { createAccessModal, selectTriggers } from '~/components/memberfolio-modal-logic';
+  const dialog = document.getElementById('mfDialog') as HTMLDialogElement | null;
+  if (dialog) {
+    const ctrl = createAccessModal({
+      dialog,
+      gateway: document.getElementById('mf-gateway') as HTMLElement,
+      howto:   document.getElementById('mf-howto')   as HTMLElement,
+      iframe:  document.getElementById('mf-frame')   as HTMLIFrameElement,
+    });
+
+    // Intercept the "Member Login" links (outside the dialog).
+    for (const a of selectTriggers(document)) {
+      a.addEventListener('click', (e) => {
+        if (typeof dialog.showModal !== 'function') return; // fail-safe: let the link navigate
+        e.preventDefault();
+        // Close the mobile menu if the trigger lives inside it.
+        const menu   = document.getElementById('mobile-menu');
+        const toggle = document.getElementById('mobile-menu-toggle');
+        if (menu && !menu.classList.contains('hidden')) {
+          menu.classList.add('hidden');
+          toggle?.setAttribute('aria-expanded', 'false');
+          toggle?.setAttribute('aria-label', 'Open menu');
+        }
+        ctrl.open(a);
+      });
+    }
+
+    document.getElementById('mf-show-howto')?.addEventListener('click', () => ctrl.showHowto());
+    document.getElementById('mf-back')?.addEventListener('click',      () => ctrl.showGateway());
+    dialog.querySelectorAll('[data-mf-close]').forEach(b =>
+      b.addEventListener('click', () => ctrl.close())
+    );
+    dialog.addEventListener('close', () => ctrl.handleClose());
+    // Backdrop click: the click lands on the <dialog> element itself.
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) ctrl.close(); });
+  }
+</script>
