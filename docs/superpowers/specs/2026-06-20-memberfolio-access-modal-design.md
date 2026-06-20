@@ -85,8 +85,8 @@ on the portal href). The footer's plain `<a>` to the portal is covered too.
 - Header bar (navy): title "Access MemberFolio" + reframed subtitle. Close (×).
 - Signature gradient rule.
 - **Feature strip:** "Everything in one member portal" + check-mark pills:
-  Capital shares & dividends · Loans & balances · Loan calculator · Apply for loans ·
-  Statements & certificates · Membership classification · Welfare fund · Two-factor security.
+  Capital shares & dividends · Loans & balances · Loan calculator · Loan applications ·
+  Statements & certificates · Classifications · Welfare fund · Two-factor security.
   (Sourced from MemberFolio's actual member-facing features.)
 - **Two choice cards:**
   - *Existing member* — "Sign in" → `<a href="portal">` (direct).
