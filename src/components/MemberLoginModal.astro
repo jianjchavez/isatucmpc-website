@@ -48,7 +48,7 @@ const FEATURES = [
       <strong class="mf-bar-title">How to create your account &amp; sign in</strong>
       <span style="width:3rem"></span>
     </div>
-    <iframe id="mf-frame" title="MemberFolio how-to guide" loading="lazy"></iframe>
+    <div class="mf-deck-scaler" id="mf-deck-scaler"><iframe id="mf-frame" title="MemberFolio how-to guide" loading="lazy"></iframe></div>
     <div class="mf-foot">
       <button type="button" class="mf-btn mf-btn-ghost" data-mf-close>Close</button>
       <a class="mf-btn mf-btn-primary" href={PORTAL_URL}>Continue to MemberFolio &rarr;</a>
@@ -62,7 +62,7 @@ const FEATURES = [
     border: none;
     border-radius: 1rem;
     padding: 0;
-    width: min(44rem, 95vw);
+    width: min(54rem, 95vw);
     max-height: 92vh;
     overflow: hidden;
     box-shadow: 0 24px 60px rgba(1, 1, 40, 0.32);
@@ -277,7 +277,6 @@ const FEATURES = [
   .mf-howto {
     display: none;
     flex-direction: column;
-    height: min(82vh, 720px);
   }
   .mf-howto.is-active {
     display: flex;
@@ -310,11 +309,22 @@ const FEATURES = [
   .mf-back:hover {
     color: var(--color-orange);
   }
-  .mf-howto iframe {
-    border: 0;
+  .mf-deck-scaler {
+    position: relative;
     width: 100%;
-    flex: 1 1 auto;
-    background: #fff;
+    aspect-ratio: 1280 / 720;
+    overflow: hidden;
+    background: #0b0b1f;
+  }
+  .mf-deck-scaler iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    border: 0;
+    transform-origin: top left;
+    background: #0b0b1f;
   }
   .mf-foot {
     border-top: 1px solid var(--color-rule);
@@ -340,9 +350,6 @@ const FEATURES = [
     }
     .mf-choices {
       grid-template-columns: 1fr;
-    }
-    .mf-howto {
-      height: calc(100vh - 5rem);
     }
   }
 
@@ -386,7 +393,18 @@ const FEATURES = [
       });
     }
 
-    document.getElementById('mf-show-howto')?.addEventListener('click', () => ctrl.showHowto());
+    // Scale the native-1280x720 deck iframe to fit the modal (deterministic, no crop).
+    const scaleDeck = () => {
+      const ds = document.getElementById('mf-deck-scaler');
+      const frame = document.getElementById('mf-frame') as HTMLIFrameElement | null;
+      if (ds && frame) frame.style.transform = `scale(${ds.clientWidth / 1280})`;
+    };
+    document.getElementById('mf-show-howto')?.addEventListener('click', () => {
+      ctrl.showHowto();
+      requestAnimationFrame(scaleDeck);
+      requestAnimationFrame(() => requestAnimationFrame(scaleDeck));
+    });
+    window.addEventListener('resize', scaleDeck);
     document.getElementById('mf-back')?.addEventListener('click',      () => ctrl.showGateway());
     dialog.querySelectorAll('[data-mf-close]').forEach(b =>
       b.addEventListener('click', () => ctrl.close())

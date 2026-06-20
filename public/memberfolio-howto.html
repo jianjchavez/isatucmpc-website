@@ -269,8 +269,21 @@ table.story td.mn{width:200px;color:var(--slate);}
 }
 </style>
 <style>
-  /* In-site embed: hide video/presenter chrome, keep Prev/Next + counter/progress */
-  #btnPlay, #btnNotes, #btnFull, #timerbar, #notes { display: none !important; }
+  /* In-site embed: render the deck at its native 1280x720 (the parent page scales the
+     whole iframe to fit); hide presenter chrome; chevron arrows + dot progress. */
+  #btnPlay, #btnNotes, #btnFull, #timerbar, #notes, .hint { display: none !important; }
+  #deck { transform: none !important; border-radius: 0 !important; box-shadow: none !important; }
+  #chrome { gap: 18px; justify-content: center; padding: 16px 24px; }
+  .navarrow { display: inline-flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 999px; color: #fff; flex: 0 0 auto; cursor: pointer;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); transition: background .15s; }
+  .navarrow svg { width: 30px; height: 30px; }
+  .navarrow:hover { background: rgba(255,255,255,.26); }
+  .navarrow:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  #dots { display: flex; align-items: center; justify-content: center; gap: 12px; flex: 0 1 auto; flex-wrap: wrap; max-width: 62%; }
+  #dots .dot { width: 12px; height: 12px; border-radius: 999px; background: rgba(255,255,255,.34); transition: width .25s ease, background .25s ease; }
+  #dots .dot.on { width: 34px; background: var(--grad); }
+  @media (prefers-reduced-motion: reduce) { #dots .dot { transition: none; } }
 </style>
 </head>
 <body>
@@ -687,17 +700,16 @@ table.story td.mn{width:200px;color:var(--slate);}
 
 <!-- fixed chrome -->
 <nav id="chrome" aria-label="Presentation controls">
-  <div class="ctrl">
-    <button id="btnPrev" aria-label="Previous slide">‹ Prev</button>
-    <button id="btnPlay" aria-label="Play or pause autoplay"><span class="playpill"><span id="playTxt">Play</span></span></button>
-    <button id="btnNext" aria-label="Next slide">Next ›</button>
-  </div>
-  <div id="progress" role="progressbar" aria-label="Slide progress"><i></i></div>
-  <span id="counter">Slide 1 of 13</span>
-  <div class="ctrl">
-    <button id="btnNotes" aria-label="Toggle narration notes">Notes</button>
-    <button id="btnFull" aria-label="Toggle fullscreen">Fullscreen</button>
-  </div>
+  <button id="btnPrev" class="navarrow" aria-label="Previous slide">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button id="btnPlay" aria-label="Play or pause autoplay"><span class="playpill"><span id="playTxt">Play</span></span></button>
+  <div id="dots" role="progressbar" aria-label="Slide progress" aria-valuemin="1"></div>
+  <button id="btnNotes" aria-label="Toggle narration notes">Notes</button>
+  <button id="btnFull" aria-label="Toggle fullscreen">Fullscreen</button>
+  <button id="btnNext" class="navarrow" aria-label="Next slide">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
 </nav>
 
 <script>
@@ -724,13 +736,18 @@ table.story td.mn{width:200px;color:var(--slate);}
   }
   window.addEventListener('resize', fit);
 
-  /* ---- progress + counter ---- */
-  var bar     = document.querySelector('#progress > i');
-  var counter = document.getElementById('counter');
+  /* ---- dot progress ---- */
+  var dotsEl  = document.getElementById('dots');
   function updateChrome(){
-    bar.style.width = ((cur+1)/N*100) + '%';
-    counter.textContent = 'Slide ' + (cur+1) + ' of ' + N;
-    document.getElementById('progress').setAttribute('aria-valuenow', cur+1);
+    if (dotsEl){
+      if (dotsEl.children.length !== N){
+        dotsEl.innerHTML = '';
+        for (var k=0;k<N;k++){ var dot=document.createElement('span'); dot.className='dot'; dotsEl.appendChild(dot); }
+      }
+      for (var j=0;j<dotsEl.children.length;j++){ dotsEl.children[j].classList.toggle('on', j===cur); }
+      dotsEl.setAttribute('aria-valuenow', cur+1);
+      dotsEl.setAttribute('aria-valuemax', N);
+    }
     // notes content
     var s = slides[cur];
     document.getElementById('voText').textContent = s.getAttribute('data-vo') || '(No narration on this slide.)';
@@ -830,6 +847,18 @@ table.story td.mn{width:200px;color:var(--slate);}
   fit();
   show(0);
 })();
+</script>
+<script>
+  /* In-site embed: the deck's fit() runs once on load, but inside a lazily-shown
+     iframe the real size isn't known yet — re-fire its resize handler once the
+     iframe is actually sized so the 1280x720 stage scales to fit (no crop). */
+  (function () {
+    var refit = function () { window.dispatchEvent(new Event('resize')); };
+    window.addEventListener('load', function () { refit(); setTimeout(refit, 60); setTimeout(refit, 300); });
+    if (window.ResizeObserver) {
+      try { new ResizeObserver(refit).observe(document.documentElement); } catch (e) {}
+    }
+  })();
 </script>
 </body>
 </html>
