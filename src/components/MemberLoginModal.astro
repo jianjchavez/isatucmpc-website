@@ -69,10 +69,36 @@ const FEATURES = [
     box-shadow: 0 24px 60px rgba(1, 1, 40, 0.32);
     color: var(--color-ink);
     font-family: var(--font-body);
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+    transition: opacity 0.34s cubic-bezier(0.16, 1, 0.3, 1), transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+      overlay 0.34s allow-discrete, display 0.34s allow-discrete;
+  }
+  .mf-dialog[open] {
+    opacity: 1;
+    transform: none;
+  }
+  @starting-style {
+    .mf-dialog[open] {
+      opacity: 0;
+      transform: translateY(14px) scale(0.96);
+    }
   }
   .mf-dialog::backdrop {
+    background: rgba(1, 1, 40, 0);
+    backdrop-filter: blur(0);
+    transition: background 0.34s ease, backdrop-filter 0.34s ease,
+      overlay 0.34s allow-discrete, display 0.34s allow-discrete;
+  }
+  .mf-dialog[open]::backdrop {
     background: rgba(1, 1, 40, 0.55);
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(3px);
+  }
+  @starting-style {
+    .mf-dialog[open]::backdrop {
+      background: rgba(1, 1, 40, 0);
+      backdrop-filter: blur(0);
+    }
   }
 
   /* ---- Header ---- */
@@ -281,6 +307,7 @@ const FEATURES = [
   }
   .mf-howto.is-active {
     display: flex;
+    animation: mf-view-in 0.36s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .mf-bar {
     display: flex;
@@ -354,15 +381,16 @@ const FEATURES = [
     }
   }
 
-  /* ---- Open animation ---- */
-  @media (prefers-reduced-motion: no-preference) {
-    .mf-dialog[open] {
-      animation: mf-pop 0.18s ease;
-    }
-  }
-  @keyframes mf-pop {
-    from { opacity: 0; transform: translateY(8px); }
+  /* ---- Open / close + view transitions ---- */
+  @keyframes mf-view-in {
+    from { opacity: 0; transform: translateX(22px); }
     to   { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mf-dialog,
+    .mf-dialog::backdrop { transition: none; }
+    .mf-dialog { opacity: 1; transform: none; }
+    .mf-howto.is-active { animation: none; }
   }
 </style>
 
