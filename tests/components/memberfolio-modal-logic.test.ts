@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   PORTAL_URL, HOWTO_SRC, isPortalHref, selectTriggers, createAccessModal,
 } from '~/components/memberfolio-modal-logic';
