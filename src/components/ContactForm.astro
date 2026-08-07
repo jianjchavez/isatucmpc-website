@@ -15,6 +15,10 @@ import Button from '~/components/Button.astro';
     <label for="cf-message" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">How can we help?</label>
     <textarea id="cf-message" name="message" required rows="5" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm"></textarea>
   </div>
+  <label class="flex items-start gap-2 text-sm">
+    <input id="cf-consent" name="privacyConsent" type="checkbox" required class="mt-0.5" />
+    <span>I have read the <a href="/privacy" class="underline underline-offset-2 text-navy font-semibold" target="_blank">Privacy Notice</a> and consent to the processing of my name and email address to respond to my enquiry. <span class="text-orange" aria-hidden="true">*</span></span>
+  </label>
   <div class="cf-turnstile" data-sitekey="0x4AAAAAADX7ERaWq-wd4wB5"></div>
   <Button type="submit" variant="primary" size="md" showArrow>Send message</Button>
   <div id="cf-result" class="hidden p-3 rounded text-sm" role="status" aria-live="polite"></div>

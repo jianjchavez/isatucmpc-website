@@ -4,7 +4,7 @@
 > site's architecture. Whenever you change the stack, hosting, build/deploy,
 > site structure, components/data, integrations, or security configuration,
 > **update the relevant section here in the same change** (see `CLAUDE.md`).
-> Last verified against the codebase: 2026-06-20.
+> Last verified against the codebase: 2026-08-08.
 
 ---
 
@@ -69,6 +69,7 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 /services          src/pages/services.astro       Service catalog (10 services)
 /membership        src/pages/membership.astro     Eligibility check + Regular/Associate application forms
 /contact           src/pages/contact.astro        Contact form + Leaflet map
+/privacy           src/pages/privacy.astro        RA 10173 privacy notice (DPO contact, form data flows, member rights)
 /news/             src/pages/news/index.astro     News listing
 /news/[...slug]    src/pages/news/[...slug].astro  MDX article pages
 /news/rss.xml      src/pages/news/rss.xml.ts       RSS feed
