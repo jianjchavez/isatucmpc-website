@@ -4,7 +4,7 @@
 > site's architecture. Whenever you change the stack, hosting, build/deploy,
 > site structure, components/data, integrations, or security configuration,
 > **update the relevant section here in the same change** (see `CLAUDE.md`).
-> Last verified against the codebase: 2026-08-07.
+> Last verified against the codebase: 2026-06-20.
 
 ---
 
@@ -56,7 +56,7 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 ## 5. Repository, tooling & build
 
 - **Node:** `>=22.12` (CI runs Node **24**). **pnpm 11.0.4** (`packageManager`).
-- **Build output:** **11** static pages → `dist/`.
+- **Build output:** **10** static pages → `dist/`.
 - **Scripts:** `dev`, `build`, `preview`, `check` (astro check), `test` (vitest), `lint` (eslint), `format` (prettier), `a11y` (pa11y-ci).
 - **Quality gates:** `astro check` (target 0 errors / 0 warnings), ESLint 10 + `eslint-plugin-astro`, Prettier, pa11y-ci accessibility (`.pa11yci.json`).
 - ⚠️ **pnpm v11 gotcha:** installs need `--ignore-workspace --ignore-scripts`; invoke binaries via `./node_modules/.bin/` (astro, wrangler) because pnpm's strict-build policy otherwise silently exits. See `[[reference_pnpm_v11_ci_workaround]]`.
@@ -67,7 +67,6 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 /                  src/pages/index.astro          Home: hero, trust strip (+ .coop badge), services snapshot
 /about             src/pages/about.astro          History, vision/mission, 9 goals, 7 ICA principles, BOD, affiliations
 /services          src/pages/services.astro       Service catalog (10 services)
-/loan-calculator   src/pages/loan-calculator.astro Public client-side loan calculator (no personal data)
 /membership        src/pages/membership.astro     Eligibility check + Regular/Associate application forms
 /contact           src/pages/contact.astro        Contact form + Leaflet map
 /news/             src/pages/news/index.astro     News listing
@@ -81,11 +80,11 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 ## 7. Components, layouts & data
 
 - **Layouts:** `BaseLayout.astro` (head, SEO tags, Turnstile explicit-render loader), `PageLayout.astro`.
-- **Components (`src/components/`):** Header, Footer, Button, Eyebrow, GradientOrb, ServiceCard, BenefitCard, BodCard, NewsCard, Timeline, HistoryNarrative, MembershipProcess, MembershipForm, ContactForm, ContactMap, EligibilityCheck, FaqAccordion, LoanCalculator, CoopMarque (+ `eligibility-logic.ts`), `MemberLoginModal.astro` (global MemberFolio access pop-up — gateway link + how-to iframe — mounted in `PageLayout.astro`; interaction logic in `memberfolio-modal-logic.ts`).
+- **Components (`src/components/`):** Header, Footer, Button, Eyebrow, GradientOrb, ServiceCard, BenefitCard, BodCard, NewsCard, Timeline, HistoryNarrative, MembershipProcess, MembershipForm, ContactForm, ContactMap, EligibilityCheck, FaqAccordion, CoopMarque (+ `eligibility-logic.ts`), `MemberLoginModal.astro` (global MemberFolio access pop-up — gateway link + how-to iframe — mounted in `PageLayout.astro`; interaction logic in `memberfolio-modal-logic.ts`).
 - **Co-operative Marque (`CoopMarque.astro` + `public/coop-marque/`):** the official ICA Co-operative Marque, used as an *alignment device* per the ICA marque guidelines (no dependency added; PNG masters served statically). `CoopMarque.astro` is the **single compliant chokepoint** — it picks the correct unaltered master file by `variant` (marque / slogan / message) and `color`, prevents distortion (`object-contain`, derived height), reserves the exclusion-zone clear space, and emits alt text. Placed in the footer (white slogan lockup on navy), home trust strip + About affiliations (orange marque on light), and a light identity band after the About principles section (black key-message 1, "People together are stronger"). Light-bg colour = orange/black; dark/navy = white/reversed. (Note: the ICA `English_key_messages` zip ships a mislabeled `coop_white_message1_en.png` — it is actually the spring-green artwork, not white — so message 1 is used in black on a light background. Messages 2–7 white masters are correct.) **Never** recolor, stretch, box, or use plum. Design spec: `docs/superpowers/specs/2026-06-08-coop-marque-website-design.md`.
 - **Data (`src/data/`, typed TS):** `services` (10), `benefits`, `board`, `faq`, `goals` (9), `principles` (7), `stats`, `timeline`. `stats` and `timeline` auto-compute from the 1964 founding year.
 - **Content collection:** `src/content/news/` (MDX articles).
-- **Lib (`src/lib/`):** `brand.ts` (color/font tokens), `loanMath.ts` (bounded, dependency-free straight and diminishing-balance calculations for the public calculator), `pdf-fill.ts` (PDF coordinate maps for Regular + Associate forms), `seo.ts` (schema.org Organization + LocalBusiness builders).
+- **Lib (`src/lib/`):** `brand.ts` (color/font tokens), `pdf-fill.ts` (PDF coordinate maps for Regular + Associate forms), `seo.ts` (schema.org Organization + LocalBusiness builders).
 
 ## 8. Design system
 
@@ -98,7 +97,6 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 ## 9. Key features
 
 - **Membership applications:** client-side eligibility check (`EligibilityCheck` + `eligibility-logic.ts`) and in-browser PDF form-fill (`pdf-lib`) for **Regular** and **Associate** forms (templates in `public/forms/`).
-- **Public loan calculator:** client-only illustrative straight and diminishing-balance estimates (`LoanCalculator.astro` + `loanMath.ts`); user-entered assumptions are not sent to an API or analytics, and schedules are capped at 360 months.
 - **Forms email pipeline:** Turnstile (explicit-render, with `localhost` test-key fallback) → Worker → Resend; dual email (notification + auto-ack).
 - **News/blog:** MDX content collection + RSS feed.
 - **SEO:** Organization + LocalBusiness schema.org JSON-LD, sitemap, OG image (`og-default.svg`).
