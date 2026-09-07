@@ -260,6 +260,10 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <div class="cf-turnstile" data-sitekey="0x4AAAAAADX7ERaWq-wd4wB5"></div>
+  <label class="flex items-start gap-2 text-sm">
+    <input id="mf-consent" name="privacyConsent" type="checkbox" required class="mt-0.5" />
+    <span>I have read the <a href="/privacy" class="underline underline-offset-2 text-navy font-semibold" target="_blank">Privacy Notice</a> and consent to ISATUCMPC collecting and processing the personal information in this form — including sensitive personal information such as my civil status — to process my membership application. <span class="text-orange" aria-hidden="true">*</span></span>
+  </label>
   <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll generate your pre-filled application form (PDF) for download. You'll still need to print, sign, and bring it to the cooperative office for verification and PMES scheduling.</div>
   <Button type="submit" variant="primary" size="md" showArrow>Submit &amp; download my application</Button>
   <div id="mf-result" class="hidden p-3 rounded text-sm" role="status" aria-live="polite"></div>
@@ -368,6 +372,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         ['Beneficiary 3', [val('[data-field="ben3Name"]'), val('[data-field="ben3Dob"]'), val('[data-field="ben3Rel"]'), val('[data-field="ben3Age"]')].filter(Boolean).join(' / ')],
         ['Connection', val('[data-field="affiliation"]')],
         ['Notes', val('[data-field="notes"]')],
+        ['Privacy consent', (form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked ? 'Given — Privacy Notice v2026-08' : ''],
       ];
       const message = rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n') || '(no details)';
       (form!.elements.namedItem('message') as HTMLInputElement).value = message;
