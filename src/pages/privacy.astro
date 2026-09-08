@@ -16,7 +16,7 @@ const sections = [
 ];
 ---
 <PageLayout title="Privacy Notice" description="How the Iloilo Science and Technology University and Community Multi-Purpose Cooperative collects, uses, protects, and shares personal data across all its services, per RA 10173 (Data Privacy Act of 2012).">
-  <section class="relative bg-navy text-white overflow-hidden">
+  <section class="screen-hero relative bg-navy text-white overflow-hidden">
     <GradientOrb position="top-right" size="md" intensity={0.2} />
     <div class="container-page py-16 md:py-24 relative">
       <Eyebrow color="orange">Data privacy</Eyebrow>
@@ -27,6 +27,30 @@ const sections = [
 
   <section class="container-page py-16 md:py-20">
     <div class="max-w-3xl space-y-10 text-ink leading-relaxed">
+      <header class="print-letterhead" aria-hidden="true">
+        <div class="lh-rule"></div>
+        <div class="lh-body">
+          <img src="/logo.svg" alt="" class="lh-seal" />
+          <div class="lh-ident">
+            <p class="lh-name">Iloilo Science and Technology University and<br />Community Multi-Purpose Cooperative (ISATUCMPC)</p>
+            <div class="lh-meta">
+              <div>Burgos St., La Paz, Iloilo City<br />Phone: 330-2586<br />Registered with CDA Iloilo Extension Office</div>
+              <div>CDA Reg. No. 9520-06008210 &middot; CIN: 106060939<br />TIN: 005-440-349<br />isatucmpc1964@gmail.com &middot; www.isatucmpc.coop</div>
+            </div>
+          </div>
+        </div>
+        <div class="lh-rule"></div>
+        <p class="lh-eyebrow">ISATU and Community Multi-Purpose Cooperative</p>
+        <h2 class="lh-title">Privacy Notice</h2>
+        <p class="lh-sub">Cooperative-wide &middot; Version 2026-08 &middot; Effective 1 October 2026</p>
+      </header>
+
+      <p class="no-print text-right">
+        <button type="button" id="printNotice" class="border border-navy text-navy rounded px-4 py-2 text-sm font-semibold bg-white cursor-pointer">
+          Print this notice
+        </button>
+      </p>
+
       <div class="bg-brand-bg border-t-[3px] border-orange rounded-b-lg p-6">
         <p><strong class="font-display text-navy">Data Protection Officer (DPO):</strong> Elma E. Liza, Finance Head<br />
           Iloilo Science and Technology University<br />and Community Multi-Purpose Cooperative<br />
@@ -56,7 +80,7 @@ const sections = [
           <li><strong>Boarders</strong> — boarder profile and registration details, guardian contacts, and billing records.</li>
           <li><strong>Store and loyalty customers</strong> — sales transaction records; and, if you enroll in the student loyalty program, your name and student ID.</li>
           <li><strong>Visitors to our premises</strong> — video images recorded by our CCTV cameras at the main office, our stores, the canteen, the boarding house, and the laundry. See <a href="#cctv" class="text-navy underline underline-offset-2">Video surveillance</a> below.</li>
-          <li><strong>Website visitors</strong> — only what you type into our forms. See <a href="#website" class="text-navy underline underline-offset-2">This website specifically</a> below.</li>
+          <li><strong>Website visitors</strong> — only what you type into our forms. The detail is in <a href="#website" class="text-navy underline underline-offset-2">the section on this website</a> below.</li>
         </ul>
       </div>
 
@@ -144,6 +168,63 @@ const sections = [
       </div>
 
       <p class="text-sm text-slate"><em>Version 2026-08, adopted by Board Resolution No. 2026-08-48 and effective 1 October 2026. Changes to our privacy practices are made through a new version of this Notice, approved by the Data Protection Officer and posted on our website and at our offices. A printed copy is available from any staff member.</em></p>
+
+      <p class="print-foot" aria-hidden="true">ISATUCMPC &middot; Cooperative-wide Privacy Notice v2026-08 &middot; printed from isatucmpc.coop/privacy</p>
     </div>
   </section>
+
+  <style is:global>
+    .print-letterhead, .print-foot { display: none; }
+
+    @media print {
+      @page { size: A4; margin: 15mm 18mm; }
+
+      /* site chrome is not part of the notice */
+      header:not(.print-letterhead), footer, .screen-hero, .no-print,
+      nav[aria-label="On this page"] { display: none !important; }
+
+      html, body { background: #fff !important; }
+      body { font-size: 10pt; line-height: 1.45; color: #111827; }
+      section { padding: 0 !important; }
+      .container-page { max-width: none !important; padding: 0 !important; }
+      .max-w-3xl { max-width: none !important; }
+      /* Tailwind v4 spaces with margin-block-end on :not(:last-child), not margin-top. */
+      .space-y-10 > :not(:last-child) { margin-block-end: 11px !important; }
+
+      .print-letterhead { display: block; margin-bottom: 10px; }
+      .lh-rule { height: 2.5px; background: linear-gradient(to right, #010066, #FE9900, #FFC001); }
+      .lh-body { display: flex; align-items: center; gap: 14px; padding: 10px 0 8px; }
+      .lh-seal { width: 58px; height: 58px; flex: none; }
+      .lh-ident { flex: 1; }
+      .lh-name { margin: 0; font-family: Montserrat, sans-serif; font-size: 11.5pt; font-weight: 800;
+                 line-height: 1.22; color: #010066; text-transform: uppercase; }
+      .lh-meta { display: flex; justify-content: space-between; gap: 20px; margin-top: 5px;
+                 font-size: 7.6pt; line-height: 1.45; color: #6B7280; }
+      .lh-eyebrow { margin: 12px 0 2px; font-size: 7.6pt; font-weight: 700; letter-spacing: .12em;
+                    text-transform: uppercase; color: #FE9900; }
+      .lh-title { margin: 0; font-family: Montserrat, sans-serif; font-size: 17pt; font-weight: 800; color: #010066; }
+      .lh-sub { margin: 2px 0 0; font-size: 8.6pt; color: #6B7280; }
+
+      h2 { font-size: 11.5pt !important; margin: 10px 0 4px !important; color: #010066 !important;
+           border-bottom: 1.2px solid #E8E8E8; padding-bottom: 2px; break-after: avoid; }
+      h2 + p, h2 + ul, h2 + ol { break-before: avoid; }
+      p, li { orphans: 3; widows: 3; }
+      p { margin-top: 5px !important; }
+      ul, ol { margin-top: 5px !important; }
+      li { margin-bottom: 2px !important; }
+      a { color: #111827 !important; text-decoration: none !important; }
+
+      /* the DPO block keeps its emphasis in print, without a heavy fill */
+      .bg-brand-bg { background: #fff !important; border: 1px solid #E8E8E8;
+                     border-top: 2.5px solid #FE9900 !important; padding: 8px 11px !important;
+                     border-radius: 0 !important; break-inside: avoid; }
+
+      .print-foot { display: block; margin-top: 12px; padding-top: 6px;
+                    border-top: 1.2px solid #E8E8E8; font-size: 7.6pt; color: #6B7280; }
+    }
+  </style>
+
+  <script>
+    document.getElementById('printNotice')?.addEventListener('click', () => window.print());
+  </script>
 </PageLayout>
