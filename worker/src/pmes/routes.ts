@@ -7,6 +7,7 @@ import { drawQuiz, presentDraw } from './draw';
 import { findOpenSession } from './sessions';
 import { isPhMobile, isEmail, attemptLimit } from './validate';
 import { verifyTurnstile } from '../turnstile';
+import { submit } from './submit';
 
 export const pmes = new Hono<{ Bindings: PmesEnv }>();
 
@@ -97,5 +98,5 @@ pmes.post('/start', async c => {
   return c.json({ attemptId, attemptNo, deadlineAt, questions: presentDraw(bank, draw) });
 });
 
-// submit routes: see submit.ts
+pmes.route('/', submit); // submit routes: see submit.ts
 // admin routes: see admin.ts
