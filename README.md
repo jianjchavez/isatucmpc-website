@@ -5,6 +5,7 @@ Public-facing website for the **Iloilo Science and Technology University and Com
 - **Live:** https://isatucmpc.pages.dev (custom domain `isatucmpc.coop` pending DotCoop `.coop` eligibility — see `docs/T27-DNS-CUTOVER.md`)
 - **Stack:** Astro 6 + Tailwind 4 + MDX, deployed on Cloudflare Pages. Form submissions go to a Cloudflare Worker (`worker/`) + Resend, protected by Turnstile.
 - **Deploy:** automatic on push to `main` via GitHub Actions → Cloudflare Pages.
+- **PMES certification quiz** (`/pmes/*`, Worker `/api/pmes/*`, D1): design in `docs/superpowers/specs/2026-10-21-pmes-quiz-design.md`; owner-run deploy notes in `worker/README-pmes.md`.
 
 > This is a **standalone git repo** nested under the CoopSuite pnpm workspace. It is **not** part of the monorepo and must be worked on with the flags below.
 
