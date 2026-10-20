@@ -23,7 +23,7 @@ SITE_URL = "https://isatucmpc.coop"
 [[d1_databases]]
 binding = "PMES_DB"
 database_name = "isatucmpc-pmes"
-database_id = "TODO-after-wrangler-d1-create"
+database_id = "346b1372-a4bc-4d8e-9cfd-b5f08001c92f"
 migrations_dir = "migrations"
 
 # start: 10 per IP per 10 minutes is the spec; the binding only allows 10 s or
