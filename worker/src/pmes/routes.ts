@@ -8,6 +8,7 @@ import { findOpenSession } from './sessions';
 import { isPhMobile, isEmail, attemptLimit } from './validate';
 import { verifyTurnstile } from '../turnstile';
 import { submit } from './submit';
+import { admin } from './admin';
 
 export const pmes = new Hono<{ Bindings: PmesEnv }>();
 
@@ -98,5 +99,5 @@ pmes.post('/start', async c => {
   return c.json({ attemptId, attemptNo, deadlineAt, questions: presentDraw(bank, draw) });
 });
 
-pmes.route('/', submit); // submit routes: see submit.ts
-// admin routes: see admin.ts
+pmes.route('/', submit);
+pmes.route('/admin', admin);

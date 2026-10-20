@@ -2,7 +2,7 @@
 // Shapes mirror the admin API (spec §5, plan Task 10).
 
 export interface AdminSession {
-  id: string;
+  id: number | string;
   code: string;
   sessionDate: string;
   venue: string;

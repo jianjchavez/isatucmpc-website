@@ -202,7 +202,7 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
     }
     $('session-list').addEventListener('click', e => {
       const id = (e.target as HTMLElement).closest<HTMLElement>('[data-open]')?.dataset.open;
-      const s = sessions.find(x => x.id === id);
+      const s = sessions.find(x => String(x.id) === id);
       if (s) openSession(s);
     });
 
