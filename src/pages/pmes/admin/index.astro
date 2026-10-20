@@ -1,0 +1,323 @@
+---
+import PageLayout from '~/layouts/PageLayout.astro';
+const field = 'mt-1 block w-full rounded-lg border border-rule px-3 py-2.5 text-base focus:border-navy focus:outline-none';
+const btn = 'inline-flex items-center justify-center rounded-lg font-display font-bold text-sm px-4 py-2.5 cursor-pointer disabled:opacity-50';
+const primary = `${btn} bg-orange text-white hover:bg-orange/90`;
+const outline = `${btn} border-2 border-navy text-navy bg-white hover:bg-navy hover:text-white`;
+const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error hover:text-white`;
+---
+<PageLayout title="PMES Presenter" description="Presenter sign-in for PMES certification quiz sessions." noIndex>
+  <section class="container-page py-10 md:py-14">
+    <div id="pmes-admin" class="max-w-4xl mx-auto space-y-6" data-primary={primary} data-outline={outline} data-danger={danger}>
+      <p id="notice" role="status" class="hidden rounded-lg px-4 py-3 text-sm font-semibold"></p>
+
+      <!-- Sign-in -->
+      <form id="scr-signin" class="hidden max-w-md mx-auto space-y-4 bg-brand-bg border-t-[3px] border-orange rounded-b-lg p-6" autocomplete="on">
+        <h1 class="text-2xl">PMES Presenter</h1>
+        <p class="text-sm text-slate">Sign in with your full name as registered with the Education and Training Committee.</p>
+        <label class="block text-sm font-semibold">Full name
+          <input name="username" type="text" required autocomplete="username" class={field} />
+        </label>
+        <label class="block text-sm font-semibold">Password
+          <span class="relative block">
+            <input id="pw" name="password" type="password" required autocomplete="current-password" class={`${field} pr-16`} />
+            <button type="button" id="pw-toggle" aria-label="Show password" aria-pressed="false"
+              class="absolute right-2 top-1/2 -translate-y-1/2 mt-0.5 text-xs font-bold text-navy px-2 py-1 cursor-pointer">Show</button>
+          </span>
+        </label>
+        <button type="submit" class={`${primary} w-full`}>Sign in</button>
+      </form>
+
+      <!-- Session list -->
+      <div id="scr-list" class="hidden space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h1 class="text-2xl">PMES Sessions</h1>
+          <div class="flex gap-2">
+            <button type="button" id="new-session" class={primary}>New session</button>
+            <button type="button" id="signout" class={outline}>Sign out</button>
+          </div>
+        </div>
+        <ul id="session-list" class="divide-y divide-rule border border-rule rounded-lg"></ul>
+      </div>
+
+      <!-- Create session -->
+      <form id="scr-create" class="hidden max-w-md space-y-4 bg-brand-bg border-t-[3px] border-orange rounded-b-lg p-6">
+        <h1 class="text-2xl">New session</h1>
+        <label class="block text-sm font-semibold">Session date
+          <input name="sessionDate" type="date" required class={field} />
+        </label>
+        <label class="block text-sm font-semibold">Venue
+          <input name="venue" type="text" required class={field} />
+        </label>
+        <label class="block text-sm font-semibold">Presenter name
+          <input name="presenterName" type="text" required class={field} />
+        </label>
+        <label class="block text-sm font-semibold">Education and Training Committee Chair (BOD Vice-Chairperson)
+          <input name="chairName" type="text" required class={field} />
+        </label>
+        <label class="flex items-center gap-2 text-sm font-semibold">
+          <input name="timer" type="checkbox" checked class="h-4 w-4" /> 20-minute timer
+        </label>
+        <div class="flex gap-2">
+          <button type="submit" class={primary}>Create session</button>
+          <button type="button" id="create-cancel" class={outline}>Cancel</button>
+        </div>
+      </form>
+
+      <!-- Session view -->
+      <div id="scr-session" class="hidden space-y-6">
+        <button type="button" id="back" class="text-sm text-navy underline cursor-pointer">&larr; All sessions</button>
+        <div class="text-center bg-brand-bg border-t-[3px] border-orange rounded-b-lg py-8 px-4">
+          <p class="text-xs font-bold uppercase tracking-[.18em] text-orange">Session code</p>
+          <p id="s-code" class="font-display font-extrabold text-navy text-6xl md:text-8xl tracking-[.12em] leading-none mt-2 break-all"></p>
+          <p id="s-meta" class="mt-4 text-sm text-slate"></p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="refresh" class={outline}>Refresh</button>
+          <a id="csv-link" class={outline} href="#">Download CSV</a>
+          <a id="sheet-link" class={outline} href="#" target="_blank" rel="noopener">Results sheet</a>
+          <button type="button" id="close-session" class={danger}>Close session</button>
+        </div>
+        <div id="close-confirm" class="hidden rounded-lg border border-error p-4 space-y-3">
+          <p class="text-sm">Close this session? Attendees will no longer be able to start the quiz with this code.</p>
+          <div class="flex gap-2">
+            <button type="button" id="close-yes" class={danger}>Yes, close it</button>
+            <button type="button" id="close-no" class={outline}>Cancel</button>
+          </div>
+        </div>
+        <form id="override-form" class="hidden rounded-lg border border-navy p-4 space-y-3">
+          <p class="text-sm font-semibold">Allow another attempt for <span id="ov-who"></span></p>
+          <p class="text-xs text-slate">Grants three more attempts for this attendee in this session. Recorded with your name and shown on the results sheet.</p>
+          <label class="block text-sm font-semibold">Reason
+            <textarea name="reason" required rows="2" class={field}></textarea>
+          </label>
+          <div class="flex gap-2">
+            <button type="submit" class={primary}>Grant 3 attempts</button>
+            <button type="button" id="ov-cancel" class={outline}>Cancel</button>
+          </div>
+        </form>
+        <p id="totals" class="text-sm text-slate"></p>
+        <div class="overflow-x-auto -mx-6 md:mx-0">
+          <table class="min-w-full text-sm text-left whitespace-nowrap">
+            <thead class="bg-brand-bg text-xs uppercase tracking-wide text-slate">
+              <tr>
+                <th class="px-3 py-2">Name</th><th class="px-3 py-2">ID</th><th class="px-3 py-2">Attempts</th>
+                <th class="px-3 py-2">Best</th><th class="px-3 py-2">Result</th><th class="px-3 py-2">Certificate No.</th>
+                <th class="px-3 py-2">Email</th><th class="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody id="roster" class="divide-y divide-rule"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    import {
+      attemptsLabel, csvFilename, escapeHtml as esc, formatManila, idLabel, latestChairName, manilaDate,
+      resendAttemptId, resultLabel, rosterTotals, type AdminSession, type RosterRow,
+    } from '~/components/pmes-admin-logic';
+
+    const API = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/pmes/admin';
+    const root = document.getElementById('pmes-admin')!;
+    const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+    const screens = ['scr-signin', 'scr-list', 'scr-create', 'scr-session'];
+
+    let presenterName = sessionStorage.getItem('pmesPresenter') ?? '';
+    let sessions: AdminSession[] = [];
+    let current: AdminSession | null = null;
+    let timer: number | undefined;
+
+    function show(id: string) {
+      screens.forEach(s => $(s).classList.toggle('hidden', s !== id));
+      if (id !== 'scr-session') { clearInterval(timer); timer = undefined; }
+    }
+    function notify(text: string, ok = false) {
+      const n = $('notice');
+      n.textContent = text;
+      n.className = `rounded-lg px-4 py-3 text-sm font-semibold ${ok ? 'bg-success/15 text-ink' : 'bg-error/10 text-error'}`;
+      n.classList.toggle('hidden', !text);
+    }
+
+    class Unauthorized extends Error {}
+    async function api<T>(path: string, body?: unknown): Promise<T> {
+      const res = await fetch(API + path, {
+        method: body === undefined ? 'GET' : 'POST',
+        credentials: 'include',
+        headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      if (res.status === 401) { show('scr-signin'); throw new Unauthorized('Please sign in.'); }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `request-failed-${res.status}`);
+      return json as T;
+    }
+    async function run(fn: () => Promise<void>) {
+      try { notify(''); await fn(); } catch (e) { notify((e as Error).message); }
+    }
+
+    // Sign-in
+    $('pw-toggle').addEventListener('click', () => {
+      const pw = $<HTMLInputElement>('pw');
+      const shown = pw.type === 'text';
+      pw.type = shown ? 'password' : 'text';
+      $('pw-toggle').textContent = shown ? 'Show' : 'Hide';
+      $('pw-toggle').setAttribute('aria-label', shown ? 'Show password' : 'Hide password');
+      $('pw-toggle').setAttribute('aria-pressed', String(!shown));
+    });
+    $('scr-signin').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target as HTMLFormElement);
+      run(async () => {
+        const r = await api<{ presenter: { id: string; displayName: string } }>('/login', {
+          username: String(fd.get('username')).trim(), password: fd.get('password'),
+        }).catch(err => { throw err instanceof Unauthorized ? new Error('Invalid name or password.') : err; });
+        presenterName = r.presenter.displayName;
+        sessionStorage.setItem('pmesPresenter', presenterName);
+        (e.target as HTMLFormElement).reset();
+        await loadSessions();
+      });
+    });
+    $('signout').addEventListener('click', () => run(async () => {
+      await api('/logout', {});
+      sessionStorage.removeItem('pmesPresenter');
+      show('scr-signin');
+    }));
+
+    // Session list
+    async function loadSessions() {
+      sessions = (await api<{ sessions: AdminSession[] }>('/sessions')).sessions;
+      $('session-list').innerHTML = sessions.length
+        ? sessions.map(s => `
+          <li class="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <div>
+              <p class="font-display font-bold text-navy">${esc(s.code)} <span class="ml-2 text-xs font-semibold uppercase ${s.status === 'open' ? 'text-success' : 'text-slate'}">${esc(s.status)}</span></p>
+              <p class="text-sm text-slate">${esc(s.sessionDate)} &middot; ${esc(s.venue)}</p>
+            </div>
+            <button type="button" data-open="${esc(s.id)}" class="${root.dataset.outline}">Open</button>
+          </li>`).join('')
+        : '<li class="px-4 py-6 text-sm text-slate">No sessions yet.</li>';
+      show('scr-list');
+    }
+    $('session-list').addEventListener('click', e => {
+      const id = (e.target as HTMLElement).closest<HTMLElement>('[data-open]')?.dataset.open;
+      const s = sessions.find(x => x.id === id);
+      if (s) openSession(s);
+    });
+
+    // Create
+    $('new-session').addEventListener('click', () => {
+      const f = $<HTMLFormElement>('scr-create');
+      f.reset();
+      (f.elements.namedItem('sessionDate') as HTMLInputElement).value = manilaDate();
+      (f.elements.namedItem('presenterName') as HTMLInputElement).value = presenterName;
+      (f.elements.namedItem('chairName') as HTMLInputElement).value = latestChairName(sessions);
+      show('scr-create');
+    });
+    $('create-cancel').addEventListener('click', () => show('scr-list'));
+    $('scr-create').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target as HTMLFormElement);
+      run(async () => {
+        const s = await api<AdminSession>('/sessions', {
+          sessionDate: fd.get('sessionDate'), venue: String(fd.get('venue')).trim(),
+          presenterName: String(fd.get('presenterName')).trim(), chairName: String(fd.get('chairName')).trim(),
+          timerMinutes: fd.get('timer') ? 20 : 0,
+        });
+        sessions = [s, ...sessions];
+        openSession(s);
+      });
+    });
+
+    // Session view
+    function renderHeader() {
+      const s = current!;
+      $('s-code').textContent = s.code;
+      $('s-meta').textContent = `${s.sessionDate} · ${s.venue} · ${s.presenterName} · ${s.timerMinutes ? `${s.timerMinutes}-minute timer` : 'no timer'} · ${s.status}`;
+      $<HTMLAnchorElement>('csv-link').href = `${API}/sessions/${s.id}/roster.csv`;
+      $<HTMLAnchorElement>('csv-link').download = csvFilename(s);
+      $<HTMLAnchorElement>('sheet-link').href = `/pmes/admin/results-sheet/?id=${encodeURIComponent(s.id)}`;
+      $('close-session').classList.toggle('hidden', s.status !== 'open');
+    }
+    function openSession(s: AdminSession) {
+      current = s;
+      $('close-confirm').classList.add('hidden');
+      $('override-form').classList.add('hidden');
+      renderHeader();
+      $('roster').innerHTML = '';
+      show('scr-session');
+      run(loadRoster);
+      timer = window.setInterval(() => { if (current?.status === 'open') run(loadRoster); }, 30_000);
+    }
+    async function loadRoster() {
+      const r = await api<{ session: AdminSession; rows: RosterRow[] }>(`/sessions/${current!.id}/roster`);
+      current = r.session; renderHeader();
+      const t = rosterTotals(r.rows);
+      $('totals').textContent = `Attended ${t.attended} · Passed ${t.passed} · Failed ${t.failed} · updated ${formatManila(new Date().toISOString()).slice(11)}`;
+      $('roster').innerHTML = r.rows.length
+        ? r.rows.map(row => {
+          const resend = resendAttemptId(row);
+          return `
+          <tr>
+            <td class="px-3 py-2 font-semibold">${esc(row.fullName)}${row.overrides.length ? ' <sup title="Another attempt allowed">¹</sup>' : ''}</td>
+            <td class="px-3 py-2">${esc(idLabel(row))}</td>
+            <td class="px-3 py-2">${esc(attemptsLabel(row))}</td>
+            <td class="px-3 py-2">${esc(row.bestScore ?? '')}</td>
+            <td class="px-3 py-2 ${row.passed ? 'text-success font-bold' : ''}">${esc(resultLabel(row))}</td>
+            <td class="px-3 py-2">${esc(row.certificateNo ?? '')}</td>
+            <td class="px-3 py-2">${esc(row.emailStatus ?? '')}${resend ? ` <button type="button" data-resend="${esc(resend)}" class="ml-1 text-xs font-bold text-navy underline cursor-pointer">Resend</button>` : ''}</td>
+            <td class="px-3 py-2"><button type="button" data-override="${esc(row.idType)}:${esc(row.idNumber)}" data-name="${esc(row.fullName)}" class="text-xs font-bold text-navy underline cursor-pointer">Allow another attempt</button></td>
+          </tr>`;
+        }).join('')
+        : '<tr><td colspan="8" class="px-3 py-6 text-slate">No attendees yet.</td></tr>';
+    }
+    $('refresh').addEventListener('click', () => run(loadRoster));
+    $('back').addEventListener('click', () => run(loadSessions));
+
+    $('close-session').addEventListener('click', () => $('close-confirm').classList.remove('hidden'));
+    $('close-no').addEventListener('click', () => $('close-confirm').classList.add('hidden'));
+    $('close-yes').addEventListener('click', () => run(async () => {
+      await api(`/sessions/${current!.id}/close`, {});
+      $('close-confirm').classList.add('hidden');
+      await loadRoster();
+      notify('Session closed.', true);
+    }));
+
+    let overrideTarget: { idType: string; idNumber: string } | null = null;
+    $('roster').addEventListener('click', e => {
+      const el = e.target as HTMLElement;
+      const resend = el.dataset.resend;
+      if (resend) {
+        run(async () => {
+          const r = await api<{ emailStatus: string }>(`/sessions/${current!.id}/resend-email`, { attemptId: resend });
+          notify(`Email ${r.emailStatus}.`, r.emailStatus !== 'failed');
+          await loadRoster();
+        });
+      }
+      const ov = el.dataset.override;
+      if (ov) {
+        const [idType, idNumber] = ov.split(/:(.*)/s);
+        overrideTarget = { idType, idNumber };
+        $('ov-who').textContent = `${el.dataset.name} (${idLabel({ idType: idType as RosterRow['idType'], idNumber })})`;
+        $<HTMLFormElement>('override-form').reset();
+        $('override-form').classList.remove('hidden');
+        $('override-form').scrollIntoView({ block: 'nearest' });
+      }
+    });
+    $('ov-cancel').addEventListener('click', () => $('override-form').classList.add('hidden'));
+    $('override-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const reason = String(new FormData(e.target as HTMLFormElement).get('reason')).trim();
+      run(async () => {
+        const r = await api<{ extraAttempts: number }>(`/sessions/${current!.id}/override`, { ...overrideTarget, reason });
+        $('override-form').classList.add('hidden');
+        await loadRoster();
+        notify(`${r.extraAttempts} more attempts allowed.`, true);
+      });
+    });
+
+    // Boot: a valid cookie goes straight to the list; 401 shows sign-in.
+    run(loadSessions).catch(() => {});
+  </script>
+</PageLayout>
