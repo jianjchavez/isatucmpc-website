@@ -1,0 +1,114 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PmesLetterhead from '~/components/PmesLetterhead.astro';
+import PmesDocFooter from '~/components/PmesDocFooter.astro';
+import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
+---
+<BaseLayout title="PMES Session Results Sheet" description="Results sheet for a PMES certification quiz session." noIndex>
+  <main id="main" class="sheet">
+    <p class="no-print toolbar">
+      <a href="/pmes/admin/">&larr; Presenter</a>
+      <button type="button" id="print">Print</button>
+    </p>
+    <PmesLetterhead tier="lean" />
+    <h1 class="title">PMES Session Results Sheet</h1>
+    <p id="status" class="status">Loading&hellip;</p>
+    <div id="doc" hidden>
+      <dl class="meta">
+        <div><dt>Session date</dt><dd id="m-date"></dd></div>
+        <div><dt>Venue</dt><dd id="m-venue"></dd></div>
+        <div><dt>Session code</dt><dd id="m-code"></dd></div>
+        <div><dt>Presenter</dt><dd id="m-presenter"></dd></div>
+      </dl>
+      <table class="roster">
+        <thead>
+          <tr><th>No.</th><th>Name</th><th>ID</th><th>Attempts</th><th>Best score</th><th>Result</th><th>Certificate No.</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="footnotes" class="footnotes"></div>
+      <p id="totals" class="totals"></p>
+      <div class="sigs">
+        <div class="sig"><p id="sig-presenter" class="sig-name"></p><p class="sig-caption">{PMES_PRESENTER_CAPTION}</p></div>
+        <div class="sig"><p id="sig-chair" class="sig-name"></p><p class="sig-caption">{PMES_CHAIR_CAPTION}</p></div>
+      </div>
+    </div>
+    <PmesDocFooter pageNumbers validityLine />
+  </main>
+
+  <style>
+    .sheet { max-width: 174mm; margin: 0 auto; padding: 16px; font-family: 'Open Sans', system-ui, sans-serif; font-size: 10pt; color: #111827; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin: 0 0 12px; font-size: 14px; }
+    .toolbar button { border: 1px solid #010066; color: #010066; background: #fff; border-radius: 6px; padding: 6px 16px; font-weight: 600; cursor: pointer; }
+    .title { margin: 14px 0 8px; font-family: 'Montserrat', system-ui, sans-serif; font-size: 15pt; font-weight: 800; color: #010066; letter-spacing: -0.01em; }
+    .status { color: #6B7280; }
+    .meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 16px; margin: 0 0 10px; font-size: 9.5pt; }
+    .meta dt { color: #6B7280; font-size: 8pt; text-transform: uppercase; letter-spacing: .08em; }
+    .meta dd { margin: 0; font-weight: 600; }
+    .roster { width: 100%; border-collapse: collapse; font-size: 9pt; }
+    .roster th, .roster td { border: 1px solid #E8E8E8; padding: 4px 6px; text-align: left; vertical-align: top; }
+    .roster th { background: #F5F5F5; font-family: 'Montserrat', system-ui, sans-serif; font-size: 8pt; text-transform: uppercase; letter-spacing: .05em; color: #010066; }
+    .roster tr { break-inside: avoid; }
+    .roster thead { display: table-header-group; }
+    .footnotes { margin-top: 6px; font-size: 8pt; color: #6B7280; }
+    .footnotes p { margin: 0; line-height: 1.5; }
+    .totals { margin: 10px 0 0; font-weight: 600; }
+    .sigs { display: flex; justify-content: space-between; gap: 32px; margin-top: 44px; break-inside: avoid; }
+    .sig { flex: 1; max-width: 70mm; }
+    .sig-name { margin: 0; padding-top: 4px; border-top: 1px solid #111827; font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; min-height: 1.4em; }
+    .sig-caption { margin: 2px 0 0; font-size: 8pt; color: #6B7280; line-height: 1.4; }
+    .sheet :global(.doc-footer) { margin-top: 28px; }
+    @page { size: A4; margin: 15mm 18mm 26mm; }
+    @media print {
+      .no-print { display: none !important; }
+      .sheet { max-width: none; padding: 0; }
+    }
+  </style>
+
+  <script>
+    import {
+      attemptsLabel, escapeHtml as esc, formatManila, idLabel, resultLabel, rosterTotals, sortRowsByName,
+      type AdminSession, type RosterRow,
+    } from '~/components/pmes-admin-logic';
+
+    const API = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/pmes/admin';
+    const $ = (id: string) => document.getElementById(id)!;
+    const id = new URLSearchParams(location.search).get('id');
+
+    document.getElementById('print')?.addEventListener('click', () => window.print());
+
+    async function load() {
+      if (!id) throw new Error('No session selected. Open a session from the presenter page.');
+      const res = await fetch(`${API}/sessions/${encodeURIComponent(id)}/roster`, { credentials: 'include' });
+      if (res.status === 401) throw new Error('Please sign in on the presenter page first, then reopen this sheet.');
+      if (!res.ok) throw new Error(`Could not load the roster (${res.status}).`);
+      const { session, rows } = (await res.json()) as { session: AdminSession; rows: RosterRow[] };
+
+      $('m-date').textContent = session.sessionDate;
+      $('m-venue').textContent = session.venue;
+      $('m-code').textContent = session.code;
+      $('m-presenter').textContent = session.presenterName;
+      $('sig-presenter').textContent = session.presenterName;
+      $('sig-chair').textContent = session.chairName;
+
+      const sorted = sortRowsByName(rows);
+      $('rows').innerHTML = sorted.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${esc(r.fullName)}${r.overrides.length ? '<sup>¹</sup>' : ''}</td>
+          <td>${esc(idLabel(r))}</td>
+          <td>${esc(attemptsLabel(r))}</td>
+          <td>${esc(r.bestScore ?? '')}</td>
+          <td>${esc(resultLabel(r))}</td>
+          <td>${esc(r.certificateNo ?? '')}</td>
+        </tr>`).join('');
+      $('footnotes').innerHTML = sorted.flatMap(r => r.overrides.map(o =>
+        `<p>¹ ${esc(r.fullName)}: another attempt allowed — ${esc(o.reason)} (${esc(o.presenterName)}, ${esc(formatManila(o.createdAt))})</p>`)).join('');
+      const t = rosterTotals(rows);
+      $('totals').textContent = `Attended: ${t.attended} · Passed: ${t.passed} · Failed: ${t.failed}`;
+      $('status').hidden = true;
+      $('doc').hidden = false;
+    }
+    load().catch(e => { $('status').textContent = (e as Error).message; });
+  </script>
+</BaseLayout>
