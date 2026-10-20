@@ -13,6 +13,11 @@ export type Question = {
 };
 export type Bank = { sections: Section[]; questions: Question[] };
 
+/** Every question regardless of status: an already-drawn attempt must score the same whatever happens to the bank later. */
+export function allQuestions(): Question[] {
+  return data.questions as Question[];
+}
+
 export function loadBank(status: 'approved' | 'draft'): Bank {
   const questions = (data.questions as Question[]).filter(q => q.status === status);
   return { sections: data.sections, questions };

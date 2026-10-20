@@ -68,8 +68,8 @@ Certificate and verification
 - `GET /api/pmes/certificate?no=&key=` → full certificate record (for the print page).
 - `GET /api/pmes/verify?no=` → public subset.
 
-Admin (cookie `pmes_admin`, HMAC-signed with `PMES_SESSION_SECRET`, 12-hour expiry, `HttpOnly; Secure; SameSite=Lax`)
-- `POST /api/pmes/admin/login` `{ username, password }`; `POST /api/pmes/admin/logout`.
+Admin (presenter session = HMAC-signed bearer token (12 h) returned by login, sent as `Authorization: Bearer`; stored by the page in sessionStorage; no cookies, so it works in Safari and private windows; signed with `PMES_SESSION_SECRET`)
+- `POST /api/pmes/admin/login` `{ username, password }` → `{ presenter: { id, displayName }, token, expiresAt }`; logout is client-side (the page drops the token).
 - `GET /api/pmes/admin/sessions`; `POST /api/pmes/admin/sessions` `{ sessionDate, venue, presenterName, chairName, timerMinutes: 20|0 }` → `{ id, code, ... }`; `POST /api/pmes/admin/sessions/:id/close`.
 - `POST /api/pmes/admin/sessions/:id/override` `{ idType, idNumber, reason }` → `{ extraAttempts: 3 }`; recorded in `pmes_overrides` with the presenter id.
 - `GET /api/pmes/admin/sessions/:id/roster` → rows per identity with all attempts; `GET /api/pmes/admin/sessions/:id/roster.csv`.
@@ -139,14 +139,14 @@ Both templates follow the `isatucmpc-letterhead` skill exactly: the organization
 
 Certificate of Completion (Tier 0, seal, ornate border, title 22pt): "This certifies that **[Full name]** ([Application No. / Member No.]) has completed the Pre-Membership Education Seminar held on [date] at [venue] and passed the certification quiz with a score of [n] of 20 ([%])." Certificate No., session code, issued date-time, two signature lines: "[Presenter name], Presenter, Education and Training Committee" and "[Name], Chair, Education and Training Committee / Vice-Chairperson, Board of Directors" (name from the session's `chair_name`, entered by the presenter when the session is created). The Session Results Sheet carries the same two signature lines. Footer: website QR at 12 mm bottom-right, verification URL, "This document is not valid without the signature of the authorized signatory."
 
-Session Results Sheet (Tier 1, lean header, no seal): session date, venue, code, presenter; table of attendees sorted by name: No., Name, ID, Attempts, Best score, Result, Certificate No.; totals (attended, passed, failed); two signature lines as above; `Page X of Y`.
+Session Results Sheet (Tier 1, lean header, no seal): session date, venue, code, presenter; table of attendees sorted by name: No., Name, ID, Attempts, Best score, Result, Certificate No.; totals (attended, passed, failed); two signature lines as above.
 
 ## 10. Security and privacy
 
-- Turnstile on `start`. Rate limit `start` per IP with the Workers rate-limit binding `PMES_RL` (10 per 60 s window; the binding offers only 10 s or 60 s windows, and the attempt limit bounds the ten-minute budget).
+- Turnstile on `start`. Rate limit `start` per IP + identity (`ip:idType:idNumber`, so one venue NAT does not trip it; Turnstile covers bots) with the Workers rate-limit binding `PMES_RL` (10 per 60 s window; the binding offers only 10 s or 60 s windows, and the attempt limit bounds the ten-minute budget).
 - Accepted tradeoff (v1): identity is self-declared, so anyone who knows the session code and another attendee's ID number could use up that attendee's attempts. The session code is only announced in the room, the roster shows every attempt with its time, and the presenter's override restores attempts; a pre-registered roster or one-time code is a v2 option if this is ever abused.
 - Correct answers never leave the server; the draw is server-side; scoring is server-side.
-- Admin cookie HMAC-signed, `HttpOnly; Secure; SameSite=None` (the site calls the Worker cross-site; every POST is gated by the Origin allowlist); passwords PBKDF2; no self-registration; sessions can be closed early.
+- Admin: presenter session = HMAC-signed bearer token (12 h) returned by login, sent as `Authorization: Bearer`; stored by the page in sessionStorage; no cookies, so it works in Safari and private windows (every POST is still gated by the Origin allowlist); passwords PBKDF2; no self-registration; sessions can be closed early.
 - Certificate page needs the per-certificate key; the public verify endpoint returns no contact details.
 - Privacy consent text: "I consent to ISATUCMPC processing my name, application or member number, mobile number, email and quiz answers for membership processing, under the Data Privacy Act of 2012 and the cooperative's privacy notice." Stored as `consent_at`.
 - Content Security Policy in `public/_headers` must allow the Worker origin and Turnstile, as the forms already do.

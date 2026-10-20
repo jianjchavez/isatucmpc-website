@@ -1,7 +1,7 @@
 // POST /submit, GET /certificate, GET /verify (spec §5; plan Tasks 7 and 8).
 import { Hono } from 'hono';
 import type { PmesEnv } from './env';
-import { loadBank } from './bank';
+import { loadBank, allQuestions } from './bank';
 import type { Draw } from './draw';
 import { scoreAttempt } from './score';
 import { issueCertificate, getCertificate, getVerification } from './certificates';
@@ -13,11 +13,7 @@ export const submit = new Hono<{ Bindings: PmesEnv }>();
 const GRACE_MS = 120e3;
 const NO_RETAKES = 'Please see the Education and Training Committee. The presenter can allow another attempt.';
 
-/** Every question regardless of status: a draw made under 'draft' must still score after the bank is approved. */
-function fullBank() {
-  const approved = loadBank('approved');
-  return { sections: approved.sections, questions: [...approved.questions, ...loadBank('draft').questions] };
-}
+const fullBank = () => ({ sections: loadBank('approved').sections, questions: allQuestions() });
 
 submit.post('/submit', async c => {
   type Body = { attemptId?: unknown; answers?: unknown };

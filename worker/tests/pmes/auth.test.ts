@@ -5,7 +5,7 @@ import {
   hashPassword,
   verifyPassword,
   signSession,
-  verifySessionCookie,
+  verifySessionToken,
   findPresenterByName,
   requirePresenter,
   type PresenterApp,
@@ -44,24 +44,24 @@ describe('passwords', () => {
   });
 });
 
-describe('session cookie', () => {
+describe('session token', () => {
   it('verifies before expiry and returns null after', async () => {
     const value = await signSession(1, future, SECRET);
     expect(value).toMatch(/^1\.\d+\.[0-9a-f]{64}$/);
-    expect(await verifySessionCookie(value, SECRET, '2026-10-21T00:00:00Z')).toEqual({ presenterId: 1 });
-    expect(await verifySessionCookie(value, SECRET, '2027-01-01T00:00:00Z')).toBeNull();
-    expect(await verifySessionCookie(await signSession(1, past, SECRET), SECRET, '2026-10-21T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken(value, SECRET, '2026-10-21T00:00:00Z')).toEqual({ presenterId: 1 });
+    expect(await verifySessionToken(value, SECRET, '2027-01-01T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken(await signSession(1, past, SECRET), SECRET, '2026-10-21T00:00:00Z')).toBeNull();
   });
 
   it('returns null for tampered, wrong-secret or malformed values', async () => {
     const value = await signSession(1, future, SECRET);
     const [id, exp, sig] = value.split('.');
-    expect(await verifySessionCookie(`2.${exp}.${sig}`, SECRET, '2026-10-21T00:00:00Z')).toBeNull();
-    expect(await verifySessionCookie(`${id}.${future + 1000}.${sig}`, SECRET, '2026-10-21T00:00:00Z')).toBeNull();
-    expect(await verifySessionCookie(value, 'other-secret', '2026-10-21T00:00:00Z')).toBeNull();
-    expect(await verifySessionCookie('garbage', SECRET, '2026-10-21T00:00:00Z')).toBeNull();
-    expect(await verifySessionCookie(`${id}.${exp}.zz`, SECRET, '2026-10-21T00:00:00Z')).toBeNull();
-    expect(await verifySessionCookie('', SECRET, '2026-10-21T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken(`2.${exp}.${sig}`, SECRET, '2026-10-21T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken(`${id}.${future + 1000}.${sig}`, SECRET, '2026-10-21T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken(value, 'other-secret', '2026-10-21T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken('garbage', SECRET, '2026-10-21T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken(`${id}.${exp}.zz`, SECRET, '2026-10-21T00:00:00Z')).toBeNull();
+    expect(await verifySessionToken('', SECRET, '2026-10-21T00:00:00Z')).toBeNull();
   });
 });
 
@@ -81,23 +81,25 @@ describe('requirePresenter', () => {
   const app = new Hono<PresenterApp>();
   app.get('/me', requirePresenter, c => c.json(c.var.presenter));
   const testEnv = { ...env, PMES_SESSION_SECRET: SECRET };
-  const get = (cookie?: string) => app.request('/me', { headers: cookie ? { Cookie: cookie } : {} }, testEnv);
+  const get = (token?: string) => app.request('/me', { headers: token ? { Authorization: `Bearer ${token}` } : {} }, testEnv);
 
-  it('returns 401 without a cookie', async () => {
+  it('returns 401 without an Authorization header', async () => {
     const res = await get();
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: 'unauthorized' });
   });
 
-  it('sets c.var.presenter for a valid cookie', async () => {
-    const res = await get(`pmes_admin=${await signSession(1, future, SECRET)}`);
+  it('sets c.var.presenter for a valid bearer token', async () => {
+    const res = await get(await signSession(1, future, SECRET));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ id: 1, displayName: 'Juan Dela Cruz' });
   });
 
-  it('returns 401 for an expired cookie, a tampered cookie, or an inactive presenter', async () => {
-    expect((await get(`pmes_admin=${await signSession(1, past, SECRET)}`)).status).toBe(401);
-    expect((await get(`pmes_admin=1.${future}.deadbeef`)).status).toBe(401);
-    expect((await get(`pmes_admin=${await signSession(2, future, SECRET)}`)).status).toBe(401);
+  it('returns 401 for an expired token, a tampered token, a cookie, or an inactive presenter', async () => {
+    expect((await get(await signSession(1, past, SECRET))).status).toBe(401);
+    expect((await get(`1.${future}.deadbeef`)).status).toBe(401);
+    expect((await get(await signSession(2, future, SECRET))).status).toBe(401);
+    const cookie = await app.request('/me', { headers: { Cookie: `pmes_admin=${await signSession(1, future, SECRET)}` } }, testEnv);
+    expect(cookie.status).toBe(401);
   });
 });

@@ -101,6 +101,7 @@ describe('certificates', () => {
       idNumber: 'A-1',
       sessionDate: '2026-10-24',
       score: 18,
+      total: 20,
       passed: true,
       presenterName: 'Presenter Name',
       issuedAt: '2026-10-24T01:15:00Z',

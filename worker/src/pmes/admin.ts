@@ -1,16 +1,15 @@
 // Presenter (admin) routes, mounted at /api/pmes/admin (spec §3.1, §5 Admin).
 import { Hono } from 'hono';
-import { setCookie, deleteCookie } from 'hono/cookie';
-import { ADMIN_COOKIE, findPresenterByName, hashPassword, verifyPassword, signSession, requirePresenter, type PresenterApp } from './auth';
+import { findPresenterByName, hashPassword, verifyPassword, signSession, requirePresenter, type PresenterApp } from './auth';
 import { createSession, closeSession, type SessionRow } from './sessions';
 import { attemptLimit } from './validate';
 import { sendResultEmails, type AttemptRow } from './email';
+import { issueCertificate } from './certificates';
 import { buildRoster, rosterCsv } from './roster';
 
 export const admin = new Hono<PresenterApp>();
 
 const SESSION_HOURS = 12;
-const cookieOpts = { httpOnly: true, secure: true, sameSite: 'None' as const, path: '/api/pmes/admin' };
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 const json = (c: { req: { json<T>(): Promise<T> } }) => c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
 // Verified against when the presenter name is unknown, so a miss costs the same time as a wrong password.
@@ -35,14 +34,9 @@ admin.post('/login', async c => {
   const presenter = await findPresenterByName(c.env.PMES_DB, username);
   const { hash, salt } = presenter ? { hash: presenter.password_hash, salt: presenter.password_salt } : await dummy;
   if (!(await verifyPassword(password, hash, salt)) || !presenter) return c.json({ error: 'invalid-login' }, 401);
-  const value = await signSession(presenter.id, Date.now() + SESSION_HOURS * 3600e3, c.env.PMES_SESSION_SECRET);
-  setCookie(c, ADMIN_COOKIE, value, { ...cookieOpts, maxAge: SESSION_HOURS * 3600 });
-  return c.json({ presenter: { id: presenter.id, displayName: presenter.display_name } });
-});
-
-admin.post('/logout', c => {
-  deleteCookie(c, ADMIN_COOKIE, cookieOpts);
-  return c.json({ ok: true });
+  const expiresAt = Date.now() + SESSION_HOURS * 3600e3;
+  const token = await signSession(presenter.id, expiresAt, c.env.PMES_SESSION_SECRET);
+  return c.json({ presenter: { id: presenter.id, displayName: presenter.display_name }, token, expiresAt });
 });
 
 admin.use('/sessions', requirePresenter);
@@ -105,11 +99,13 @@ admin.post('/sessions/:id/resend-email', async c => {
     .bind(str((await json(c)).attemptId), s.id)
     .first<AttemptRow>();
   if (!attempt) return c.json({ error: 'unknown-attempt' }, 404);
-  const [used, limit, certificate] = await Promise.all([
+  const [used, limit, existing] = await Promise.all([
     db.prepare('SELECT COUNT(*) AS n FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ?').bind(s.id, attempt.id_type, attempt.id_number).first<{ n: number }>(),
     attemptLimit(db, s.id, attempt.id_type, attempt.id_number, Number(c.env.PMES_MAX_ATTEMPTS) || 3),
     db.prepare('SELECT no, key FROM pmes_certificates WHERE attempt_id = ?').bind(attempt.id).first<{ no: string; key: string }>(),
   ]);
+  // A pass whose certificate issue failed (or never ran) is issued here, so the resend can carry it.
+  const certificate = existing ?? (attempt.passed === 1 ? await issueCertificate(db, attempt.id, new Date().toISOString()) : null);
   const result = { score: attempt.score!, total: JSON.parse(attempt.draw_json).length, passed: attempt.passed === 1, retakesLeft: Math.max(0, limit - (used?.n ?? 0)) };
   const emailStatus = await sendResultEmails(c.env, attempt, result, certificate);
   if (certificate) await db.prepare('UPDATE pmes_certificates SET email_status = ? WHERE no = ?').bind(emailStatus, certificate.no).run();

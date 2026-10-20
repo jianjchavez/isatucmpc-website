@@ -23,6 +23,7 @@ export type Verification = {
   idNumber: string;
   sessionDate: string;
   score: number;
+  total: number;
   passed: true;
   presenterName: string;
   issuedAt: string;
@@ -111,6 +112,7 @@ export async function getVerification(db: D1Database, no: string): Promise<Verif
     idNumber: maskId(r.id_number),
     sessionDate: r.session_date,
     score: r.score,
+    total: JSON.parse(r.draw_json).length,
     passed: true,
     presenterName: r.presenter_name,
     issuedAt: r.issued_at,

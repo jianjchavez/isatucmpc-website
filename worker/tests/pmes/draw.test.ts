@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { loadBank } from '../../src/pmes/bank';
+import { loadBank, allQuestions } from '../../src/pmes/bank';
+import data from '../../../src/data/pmes-questions.json';
 import { drawQuiz, presentDraw } from '../../src/pmes/draw';
 
 const bank = loadBank('draft');
@@ -10,6 +11,21 @@ describe('loadBank', () => {
     expect(bank.sections).toHaveLength(10);
     expect(bank.questions.length).toBeGreaterThanOrEqual(40);
     expect(loadBank('approved').questions).toHaveLength(0);
+  });
+});
+
+describe('allQuestions', () => {
+  it('ignores status, so a drawn attempt still scores after its question is retired', () => {
+    const q = data.questions[0];
+    const was = q.status;
+    q.status = 'retired';
+    try {
+      expect(loadBank('draft').questions.find(x => x.id === q.id)).toBeUndefined();
+      expect(allQuestions().find(x => x.id === q.id)).toBeDefined();
+      expect(allQuestions()).toHaveLength(data.questions.length);
+    } finally {
+      q.status = was;
+    }
   });
 });
 

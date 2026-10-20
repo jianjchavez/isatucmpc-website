@@ -1,9 +1,7 @@
-// Presenter passwords and the signed admin cookie (spec §5 admin, §6 passwords). WebCrypto only.
+// Presenter passwords and the signed bearer session token (spec §5 admin, §6 passwords). WebCrypto only.
 import type { MiddlewareHandler } from 'hono';
-import { getCookie } from 'hono/cookie';
 import type { PmesEnv } from './env';
 
-export const ADMIN_COOKIE = 'pmes_admin';
 const PBKDF2_ITERATIONS = 100000;
 const enc = new TextEncoder();
 
@@ -62,14 +60,14 @@ export async function verifyPassword(password: string, hash: string, salt: strin
 const hmacKey = (secret: string, usage: KeyUsage) =>
   crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, [usage]);
 
-/** Cookie value `${presenterId}.${expiresAt}.${sigHex}`; expiresAt is Unix epoch milliseconds. */
+/** Token `${presenterId}.${expiresAt}.${sigHex}`; expiresAt is Unix epoch milliseconds. */
 export async function signSession(presenterId: number, expiresAt: number, secret: string): Promise<string> {
   const payload = `${presenterId}.${expiresAt}`;
   const sig = await crypto.subtle.sign('HMAC', await hmacKey(secret, 'sign'), enc.encode(payload));
   return `${payload}.${toHex(sig)}`;
 }
 
-export async function verifySessionCookie(
+export async function verifySessionToken(
   value: string,
   secret: string,
   nowIso: string,
@@ -94,8 +92,8 @@ export async function findPresenterByName(db: D1Database, name: string): Promise
 }
 
 export const requirePresenter: MiddlewareHandler<PresenterApp> = async (c, next) => {
-  const value = getCookie(c, ADMIN_COOKIE);
-  const session = value ? await verifySessionCookie(value, c.env.PMES_SESSION_SECRET, new Date().toISOString()) : null;
+  const value = c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  const session = value ? await verifySessionToken(value, c.env.PMES_SESSION_SECRET, new Date().toISOString()) : null;
   const row = session
     ? await c.env.PMES_DB.prepare('SELECT id, display_name FROM pmes_presenters WHERE id = ? AND active = 1')
         .bind(session.presenterId)

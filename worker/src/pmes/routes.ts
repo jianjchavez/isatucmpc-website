@@ -19,8 +19,7 @@ pmes.use(
   cors({
     origin: (origin, c) => (allowedOrigins(c.env).includes(origin) ? origin : null),
     allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['content-type'],
-    credentials: true,
+    allowHeaders: ['content-type', 'authorization'],
     maxAge: 86400,
   }),
 );
@@ -55,7 +54,8 @@ pmes.post('/start', async c => {
   if (b.consent !== true) return c.json({ error: 'consent-required' }, 400);
 
   const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
-  if (!(await c.env.PMES_RL.limit({ key: ip })).success) return c.json({ error: 'rate-limited' }, 429);
+  // Keyed per IP and identity so one venue NAT does not trip it (Turnstile covers bots; the attempt limit bounds each identity).
+  if (!(await c.env.PMES_RL.limit({ key: `${ip}:${b.idType}:${b.idNumber}` })).success) return c.json({ error: 'rate-limited' }, 429);
   if (!(await verifyTurnstile(c.env.TURNSTILE_SECRET, b.turnstile))) return c.json({ error: 'turnstile-failed' }, 400);
 
   const now = new Date();
@@ -88,13 +88,19 @@ pmes.post('/start', async c => {
   const attemptId = hexId();
   const attemptNo = count + 1;
   const deadlineAt = session.timer_minutes > 0 ? new Date(now.getTime() + session.timer_minutes * 60e3).toISOString() : null;
-  await db
-    .prepare(
-      `INSERT INTO pmes_attempts (id, session_id, attempt_no, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, deadline_at, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'started')`,
-    )
-    .bind(attemptId, session.id, attemptNo, b.idType, b.idNumber, b.fullName, b.mobile, b.email, nowIso, JSON.stringify(draw.items), nowIso, deadlineAt)
-    .run();
+  try {
+    await db
+      .prepare(
+        `INSERT INTO pmes_attempts (id, session_id, attempt_no, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, deadline_at, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'started')`,
+      )
+      .bind(attemptId, session.id, attemptNo, b.idType, b.idNumber, b.fullName, b.mobile, b.email, nowIso, JSON.stringify(draw.items), nowIso, deadlineAt)
+      .run();
+  } catch (err) {
+    // Two concurrent starts for one identity both computed attempt_no N; the loser hits the UNIQUE constraint.
+    if (/UNIQUE/.test(String((err as Error).message))) return c.json({ error: 'attempts-exhausted' }, 409);
+    throw err;
+  }
 
   return c.json({ attemptId, attemptNo, deadlineAt, questions: presentDraw(bank, draw) });
 });

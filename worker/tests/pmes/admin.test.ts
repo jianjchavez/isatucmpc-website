@@ -23,10 +23,10 @@ vi.stubGlobal('fetch', fetchMock);
 
 const manilaToday = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
 
-function call(path: string, body?: unknown, cookie?: string) {
+function call(path: string, body?: unknown, token?: string) {
   const headers: Record<string, string> = { origin: ORIGIN };
   if (body !== undefined) headers['content-type'] = 'application/json';
-  if (cookie) headers.cookie = cookie;
+  if (token) headers.authorization = `Bearer ${token}`;
   return worker.fetch(
     new Request(API + path, { method: body === undefined ? 'GET' : 'POST', headers, body: body === undefined ? undefined : JSON.stringify(body) }),
     testEnv(),
@@ -36,7 +36,8 @@ function call(path: string, body?: unknown, cookie?: string) {
 
 async function login(username = 'Presenter Name', password = 'pw-1234') {
   const res = await call('/admin/login', { username, password });
-  return { res, cookie: (res.headers.get('set-cookie') ?? '').split(';')[0] };
+  const json = res.status === 200 ? await res.clone().json<{ token: string }>() : { token: '' };
+  return { res, token: json.token };
 }
 
 const insertAttempt = (sessionId: number, no: number, over: Record<string, unknown> = {}) => {
@@ -76,17 +77,17 @@ describe('/api/pmes/admin', () => {
     sessionId = row.id;
   });
 
-  it('login sets an HttpOnly Secure SameSite=None cookie and returns the presenter', async () => {
+  it('login returns the presenter, a signed bearer token and its expiry; sets no cookie', async () => {
+    const before = Date.now();
     const { res } = await login();
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ presenter: { id: 1, displayName: 'Presenter Name' } });
-    const cookie = res.headers.get('set-cookie')!;
-    expect(cookie).toMatch(/^pmes_admin=\d+\.\d+\.[0-9a-f]+;/);
-    expect(cookie).toContain('HttpOnly');
-    expect(cookie).toContain('Secure');
-    expect(cookie).toContain('SameSite=None');
-    expect(cookie).toContain('Path=/api/pmes/admin');
-    expect(cookie).toContain('Max-Age=43200');
+    const json = await res.json<any>();
+    expect(json.presenter).toEqual({ id: 1, displayName: 'Presenter Name' });
+    expect(json.token).toMatch(/^1\.\d+\.[0-9a-f]{64}$/);
+    expect(json.expiresAt).toBe(Number(json.token.split('.')[1]));
+    expect(json.expiresAt - before).toBeGreaterThanOrEqual(12 * 3600e3);
+    expect(json.expiresAt - before).toBeLessThan(12 * 3600e3 + 5000);
+    expect(res.headers.get('set-cookie')).toBeNull();
   });
 
   it('login with a padded, lowercased name succeeds; wrong password and blanks are rejected', async () => {
@@ -98,18 +99,18 @@ describe('/api/pmes/admin', () => {
     expect((await login('', 'pw-1234')).res.status).toBe(400);
   });
 
-  it('401 without a cookie; logout clears it', async () => {
+  it('401 without an Authorization header or with a tampered token; no logout route', async () => {
     const res = await call('/admin/sessions');
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: 'unauthorized' });
-    const out = await call('/admin/logout', {});
-    expect(out.status).toBe(200);
-    expect(out.headers.get('set-cookie')).toMatch(/^pmes_admin=; Max-Age=0/);
+    const { token } = await login();
+    expect((await call('/admin/sessions', undefined, token.replace(/.$/, c => (c === '0' ? '1' : '0')))).status).toBe(401);
+    expect((await call('/admin/logout', {})).status).toBe(404);
   });
 
   it('lists sessions newest first as AdminSession', async () => {
-    const { cookie } = await login();
-    const res = await call('/admin/sessions', undefined, cookie);
+    const { token } = await login();
+    const res = await call('/admin/sessions', undefined, token);
     expect(res.status).toBe(200);
     const { sessions } = await res.json<any>();
     expect(sessions).toHaveLength(1);
@@ -118,15 +119,15 @@ describe('/api/pmes/admin', () => {
   });
 
   it('create requires chairName and returns a code; timer coerced to 0 or 20', async () => {
-    const { cookie } = await login();
+    const { token } = await login();
     const body = { sessionDate: '2026-10-24', venue: 'Room 2', presenterName: 'Presenter Name', chairName: 'Vice Chair', timerMinutes: 20 };
-    let res = await call('/admin/sessions', { ...body, chairName: '' }, cookie);
+    let res = await call('/admin/sessions', { ...body, chairName: '' }, token);
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'missing-fields' });
-    res = await call('/admin/sessions', { ...body, sessionDate: '24/10/2026' }, cookie);
+    res = await call('/admin/sessions', { ...body, sessionDate: '24/10/2026' }, token);
     expect(res.status).toBe(400);
 
-    res = await call('/admin/sessions', { ...body, timerMinutes: 0 }, cookie);
+    res = await call('/admin/sessions', { ...body, timerMinutes: 0 }, token);
     expect(res.status).toBe(200);
     const s = await res.json<any>();
     expect(s.code).toMatch(/^PMES-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/);
@@ -136,29 +137,29 @@ describe('/api/pmes/admin', () => {
   });
 
   it('close marks the session closed', async () => {
-    const { cookie } = await login();
-    const res = await call(`/admin/sessions/${sessionId}/close`, {}, cookie);
+    const { token } = await login();
+    const res = await call(`/admin/sessions/${sessionId}/close`, {}, token);
     expect(await res.json()).toEqual({ ok: true });
     const row = await db().prepare('SELECT status, closed_at FROM pmes_sessions WHERE id = ?').bind(sessionId).first<any>();
     expect(row.status).toBe('closed');
     expect(row.closed_at).toBeTruthy();
-    expect((await call('/admin/sessions/999/close', {}, cookie)).status).toBe(404);
+    expect((await call('/admin/sessions/999/close', {}, token)).status).toBe(404);
   });
 
   it('override inserts a row and lets a fourth start through; blank reason rejected', async () => {
-    const { cookie } = await login();
+    const { token } = await login();
     const start = () =>
       call('/start', { code: 'PMES-AAAA', idType: 'application', idNumber: ' a-1 ', fullName: 'Attendee Name', mobile: '09171234567', email: 'a@example.com', consent: true, turnstile: 'tok' });
     for (let i = 0; i < 3; i++) expect((await start()).status).toBe(200);
     expect((await start()).status).toBe(409);
 
-    let res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: 'a-1', reason: '  ' }, cookie);
+    let res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: 'a-1', reason: '  ' }, token);
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'reason-required' });
-    res = await call(`/admin/sessions/${sessionId}/override`, { idType: '', idNumber: 'a-1', reason: 'r' }, cookie);
+    res = await call(`/admin/sessions/${sessionId}/override`, { idType: '', idNumber: 'a-1', reason: 'r' }, token);
     expect(await res.json()).toEqual({ error: 'missing-fields' });
 
-    res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: ' a-1 ', reason: 'Committee decision' }, cookie);
+    res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: ' a-1 ', reason: 'Committee decision' }, token);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ extraAttempts: 3 });
     const row = await db().prepare('SELECT * FROM pmes_overrides').first<any>();
@@ -170,16 +171,16 @@ describe('/api/pmes/admin', () => {
   });
 
   it('roster groups attempts per identity with bestScore, override and totals; CSV quotes and has the BOM', async () => {
-    const { cookie } = await login();
+    const { token } = await login();
     await insertAttempt(sessionId, 1, { score: 10, passed: 0, status: 'submitted', submitted_at: '2026-10-21T01:00:00Z' });
     await insertAttempt(sessionId, 2, { score: 12, passed: 0, status: 'submitted', submitted_at: '2026-10-21T01:20:00Z' });
     const third = await insertAttempt(sessionId, 3, { score: 17, passed: 1, status: 'submitted', submitted_at: '2026-10-21T01:40:00Z', full_name: 'Name, Attendee' });
     await db().prepare("INSERT INTO pmes_certificates (no, year, seq, attempt_id, key, issued_at, email_status) VALUES ('PMES-2026-0001', 2026, 1, ?, 'k', '2026-10-21T01:40:00Z', 'sent')").bind(third).run();
     await insertAttempt(sessionId, 1, { id_number: 'B-2', full_name: 'another person', email: 'b@example.com', score: 9, passed: 0, status: 'submitted', submitted_at: '2026-10-21T01:00:00Z' });
     await insertAttempt(sessionId, 1, { id_type: 'member', id_number: 'M-3', full_name: 'Zed In Progress' });
-    await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: 'A-1', reason: 'Second chance' }, cookie);
+    await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: 'A-1', reason: 'Second chance' }, token);
 
-    const res = await call(`/admin/sessions/${sessionId}/roster`, undefined, cookie);
+    const res = await call(`/admin/sessions/${sessionId}/roster`, undefined, token);
     expect(res.status).toBe(200);
     const json = await res.json<any>();
     expect(json.session).toMatchObject({ id: sessionId, code: 'PMES-AAAA' });
@@ -193,7 +194,7 @@ describe('/api/pmes/admin', () => {
     expect(json.rows[2]).toMatchObject({ bestScore: null, passed: false, certificateNo: null, emailStatus: null, overrides: [] });
     expect(json.totals).toEqual({ attended: 3, passed: 1, failed: 1 });
 
-    const csv = await call(`/admin/sessions/${sessionId}/roster.csv`, undefined, cookie);
+    const csv = await call(`/admin/sessions/${sessionId}/roster.csv`, undefined, token);
     expect(csv.status).toBe(200);
     expect(csv.headers.get('content-type')).toBe('text/csv; charset=utf-8');
     expect(csv.headers.get('content-disposition')).toBe(`attachment; filename="PMES-${manilaToday()}-PMES-AAAA.csv"`);
@@ -207,11 +208,11 @@ describe('/api/pmes/admin', () => {
   });
 
   it('resend-email re-sends through Resend and updates the certificate email status', async () => {
-    const { cookie } = await login();
+    const { token } = await login();
     const id = await insertAttempt(sessionId, 1, { score: 17, passed: 1, status: 'submitted', submitted_at: '2026-10-21T01:40:00Z' });
     await db().prepare("INSERT INTO pmes_certificates (no, year, seq, attempt_id, key, issued_at, email_status) VALUES ('PMES-2026-0001', 2026, 1, ?, 'k', '2026-10-21T01:40:00Z', 'failed')").bind(id).run();
     fetchMock.mockClear();
-    const res = await call(`/admin/sessions/${sessionId}/resend-email`, { attemptId: id }, cookie);
+    const res = await call(`/admin/sessions/${sessionId}/resend-email`, { attemptId: id }, token);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ emailStatus: 'sent' });
     expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -219,9 +220,25 @@ describe('/api/pmes/admin', () => {
     expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string).subject).toContain('PMES-2026-0001');
     const cert = await db().prepare('SELECT email_status FROM pmes_certificates').first<any>();
     expect(cert.email_status).toBe('sent');
-    const missing = await call(`/admin/sessions/${sessionId}/resend-email`, { attemptId: 'nope' }, cookie);
+    const missing = await call(`/admin/sessions/${sessionId}/resend-email`, { attemptId: 'nope' }, token);
     expect(missing.status).toBe(404);
     expect(await missing.json()).toEqual({ error: 'unknown-attempt' });
+  });
+
+  it('resend-email issues the missing certificate for a passed attempt before sending', async () => {
+    const { token } = await login();
+    const id = await insertAttempt(sessionId, 1, { score: 17, passed: 1, status: 'submitted', submitted_at: '2026-10-21T01:40:00Z' });
+    fetchMock.mockClear();
+    const res = await call(`/admin/sessions/${sessionId}/resend-email`, { attemptId: id }, token);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ emailStatus: 'sent' });
+    const cert = await db().prepare('SELECT no, attempt_id, email_status FROM pmes_certificates').first<any>();
+    expect(cert).toMatchObject({ no: `PMES-${manilaToday().slice(0, 4)}-0001`, attempt_id: id, email_status: 'sent' });
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string).subject).toContain(cert.no);
+    // A failed attempt gets no certificate.
+    const failed = await insertAttempt(sessionId, 1, { id_number: 'B-2', score: 10, passed: 0, status: 'submitted', submitted_at: '2026-10-21T01:40:00Z' });
+    expect((await call(`/admin/sessions/${sessionId}/resend-email`, { attemptId: failed }, token)).status).toBe(200);
+    expect((await db().prepare('SELECT COUNT(*) AS n FROM pmes_certificates').first<any>()).n).toBe(1);
   });
 });
 

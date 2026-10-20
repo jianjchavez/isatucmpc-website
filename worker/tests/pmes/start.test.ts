@@ -139,10 +139,46 @@ describe('POST /api/pmes/start', () => {
     expect(await res.json()).toEqual({ error });
   });
 
-  it('rate-limited when PMES_RL refuses', async () => {
-    const res = await start(okBody(), testEnv({ PMES_RL: { limit: async () => ({ success: false }) } }));
+  it('rate-limited when PMES_RL refuses; the key is IP plus identity', async () => {
+    const limit = vi.fn(async (_o: { key: string }) => ({ success: false }));
+    const res = await start(okBody(), testEnv({ PMES_RL: { limit } }), { origin: ORIGIN, 'cf-connecting-ip': '203.0.113.9' });
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'rate-limited' });
+    expect(limit).toHaveBeenCalledWith({ key: '203.0.113.9:application:A-1' });
+  });
+
+  it('409 attempts-exhausted when a concurrent start takes the next attempt_no between the count and the INSERT', async () => {
+    const first = await (await start(okBody())).json<any>();
+    // Race: after start has counted 1 attempt, a rival start lands attempt_no 2 just before this INSERT runs.
+    const raceRow = () =>
+      db()
+        .prepare(
+          `INSERT INTO pmes_attempts (id, session_id, attempt_no, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, status)
+           SELECT 'race', session_id, 2, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, status FROM pmes_attempts WHERE id = ?`,
+        )
+        .bind(first.attemptId)
+        .run();
+    const racedDb = new Proxy(db(), {
+      get: (target, prop) =>
+        prop !== 'prepare'
+          ? Reflect.get(target, prop)
+          : (sql: string) => {
+              const stmt = target.prepare(sql);
+              if (!/INSERT INTO pmes_attempts/.test(sql)) return stmt;
+              const bind = stmt.bind.bind(stmt);
+              stmt.bind = (...args: unknown[]) => {
+                const bound = bind(...args);
+                const run = bound.run.bind(bound);
+                bound.run = async () => { await raceRow(); return run(); };
+                return bound;
+              };
+              return stmt;
+            },
+    });
+    const res = await start(okBody(), testEnv({ PMES_DB: racedDb }));
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: 'attempts-exhausted' });
+    expect((await db().prepare('SELECT COUNT(*) AS n FROM pmes_attempts').first<any>()).n).toBe(2);
   });
 
   it('turnstile-failed when siteverify says no', async () => {
@@ -164,17 +200,18 @@ describe('POST /api/pmes/start', () => {
     expect(res.status).toBe(403);
   });
 
-  it('CORS preflight from the allowed origin carries ACAO and credentials', async () => {
+  it('CORS preflight from the allowed origin carries ACAO, allows Authorization, no credentials', async () => {
     const res = await worker.fetch(
       new Request(URL, {
         method: 'OPTIONS',
-        headers: { origin: ORIGIN, 'access-control-request-method': 'POST', 'access-control-request-headers': 'content-type' },
+        headers: { origin: ORIGIN, 'access-control-request-method': 'POST', 'access-control-request-headers': 'content-type,authorization' },
       }),
       testEnv(),
       {} as any,
     );
     expect(res.status).toBe(204);
     expect(res.headers.get('access-control-allow-origin')).toBe(ORIGIN);
-    expect(res.headers.get('access-control-allow-credentials')).toBe('true');
+    expect(res.headers.get('access-control-allow-headers')?.toLowerCase()).toContain('authorization');
+    expect(res.headers.get('access-control-allow-credentials')).toBeNull();
   });
 });
