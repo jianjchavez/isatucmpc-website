@@ -1,0 +1,73 @@
+---
+/** Public certificate verification by number (spec §3.3). No contact details. */
+import PageLayout from '~/layouts/PageLayout.astro';
+---
+<PageLayout title="Verify a PMES certificate" description="Check a Pre-Membership Education Seminar certificate by its certificate number." noIndex>
+  <section class="container-page py-16 md:py-20">
+    <div class="max-w-xl">
+      <h1 class="text-3xl md:text-4xl text-navy">Verify a PMES certificate</h1>
+      <p class="mt-4 text-ink">Enter the certificate number printed on the Certificate of Completion, for example PMES-2026-0042.</p>
+      <form id="verifyForm" class="mt-6 flex flex-col sm:flex-row gap-3">
+        <label for="no" class="sr-only">Certificate number</label>
+        <input id="no" name="no" type="text" required placeholder="PMES-2026-0042" autocomplete="off" class="flex-1 border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <button type="submit" class="bg-navy text-white rounded-md px-5 py-2 text-sm font-semibold cursor-pointer">Verify</button>
+      </form>
+      <div id="result" class="mt-8" aria-live="polite"></div>
+    </div>
+  </section>
+</PageLayout>
+
+<script>
+  const WORKER = 'https://isatucmpc-forms.jianjchavez.workers.dev';
+  const form = document.getElementById('verifyForm') as HTMLFormElement;
+  const input = document.getElementById('no') as HTMLInputElement;
+  const result = document.getElementById('result')!;
+  const longDate = (iso: string) => new Date(iso).toLocaleDateString('en-PH', { dateStyle: 'long', timeZone: 'Asia/Manila' });
+  const longDateTime = (iso: string) =>
+    new Date(iso).toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Manila' });
+
+  function message(text: string) {
+    result.replaceChildren();
+    const p = document.createElement('p');
+    p.className = 'text-ink';
+    p.textContent = text;
+    result.append(p);
+  }
+
+  async function verify(no: string) {
+    message('Checking…');
+    try {
+      const res = await fetch(`${WORKER}/api/pmes/verify?no=${encodeURIComponent(no)}`);
+      if (res.status === 404) return message('No certificate with that number.');
+      if (!res.ok) throw new Error('failed');
+      const c = await res.json();
+      const rows: [string, string][] = [
+        ['Certificate No.', c.no],
+        ['Name', c.fullName],
+        ['ID number', c.idNumber],
+        ['Session date', longDate(c.sessionDate)],
+        ['Score', `${c.score} of 20`],
+        ['Result', c.passed ? 'Passed' : 'Not passed'],
+        ['Presenter', c.presenterName],
+        ['Issued', longDateTime(c.issuedAt)],
+      ];
+      const badge = document.createElement('p');
+      badge.className = 'inline-block bg-success text-white font-display font-bold rounded px-3 py-1 text-sm';
+      badge.textContent = 'Valid certificate';
+      const dl = document.createElement('dl');
+      dl.className = 'mt-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm';
+      for (const [k, v] of rows) {
+        const dt = document.createElement('dt'); dt.className = 'font-semibold text-navy'; dt.textContent = k;
+        const dd = document.createElement('dd'); dd.textContent = v;
+        dl.append(dt, dd);
+      }
+      result.replaceChildren(badge, dl);
+    } catch {
+      message('We could not reach the verification service. Please try again.');
+    }
+  }
+
+  form.addEventListener('submit', e => { e.preventDefault(); verify(input.value.trim()); });
+  const no = new URLSearchParams(location.search).get('no');
+  if (no) { input.value = no; verify(no); }
+</script>
