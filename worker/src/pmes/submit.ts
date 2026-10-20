@@ -30,7 +30,12 @@ submit.post('/submit', async c => {
     .bind(raw.attemptId)
     .first<AttemptRow>();
   if (!attempt) return c.json({ error: 'unknown-attempt' }, 404);
-  if (attempt.status !== 'started') return c.json({ error: 'already-submitted' }, 409);
+  // Claim the attempt atomically so two concurrent submits cannot both score it.
+  const claim = await db
+    .prepare("UPDATE pmes_attempts SET status = 'submitting' WHERE id = ? AND status = 'started'")
+    .bind(attempt.id)
+    .run();
+  if (!claim.meta.changes) return c.json({ error: 'already-submitted' }, 409);
 
   const now = new Date().toISOString();
   const draw: Draw = { items: JSON.parse(attempt.draw_json) };
@@ -71,7 +76,14 @@ submit.post('/submit', async c => {
   });
 });
 
+/** Certificate numbers are sequential, so the public lookups are rate limited per IP. */
+async function lookupAllowed(c: { env: PmesEnv; req: { header(n: string): string | undefined } }): Promise<boolean> {
+  const { success } = await c.env.PMES_RL.limit({ key: `lookup:${c.req.header('cf-connecting-ip') ?? 'unknown'}` });
+  return success;
+}
+
 submit.get('/certificate', async c => {
+  if (!(await lookupAllowed(c))) return c.json({ error: 'rate-limited' }, 429);
   const { no, key } = c.req.query();
   if (!no || !key) return c.json({ error: 'missing-fields' }, 400);
   const record = await getCertificate(c.env.PMES_DB, no, key, c.env.SITE_URL);
@@ -79,6 +91,7 @@ submit.get('/certificate', async c => {
 });
 
 submit.get('/verify', async c => {
+  if (!(await lookupAllowed(c))) return c.json({ error: 'rate-limited' }, 429);
   const no = c.req.query('no');
   if (!no) return c.json({ error: 'missing-fields' }, 400);
   const record = await getVerification(c.env.PMES_DB, no);

@@ -42,7 +42,7 @@ Anti-goals: a quiz that can be passed without attending (no valid code, no quiz)
 
 ### 3.3 Verifier (Secretary, Board, applicant)
 
-- `/pmes/verify/?no=PMES-2026-0042` shows: certificate number, attendee name, ID number, session date, score, pass, presenter, issue time. No contact details. Any certificate printed can be checked against it.
+- `/pmes/verify/?no=PMES-2026-0042` shows: certificate number, attendee name, the last four characters of the ID number (numbers are sequential, so the rest is masked against enumeration), session date, score, pass, presenter, issue time. No contact details. Lookups are rate limited per IP. Any certificate printed can be checked against it.
 
 ## 4. Pages (Astro, static, client scripts in TypeScript like `public/forms.js` and `src/components/*-logic.ts`)
 

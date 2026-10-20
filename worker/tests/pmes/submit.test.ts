@@ -207,3 +207,13 @@ describe('GET /api/pmes/certificate and /verify', () => {
     expect((await get('/verify')).status).toBe(400);
   });
 });
+
+describe('public lookups', () => {
+  it('rate limits certificate and verify lookups per IP', async () => {
+    const env429 = testEnv({ PMES_RL: { limit: async () => ({ success: false }) } });
+    for (const path of ['/api/pmes/verify?no=PMES-2026-0001', '/api/pmes/certificate?no=PMES-2026-0001&key=x']) {
+      const res = await worker.fetch(new Request(`https://forms.isatucmpc.coop${path}`), env429, {} as any);
+      expect(res.status).toBe(429);
+    }
+  });
+});

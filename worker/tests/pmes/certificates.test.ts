@@ -110,3 +110,11 @@ describe('certificates', () => {
     expect(await getVerification(db(), 'PMES-2026-9999')).toBeNull();
   });
 });
+
+describe('maskId', () => {
+  it('keeps only the last four characters of longer ID numbers', async () => {
+    const { maskId } = await import('../../src/pmes/certificates');
+    expect(maskId('2026-00123')).toBe('••••••0123');
+    expect(maskId('A-1')).toBe('A-1');
+  });
+});

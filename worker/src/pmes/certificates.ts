@@ -96,6 +96,11 @@ export async function getCertificate(
   };
 }
 
+/** Public lookups show only the tail of the ID number (certificate numbers are sequential). */
+export function maskId(id: string): string {
+  return id.length <= 4 ? id : `${'•'.repeat(id.length - 4)}${id.slice(-4)}`;
+}
+
 /** Public subset for `/pmes/verify/`, or null when there is no certificate for a passed attempt. */
 export async function getVerification(db: D1Database, no: string): Promise<Verification | null> {
   const r = await db.prepare(`${CERT_SELECT} AND a.passed = 1`).bind(no).first<CertRow>();
@@ -103,7 +108,7 @@ export async function getVerification(db: D1Database, no: string): Promise<Verif
   return {
     no: r.no,
     fullName: r.full_name,
-    idNumber: r.id_number,
+    idNumber: maskId(r.id_number),
     sessionDate: r.session_date,
     score: r.score,
     passed: true,
