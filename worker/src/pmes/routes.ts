@@ -55,7 +55,10 @@ pmes.post('/start', async c => {
 
   const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
   // Keyed per IP and identity so one venue NAT does not trip it (Turnstile covers bots; the attempt limit bounds each identity).
-  if (!(await c.env.PMES_RL.limit({ key: `${ip}:${b.idType}:${b.idNumber}` })).success) return c.json({ error: 'rate-limited' }, 429);
+  // Per identity (10/min) so a shared venue address is not starved, plus a looser per-IP bucket (60/min).
+  const perIdentity = c.env.PMES_RL.limit({ key: `${ip}:${b.idType}:${b.idNumber}` });
+  const perIp = c.env.PMES_RL_IP.limit({ key: ip });
+  if (!(await perIdentity).success || !(await perIp).success) return c.json({ error: 'rate-limited' }, 429);
   if (!(await verifyTurnstile(c.env.TURNSTILE_SECRET, b.turnstile))) return c.json({ error: 'turnstile-failed' }, 400);
 
   const now = new Date();

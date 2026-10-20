@@ -147,6 +147,11 @@ describe('POST /api/pmes/start', () => {
     expect(limit).toHaveBeenCalledWith({ key: '203.0.113.9:application:A-1' });
   });
 
+  it('rate-limited when the per-IP bucket refuses', async () => {
+    const res = await start(okBody(), testEnv({ PMES_RL_IP: { limit: async () => ({ success: false }) } }), { origin: ORIGIN, 'cf-connecting-ip': '203.0.113.9' });
+    expect(res.status).toBe(429);
+  });
+
   it('409 attempts-exhausted when a concurrent start takes the next attempt_no between the count and the INSERT', async () => {
     const first = await (await start(okBody())).json<any>();
     // Race: after start has counted 1 attempt, a rival start lands attempt_no 2 just before this INSERT runs.
