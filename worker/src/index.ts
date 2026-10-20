@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { resend, escapeHtml } from './resend';
 import { verifyTurnstile } from './turnstile';
+import { pmes } from './pmes/routes';
 
 export type Env = {
   SITE_ORIGIN: string;
@@ -79,5 +80,7 @@ app.post('/api/submit', async c => {
 
   return c.json({ ok: true });
 });
+
+app.route('/api/pmes', pmes);
 
 export default app;
