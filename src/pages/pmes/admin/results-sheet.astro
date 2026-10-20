@@ -33,7 +33,7 @@ import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
         <div class="sig"><p id="sig-chair" class="sig-name"></p><p class="sig-caption">{PMES_CHAIR_CAPTION}</p></div>
       </div>
     </div>
-    <PmesDocFooter pageNumbers validityLine />
+    <PmesDocFooter validityLine />
   </main>
 
   <style>
@@ -67,8 +67,8 @@ import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
 
   <script>
     import {
-      attemptsLabel, escapeHtml as esc, formatManila, idLabel, resultLabel, rosterTotals, sortRowsByName,
-      type AdminSession, type RosterRow,
+      attemptsLabel, escapeHtml as esc, formatManila, idLabel, resultLabel, sortRowsByName,
+      type AdminSession, type RosterRow, type RosterTotals,
     } from '~/components/pmes-admin-logic';
 
     const API = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/pmes/admin';
@@ -79,10 +79,14 @@ import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
 
     async function load() {
       if (!id) throw new Error('No session selected. Open a session from the presenter page.');
-      const res = await fetch(`${API}/sessions/${encodeURIComponent(id)}/roster`, { credentials: 'include' });
-      if (res.status === 401) throw new Error('Please sign in on the presenter page first, then reopen this sheet.');
+      // Same sessionStorage key as the presenter page; the sheet opens in the same tab.
+      const token = (JSON.parse(sessionStorage.getItem('pmes_admin') ?? '{}') as { token?: string }).token;
+      const signIn = 'Please sign in on the presenter page first, then reopen this sheet.';
+      if (!token) throw new Error(signIn);
+      const res = await fetch(`${API}/sessions/${encodeURIComponent(id)}/roster`, { headers: { authorization: `Bearer ${token}` } });
+      if (res.status === 401) { sessionStorage.removeItem('pmes_admin'); throw new Error(signIn); }
       if (!res.ok) throw new Error(`Could not load the roster (${res.status}).`);
-      const { session, rows } = (await res.json()) as { session: AdminSession; rows: RosterRow[] };
+      const { session, rows, totals: t } = (await res.json()) as { session: AdminSession; rows: RosterRow[]; totals: RosterTotals };
 
       $('m-date').textContent = session.sessionDate;
       $('m-venue').textContent = session.venue;
@@ -104,7 +108,6 @@ import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
         </tr>`).join('');
       $('footnotes').innerHTML = sorted.flatMap(r => r.overrides.map(o =>
         `<p>¹ ${esc(r.fullName)}: another attempt allowed — ${esc(o.reason)} (${esc(o.presenterName)}, ${esc(formatManila(o.createdAt))})</p>`)).join('');
-      const t = rosterTotals(rows);
       $('totals').textContent = `Attended: ${t.attended} · Passed: ${t.passed} · Failed: ${t.failed}`;
       $('status').hidden = true;
       $('doc').hidden = false;

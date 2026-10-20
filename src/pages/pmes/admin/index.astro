@@ -74,8 +74,8 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" id="refresh" class={outline}>Refresh</button>
-          <a id="csv-link" class={outline} href="#">Download CSV</a>
-          <a id="sheet-link" class={outline} href="#" target="_blank" rel="noopener">Results sheet</a>
+          <button type="button" id="csv-link" class={outline}>Download CSV</button>
+          <a id="sheet-link" class={outline} href="#">Results sheet</a>
           <button type="button" id="close-session" class={danger}>Close session</button>
         </div>
         <div id="close-confirm" class="hidden rounded-lg border border-error p-4 space-y-3">
@@ -116,7 +116,7 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
   <script>
     import {
       attemptsLabel, csvFilename, escapeHtml as esc, formatManila, idLabel, latestChairName, manilaDate,
-      resendAttemptId, resultLabel, rosterTotals, type AdminSession, type RosterRow,
+      resendAttemptId, resultLabel, type AdminSession, type RosterRow, type RosterTotals,
     } from '~/components/pmes-admin-logic';
 
     const API = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/pmes/admin';
@@ -124,7 +124,16 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
     const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
     const screens = ['scr-signin', 'scr-list', 'scr-create', 'scr-session'];
 
-    let presenterName = sessionStorage.getItem('pmesPresenter') ?? '';
+    // Presenter token from POST /login, kept for this tab only; the results sheet reads the same key.
+    const STORE = 'pmes_admin';
+    type Auth = { token: string; displayName: string; expiresAt: number };
+    function readAuth(): Auth | null {
+      try {
+        const a = JSON.parse(sessionStorage.getItem(STORE) ?? 'null') as Auth | null;
+        return a && a.expiresAt > Date.now() ? a : null;
+      } catch { return null; }
+    }
+    let auth = readAuth();
     let sessions: AdminSession[] = [];
     let current: AdminSession | null = null;
     let timer: number | undefined;
@@ -141,17 +150,28 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
     }
 
     class Unauthorized extends Error {}
-    async function api<T>(path: string, body?: unknown): Promise<T> {
+    function signOut() {
+      auth = null;
+      sessionStorage.removeItem(STORE);
+      show('scr-signin');
+    }
+    async function request(path: string, body?: unknown): Promise<Response> {
+      const headers: Record<string, string> = auth ? { authorization: `Bearer ${auth.token}` } : {};
+      if (body !== undefined) headers['content-type'] = 'application/json';
       const res = await fetch(API + path, {
         method: body === undefined ? 'GET' : 'POST',
-        credentials: 'include',
-        headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+        headers,
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-      if (res.status === 401) { show('scr-signin'); throw new Unauthorized('Please sign in.'); }
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || `request-failed-${res.status}`);
-      return json as T;
+      if (res.status === 401) { signOut(); throw new Unauthorized('Please sign in.'); }
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || `request-failed-${res.status}`);
+      }
+      return res;
+    }
+    async function api<T>(path: string, body?: unknown): Promise<T> {
+      return (await request(path, body)).json() as Promise<T>;
     }
     async function run(fn: () => Promise<void>) {
       try { notify(''); await fn(); } catch (e) { notify((e as Error).message); }
@@ -170,20 +190,16 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       e.preventDefault();
       const fd = new FormData(e.target as HTMLFormElement);
       run(async () => {
-        const r = await api<{ presenter: { id: string; displayName: string } }>('/login', {
+        const r = await api<{ presenter: { id: string; displayName: string }; token: string; expiresAt: number }>('/login', {
           username: String(fd.get('username')).trim(), password: fd.get('password'),
         }).catch(err => { throw err instanceof Unauthorized ? new Error('Invalid name or password.') : err; });
-        presenterName = r.presenter.displayName;
-        sessionStorage.setItem('pmesPresenter', presenterName);
+        auth = { token: r.token, displayName: r.presenter.displayName, expiresAt: r.expiresAt };
+        sessionStorage.setItem(STORE, JSON.stringify(auth));
         (e.target as HTMLFormElement).reset();
         await loadSessions();
       });
     });
-    $('signout').addEventListener('click', () => run(async () => {
-      await api('/logout', {});
-      sessionStorage.removeItem('pmesPresenter');
-      show('scr-signin');
-    }));
+    $('signout').addEventListener('click', () => { notify(''); signOut(); });
 
     // Session list
     async function loadSessions() {
@@ -211,7 +227,7 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       const f = $<HTMLFormElement>('scr-create');
       f.reset();
       (f.elements.namedItem('sessionDate') as HTMLInputElement).value = manilaDate();
-      (f.elements.namedItem('presenterName') as HTMLInputElement).value = presenterName;
+      (f.elements.namedItem('presenterName') as HTMLInputElement).value = auth?.displayName ?? '';
       (f.elements.namedItem('chairName') as HTMLInputElement).value = latestChairName(sessions);
       show('scr-create');
     });
@@ -235,8 +251,6 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       const s = current!;
       $('s-code').textContent = s.code;
       $('s-meta').textContent = `${s.sessionDate} · ${s.venue} · ${s.presenterName} · ${s.timerMinutes ? `${s.timerMinutes}-minute timer` : 'no timer'} · ${s.status}`;
-      $<HTMLAnchorElement>('csv-link').href = `${API}/sessions/${s.id}/roster.csv`;
-      $<HTMLAnchorElement>('csv-link').download = csvFilename(s);
       $<HTMLAnchorElement>('sheet-link').href = `/pmes/admin/results-sheet/?id=${encodeURIComponent(s.id)}`;
       $('close-session').classList.toggle('hidden', s.status !== 'open');
     }
@@ -251,9 +265,9 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       timer = window.setInterval(() => { if (current?.status === 'open') run(loadRoster); }, 30_000);
     }
     async function loadRoster() {
-      const r = await api<{ session: AdminSession; rows: RosterRow[] }>(`/sessions/${current!.id}/roster`);
+      const r = await api<{ session: AdminSession; rows: RosterRow[]; totals: RosterTotals }>(`/sessions/${current!.id}/roster`);
       current = r.session; renderHeader();
-      const t = rosterTotals(r.rows);
+      const t = r.totals;
       $('totals').textContent = `Attended ${t.attended} · Passed ${t.passed} · Failed ${t.failed} · updated ${formatManila(new Date().toISOString()).slice(11)}`;
       $('roster').innerHTML = r.rows.length
         ? r.rows.map(row => {
@@ -273,6 +287,14 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
         : '<tr><td colspan="8" class="px-3 py-6 text-slate">No attendees yet.</td></tr>';
     }
     $('refresh').addEventListener('click', () => run(loadRoster));
+    // The download needs the bearer header, which a plain <a href> cannot carry.
+    $('csv-link').addEventListener('click', () => run(async () => {
+      const blob = await (await request(`/sessions/${current!.id}/roster.csv`)).blob();
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: csvFilename(current!) });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }));
     $('back').addEventListener('click', () => run(loadSessions));
 
     $('close-session').addEventListener('click', () => $('close-confirm').classList.remove('hidden'));
@@ -317,7 +339,7 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       });
     });
 
-    // Boot: a valid cookie goes straight to the list; 401 shows sign-in.
-    run(loadSessions).catch(() => {});
+    // Boot: a stored, unexpired token goes straight to the list; 401 shows sign-in.
+    if (auth) run(loadSessions); else show('scr-signin');
   </script>
 </PageLayout>

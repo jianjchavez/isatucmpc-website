@@ -46,7 +46,7 @@ import PageLayout from '~/layouts/PageLayout.astro';
         ['Name', c.fullName],
         ['ID number', c.idNumber],
         ['Session date', longDate(c.sessionDate)],
-        ['Score', `${c.score} of 20`],
+        ['Score', `${c.score} of ${c.total}`],
         ['Result', c.passed ? 'Passed' : 'Not passed'],
         ['Presenter', c.presenterName],
         ['Issued', longDateTime(c.issuedAt)],

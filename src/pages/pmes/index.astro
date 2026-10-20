@@ -137,13 +137,16 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
     el.textContent = msg ?? '';
     el.classList.toggle('hidden', !msg);
   }
+  class ApiError extends Error {
+    constructor(code: string, readonly body: Record<string, unknown> = {}) { super(code); }
+  }
   async function post<T>(path: string, body: unknown): Promise<T> {
     let res: Response;
     try {
       res = await fetch(`${WORKER}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-    } catch { throw new Error('generic'); }
+    } catch { throw new ApiError('generic'); }
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json.error || (res.status === 429 ? 'rate-limited' : 'generic'));
+    if (!res.ok) throw new ApiError(json.error || (res.status === 429 ? 'rate-limited' : 'generic'), json);
     return json as T;
   }
 
@@ -248,7 +251,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       showResult(await post<SubmitResponse>('/api/pmes/submit', toSubmitPayload(state)));
     } catch (err) {
       const code = (err as Error).message;
-      if (code === 'expired') showExpired();
+      if (code === 'expired') showExpired((err as ApiError).body.retakesLeft);
       else { setError($('pq-error'), errorMessage(code)); $<HTMLButtonElement>('pq-submit').disabled = false; submitting = false; }
     }
   }
@@ -268,13 +271,13 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
     $('pr-retry').classList.toggle('hidden', r.passed || r.retakesLeft <= 0);
     show(result);
   }
-  function showExpired() {
+  function showExpired(retakesLeft: unknown) {
     result.classList.remove('border-success'); result.classList.add('border-error');
     $('pr-headline').textContent = 'Time is up.';
     $('pr-detail').textContent = errorMessage('expired');
     $('pr-review-wrap').classList.add('hidden');
     $('pr-cert').classList.add('hidden');
-    $('pr-retry').classList.remove('hidden');
+    $('pr-retry').classList.toggle('hidden', retakesLeft === 0);
     show(result);
   }
   $('pr-retry').addEventListener('click', () => {

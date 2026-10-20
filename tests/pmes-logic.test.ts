@@ -77,6 +77,8 @@ describe('lookups', () => {
     expect(sectionTitle('welfare')).toBe('Welfare Benefits Program and health coverage');
     expect(sectionTitle('nope')).toBe('nope');
     expect(errorMessage('invalid-code')).toMatch(/session code/i);
+    expect(errorMessage('bank-not-ready')).toBe('The quiz is not open yet. Please see the presenter.');
+    expect(errorMessage('forbidden')).toBe('This page must be opened from the cooperative website.');
     expect(errorMessage('something-else')).toBe(errorMessage('generic'));
   });
 });

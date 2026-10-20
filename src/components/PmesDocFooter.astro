@@ -2,19 +2,19 @@
 /**
  * Print footer for PMES documents: website QR at 12 mm bottom-right of the first
  * page (Brand Guide Amendment No. 1), website, optional verification URL,
- * `Page X of Y` for multi-page sheets, and the signature validity line.
+ * and the signature validity line.
  */
 import { siteQrSvg } from '~/components/pmes-qr';
 import { ORG_WEBSITE, SIGNATURE_VALIDITY_LINE } from '~/lib/letterhead';
 
-interface Props { verifyUrl?: string; pageNumbers?: boolean; validityLine?: boolean }
-const { verifyUrl, pageNumbers = false, validityLine = true } = Astro.props;
+interface Props { verifyUrl?: string; validityLine?: boolean }
+const { verifyUrl, validityLine = true } = Astro.props;
 const qr = siteQrSvg(12);
 ---
 <footer class="doc-footer">
   <div class="doc-footer-text">
     {validityLine && <p class="doc-validity">{SIGNATURE_VALIDITY_LINE}</p>}
-    <p>{ORG_WEBSITE}{verifyUrl && <span> &middot; Verify at <span class="doc-verify-url">{verifyUrl}</span></span>}{pageNumbers && <span class="doc-page"> &middot; Page <span class="doc-page-x"></span> of <span class="doc-page-y"></span></span>}</p>
+    <p>{ORG_WEBSITE}{verifyUrl && <span> &middot; Verify at <span class="doc-verify-url">{verifyUrl}</span></span>}</p>
   </div>
   <div class="doc-qr" set:html={qr}></div>
 </footer>
@@ -25,8 +25,6 @@ const qr = siteQrSvg(12);
   .doc-validity { color: #111827; font-weight: 600; }
   .doc-qr { width: 12mm; height: 12mm; flex: none; }
   .doc-qr :global(svg) { display: block; }
-  .doc-page-x::after { content: counter(page); }
-  .doc-page-y::after { content: counter(pages); }
   @media print {
     .doc-footer { position: fixed; bottom: 12mm; left: 0; right: 0; }
   }

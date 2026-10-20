@@ -1,4 +1,5 @@
-import bank from '~/data/pmes-questions.json';
+// Named import only: the default export would bundle the whole bank (answers included) into the attendee page.
+import { sections } from '~/data/pmes-questions.json';
 
 // ---- API shapes (spec §5) ----
 export type Question = { n: number; id: string; section: string; text: string; options: string[] };
@@ -51,7 +52,7 @@ export function toSubmitPayload(state: QuizState): SubmitRequest {
 }
 
 // ---- lookups ----
-const TITLES: Record<string, string> = Object.fromEntries(bank.sections.map(s => [s.id, s.title]));
+const TITLES: Record<string, string> = Object.fromEntries(sections.map(s => [s.id, s.title]));
 export function sectionTitle(id: string): string { return TITLES[id] ?? id; }
 
 const ERRORS: Record<string, string> = {
@@ -65,6 +66,8 @@ const ERRORS: Record<string, string> = {
   'invalid-email': 'Enter a valid email address.',
   'consent-required': 'Please tick the data privacy consent to continue.',
   'turnstile-failed': 'The security check did not pass. Please try again.',
+  'bank-not-ready': 'The quiz is not open yet. Please see the presenter.',
+  'forbidden': 'This page must be opened from the cooperative website.',
   'rate-limited': 'Too many attempts from this connection. Please wait a few minutes and try again.',
   'unknown-attempt': 'This attempt is no longer recognized. Please start again.',
   'already-submitted': 'This attempt was already submitted.',
