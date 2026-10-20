@@ -36,12 +36,8 @@ export interface RosterRow {
   overrides: { reason: string; presenterName: string; createdAt: string }[];
 }
 
+/** Computed by the server; failed excludes attendees with no submitted attempt. */
 export interface RosterTotals { attended: number; passed: number; failed: number }
-
-export function rosterTotals(rows: RosterRow[]): RosterTotals {
-  const passed = rows.filter(r => r.passed).length;
-  return { attended: rows.length, passed, failed: rows.length - passed };
-}
 
 export function csvFilename(session: Pick<AdminSession, 'sessionDate' | 'code'>): string {
   return `PMES-${session.sessionDate}-${session.code}.csv`;

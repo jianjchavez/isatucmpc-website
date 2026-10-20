@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  rosterTotals, csvFilename, sortRowsByName, formatManila, manilaDate, resultLabel,
+  csvFilename, sortRowsByName, formatManila, manilaDate, resultLabel,
   attemptsLabel, resendAttemptId, idLabel, latestChairName, type RosterRow,
 } from '~/components/pmes-admin-logic';
 
@@ -10,16 +10,6 @@ const attempt = (attemptNo: number, score: number, submitted = true, status = 's
 const row = (fullName: string, over: Partial<RosterRow> = {}): RosterRow => ({
   idType: 'application', idNumber: 'A-1', fullName, mobile: '', email: '',
   attempts: [], bestScore: null, passed: false, certificateNo: null, emailStatus: null, overrides: [], ...over,
-});
-
-describe('rosterTotals', () => {
-  it('counts attended, passed and failed from the rows', () => {
-    const rows = [row('A', { passed: true }), row('B', { passed: true }), row('C')];
-    expect(rosterTotals(rows)).toEqual({ attended: 3, passed: 2, failed: 1 });
-  });
-  it('is all zeros for an empty roster', () => {
-    expect(rosterTotals([])).toEqual({ attended: 0, passed: 0, failed: 0 });
-  });
 });
 
 describe('csvFilename', () => {
