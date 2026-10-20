@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { resend, escapeHtml } from './resend';
+import { verifyTurnstile } from './turnstile';
 
 export type Env = {
   SITE_ORIGIN: string;
@@ -45,13 +46,7 @@ app.post('/api/submit', async c => {
   if (!name || !email || !message || !token) return c.json({ error: 'missing-fields' }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return c.json({ error: 'invalid-email' }, 400);
 
-  // Verify Turnstile
-  const tsRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    body: new URLSearchParams({ secret: c.env.TURNSTILE_SECRET, response: token }),
-  });
-  const tsJson = await tsRes.json<{ success: boolean }>();
-  if (!tsJson.success) return c.json({ error: 'turnstile-failed' }, 400);
+  if (!(await verifyTurnstile(c.env.TURNSTILE_SECRET, token))) return c.json({ error: 'turnstile-failed' }, 400);
 
   // Send via Resend to coop inbox
   const subject =
