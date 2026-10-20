@@ -4,7 +4,7 @@ import type { PmesEnv } from './env';
 import { loadBank } from './bank';
 import type { Draw } from './draw';
 import { scoreAttempt } from './score';
-import { issueCertificate } from './certificates';
+import { issueCertificate, getCertificate, getVerification } from './certificates';
 import { sendResultEmails, type AttemptRow } from './email';
 import { attemptLimit } from './validate';
 
@@ -69,4 +69,18 @@ submit.post('/submit', async c => {
     retakesLeft,
     ...(!result.passed && retakesLeft === 0 ? { message: NO_RETAKES } : {}),
   });
+});
+
+submit.get('/certificate', async c => {
+  const { no, key } = c.req.query();
+  if (!no || !key) return c.json({ error: 'missing-fields' }, 400);
+  const record = await getCertificate(c.env.PMES_DB, no, key, c.env.SITE_URL);
+  return record ? c.json(record) : c.json({ error: 'not-found' }, 404);
+});
+
+submit.get('/verify', async c => {
+  const no = c.req.query('no');
+  if (!no) return c.json({ error: 'missing-fields' }, 400);
+  const record = await getVerification(c.env.PMES_DB, no);
+  return record ? c.json(record) : c.json({ error: 'not-found' }, 404);
 });

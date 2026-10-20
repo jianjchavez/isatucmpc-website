@@ -160,3 +160,50 @@ describe('POST /api/pmes/submit', () => {
     expect((await post('/submit', { attemptId: 'x', answers: [] }, {})).status).toBe(403);
   });
 });
+
+describe('GET /api/pmes/certificate and /verify', () => {
+  let no: string;
+  let key: string;
+  beforeEach(async () => {
+    resendStatus = 200;
+    await db().batch(
+      ['pmes_overrides', 'pmes_certificates', 'pmes_counters', 'pmes_attempts', 'pmes_sessions', 'pmes_presenters'].map(t =>
+        db().prepare(`DELETE FROM ${t}`),
+      ),
+    );
+    await db()
+      .prepare(
+        "INSERT INTO pmes_presenters (id, username, display_name, password_hash, password_salt, created_at) VALUES (1, 'presenter', 'Presenter', 'h', 's', '2026-10-21T00:00:00Z')",
+      )
+      .run();
+    await createSession(
+      db(),
+      { sessionDate: manilaToday(), venue: 'Main Hall', presenterName: 'Presenter', chairName: 'Chair', presenterId: 1, timerMinutes: 20 },
+      () => 0,
+    );
+    const { attemptId } = await start();
+    const json = await (await post('/submit', { attemptId, answers: await correctAnswers(attemptId) })).json<any>();
+    no = json.certificateNo;
+    key = json.certificateKey;
+  });
+
+  it('certificate with the right key (no Origin needed); wrong key → 404; missing params → 400', async () => {
+    const res = await get(`/certificate?no=${no}&key=${key}`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ no, fullName: 'Attendee Name', chairName: 'Chair', score: 20, total: 20, verifyUrl: `https://isatucmpc.coop/pmes/verify/?no=${no}` });
+    const wrong = await get(`/certificate?no=${no}&key=${'0'.repeat(32)}`);
+    expect(wrong.status).toBe(404);
+    expect(await wrong.json()).toEqual({ error: 'not-found' });
+    expect((await get(`/certificate?no=${no}`)).status).toBe(400);
+  });
+
+  it('verify: passed one → 200; unknown number → 404', async () => {
+    const res = await get(`/verify?no=${no}`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ no, fullName: 'Attendee Name', passed: true, presenterName: 'Presenter' });
+    const missing = await get('/verify?no=PMES-2026-9999');
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toEqual({ error: 'not-found' });
+    expect((await get('/verify')).status).toBe(400);
+  });
+});
