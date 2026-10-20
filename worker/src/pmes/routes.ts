@@ -7,6 +7,7 @@ import { drawQuiz, presentDraw } from './draw';
 import { findOpenSession } from './sessions';
 import { isPhMobile, isEmail, attemptLimit } from './validate';
 import { verifyTurnstile } from '../turnstile';
+import { admin } from './admin';
 
 export const pmes = new Hono<{ Bindings: PmesEnv }>();
 
@@ -99,3 +100,4 @@ pmes.post('/start', async c => {
 
 // submit routes: see submit.ts
 // admin routes: see admin.ts
+pmes.route('/admin', admin);
