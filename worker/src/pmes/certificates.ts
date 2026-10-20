@@ -36,6 +36,11 @@ export async function issueCertificate(
   attemptId: string,
   nowIso: string,
 ): Promise<{ no: string; key: string }> {
+  const ok = await db
+    .prepare('SELECT 1 AS ok FROM pmes_attempts WHERE id = ? AND passed = 1')
+    .bind(attemptId)
+    .first<{ ok: number }>();
+  if (!ok) throw new Error('attempt-not-passed');
   const year = new Date(Date.parse(nowIso) + MANILA_OFFSET_MS).getUTCFullYear();
   await db.prepare('INSERT OR IGNORE INTO pmes_counters (year, next_seq) VALUES (?, 1)').bind(year).run();
   const row = await db
@@ -72,7 +77,7 @@ export async function getCertificate(
   key: string,
   siteUrl: string,
 ): Promise<CertificateRecord | null> {
-  const r = await db.prepare(CERT_SELECT).bind(no).first<CertRow>();
+  const r = await db.prepare(`${CERT_SELECT} AND a.passed = 1`).bind(no).first<CertRow>();
   if (!r || !constantTimeEqual(r.key, key)) return null;
   return {
     no: r.no,

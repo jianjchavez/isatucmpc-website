@@ -106,8 +106,7 @@ describe('certificates', () => {
       issuedAt: '2026-10-24T01:15:00Z',
     });
     const failedId = await seedAttempt(sessionId, 'A-2', 0, 13);
-    const failed = await issueCertificate(db(), failedId, '2026-10-24T01:15:00Z');
-    expect(await getVerification(db(), failed.no)).toBeNull();
+    await expect(issueCertificate(db(), failedId, '2026-10-24T01:15:00Z')).rejects.toThrow('attempt-not-passed');
     expect(await getVerification(db(), 'PMES-2026-9999')).toBeNull();
   });
 });
