@@ -9,6 +9,8 @@
 #           unpkg.com              → leaflet.css
 #   img     *.tile.openstreetmap   → map tiles;  unpkg → Leaflet marker icons;  data: → inlined assets
 #   connect workers.dev            → contact/membership form POSTs;  Turnstile + CF beacon callbacks
+#                                    + /pmes/* calls to /api/pmes/* on the same Worker origin (the presenter
+#                                    pages send the pmes_admin cookie with credentials: 'include'; no new host)
 #   frame   'self'                 → MemberFolio how-to iframe;  challenges.cloudflare → Turnstile widget iframe
 #   ancestors 'self' + XFO SAMEORIGIN → allow the same-origin how-to iframe (still blocks external framing/clickjacking)
 # If you add a new third-party (font CDN, video embed, analytics), extend the matching directive.
