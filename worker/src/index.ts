@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { resend, escapeHtml } from './resend';
 
 export type Env = {
   SITE_ORIGIN: string;
@@ -61,48 +62,27 @@ app.post('/api/submit', async c => {
     <p><strong>Message:</strong></p>
     <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
   `;
-  const sendRes = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'ISATUCMPC Website <noreply@isatucmpc.coop>',
-      to: [c.env.TO_EMAIL],
-      reply_to: email,
-      subject,
-      html,
-    }),
+  const sent = await resend(c.env, {
+    from: 'ISATUCMPC Website <noreply@isatucmpc.coop>',
+    to: [c.env.TO_EMAIL],
+    reply_to: email,
+    subject,
+    html,
   });
-  if (!sendRes.ok) return c.json({ error: 'send-failed' }, 502);
+  if (!sent) return c.json({ error: 'send-failed' }, 502);
 
   // Confirmation to submitter
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'ISATUCMPC <noreply@isatucmpc.coop>',
-      to: [email],
-      subject:
-        source === 'membership'
-          ? 'We received your membership inquiry'
-          : 'We received your message',
-      html: `<p>Salamat gid, ${escapeHtml(name)}.</p><p>We've received your message and will respond within 2 business days. For urgent matters, please call (033) 330-2586.</p><p>— ISATUCMPC</p>`,
-    }),
+  await resend(c.env, {
+    from: 'ISATUCMPC <noreply@isatucmpc.coop>',
+    to: [email],
+    subject:
+      source === 'membership'
+        ? 'We received your membership inquiry'
+        : 'We received your message',
+    html: `<p>Salamat gid, ${escapeHtml(name)}.</p><p>We've received your message and will respond within 2 business days. For urgent matters, please call (033) 330-2586.</p><p>— ISATUCMPC</p>`,
   });
 
   return c.json({ ok: true });
 });
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!),
-  );
-}
 
 export default app;
