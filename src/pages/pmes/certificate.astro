@@ -1,0 +1,106 @@
+---
+/**
+ * PMES Certificate of Completion (spec §9): A4 print layout, Tier 0 letterhead.
+ * Read by ?no=&key=; the Worker fills the fields client-side.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PmesLetterhead from '~/components/PmesLetterhead.astro';
+import PmesDocFooter from '~/components/PmesDocFooter.astro';
+import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
+---
+<BaseLayout title="Certificate of Completion" description="Pre-Membership Education Seminar certificate of completion." noIndex>
+  <div class="toolbar">
+    <button type="button" id="print">Print / Save as PDF</button>
+    <span>A4 portrait. In the print dialog choose "Save as PDF" to keep a copy.</span>
+  </div>
+  <p id="error" hidden>Certificate not found. Check the link in your result email.</p>
+
+  <main id="main" class="sheet">
+    <div class="frame"><div class="frame-inner">
+      <PmesLetterhead tier="full" />
+      <h1 class="cert-title">Certificate of Completion</h1>
+      <p class="cert-body">
+        This certifies that <strong data-field="fullName">&nbsp;</strong>
+        (<span data-field="idLabel">Application No.</span> <span data-field="idNumber">&nbsp;</span>)
+        has completed the Pre-Membership Education Seminar held on
+        <span data-field="sessionDate">&nbsp;</span> at <span data-field="venue">&nbsp;</span>
+        and passed the certification quiz with a score of <span data-field="score">&nbsp;</span>.
+      </p>
+      <dl class="cert-meta">
+        <div><dt>Certificate No.</dt><dd data-field="no">&nbsp;</dd></div>
+        <div><dt>Session code</dt><dd data-field="code">&nbsp;</dd></div>
+        <div><dt>Issued</dt><dd data-field="issuedAt">&nbsp;</dd></div>
+      </dl>
+      <div class="signatures">
+        <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="presenterName">&nbsp;</p><p class="sig-caption">{PMES_PRESENTER_CAPTION}</p></div>
+        <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="chairName">&nbsp;</p><p class="sig-caption">{PMES_CHAIR_CAPTION}</p></div>
+      </div>
+    </div></div>
+    <PmesDocFooter verifyUrl="https://isatucmpc.coop/pmes/verify/" validityLine />
+  </main>
+</BaseLayout>
+
+<style is:inline>
+  body { margin: 0; background: #E8E8E8; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 20px; background: #010066; color: #fff; font-size: 14px; }
+  .toolbar button { background: #FE9900; color: #010066; border: 0; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; }
+  #error { max-width: 600px; margin: 40px auto; padding: 20px; background: #fff; border-left: 4px solid #FF3F00; font-size: 16px; }
+  .sheet { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 24px auto; padding: 18mm 20mm; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,.15); display: flex; flex-direction: column; }
+  .frame { flex: 1; border: 2px solid #010066; padding: 2mm; margin-bottom: 6mm; }
+  .frame-inner { height: 100%; box-sizing: border-box; border: 1px solid #FFC001; padding: 8mm 12mm; }
+  .cert-title { margin: 14mm 0 8mm; text-align: center; font-family: 'Montserrat', system-ui, sans-serif; font-size: 22pt; font-weight: 800; color: #010066; letter-spacing: .02em; }
+  .cert-body { margin: 0; text-align: center; font-size: 13pt; line-height: 1.8; color: #111827; }
+  .cert-body strong { font-family: 'Montserrat', system-ui, sans-serif; font-size: 16pt; color: #010066; }
+  .cert-meta { display: flex; justify-content: center; gap: 14mm; margin: 10mm 0 0; font-size: 9.5pt; color: #6B7280; }
+  .cert-meta dt { font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 7.5pt; }
+  .cert-meta dd { margin: 0; color: #111827; }
+  .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 16mm; margin-top: 22mm; }
+  .sig-line { border-top: 1px solid #010066; margin-bottom: 2mm; }
+  .sig-name { margin: 0; font-family: 'Montserrat', system-ui, sans-serif; font-weight: 700; font-size: 11pt; color: #010066; text-align: center; }
+  .sig-caption { margin: 0; font-size: 8.5pt; color: #6B7280; text-align: center; }
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, #error { display: none !important; }
+    .sheet { height: 297mm; margin: 0; padding-bottom: 30mm; box-shadow: none; overflow: hidden; }
+    .doc-footer { left: 20mm !important; right: 12mm !important; }
+  }
+</style>
+
+<script>
+  const WORKER = 'https://isatucmpc-forms.jianjchavez.workers.dev';
+  const MANILA = 'Asia/Manila';
+  const longDate = (iso: string) => new Date(iso).toLocaleDateString('en-PH', { dateStyle: 'long', timeZone: MANILA });
+  const longDateTime = (iso: string) =>
+    new Date(iso).toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short', timeZone: MANILA });
+
+  document.getElementById('print')?.addEventListener('click', () => window.print());
+
+  async function load() {
+    const q = new URLSearchParams(location.search);
+    const res = await fetch(`${WORKER}/api/pmes/certificate?no=${encodeURIComponent(q.get('no') ?? '')}&key=${encodeURIComponent(q.get('key') ?? '')}`);
+    if (!res.ok) throw new Error('not-found');
+    const c = await res.json();
+    const fields: Record<string, string> = {
+      fullName: c.fullName,
+      idLabel: c.idType === 'member' ? 'Member No.' : 'Application No.',
+      idNumber: c.idNumber,
+      sessionDate: longDate(c.sessionDate),
+      venue: c.venue,
+      score: `${c.score} of ${c.total} (${Math.round((c.score / c.total) * 100)}%)`,
+      no: c.no,
+      code: c.code,
+      issuedAt: longDateTime(c.issuedAt),
+      presenterName: c.presenterName,
+      chairName: c.chairName,
+    };
+    document.querySelectorAll<HTMLElement>('[data-field]').forEach(el => { el.textContent = fields[el.dataset.field!]; });
+    const verify = document.querySelector('.doc-verify-url');
+    if (verify && c.verifyUrl) verify.textContent = c.verifyUrl;
+  }
+
+  load().catch(() => {
+    document.getElementById('error')!.hidden = false;
+    document.getElementById('main')!.hidden = true;
+  });
+</script>

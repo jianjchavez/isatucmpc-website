@@ -1,0 +1,48 @@
+---
+/**
+ * Cooperative letterhead for PMES print documents (isatucmpc-letterhead skill §4/§4a).
+ *   tier="full"  Tier 0: seal + name + identity block, for signed instruments (certificate)
+ *   tier="lean"  Tier 1: no seal, three unbroken contact lines per column (results sheet)
+ * Never type the organization name here; it comes from ~/lib/letterhead.
+ */
+import {
+  ORG_NAME_LINE_1, ORG_NAME_LINE_2, ORG_ADDRESS, ORG_PHONE, ORG_EMAIL, ORG_WEBSITE,
+  ORG_CDA_REG, ORG_CIN, ORG_TIN, ORG_CDA_OFFICE,
+} from '~/lib/letterhead';
+
+interface Props { tier?: 'full' | 'lean' }
+const { tier = 'full' } = Astro.props;
+---
+<header class="lh">
+  <div class="lh-top"></div>
+  <div class="lh-body">
+    {tier === 'full' && <img class="lh-seal" src="/logo.svg" alt="" width="64" height="64" />}
+    <div class="lh-text">
+      <p class="lh-name">{ORG_NAME_LINE_1}<br />{ORG_NAME_LINE_2}</p>
+      {tier === 'full' ? (
+        <div class="lh-meta">
+          <div>{ORG_ADDRESS}<br />Phone: {ORG_PHONE}<br />{ORG_CDA_OFFICE}</div>
+          <div>CDA Reg. No.: {ORG_CDA_REG} &middot; CIN: {ORG_CIN}<br />TIN: {ORG_TIN}<br />{ORG_EMAIL} &middot; {ORG_WEBSITE}</div>
+        </div>
+      ) : (
+        <div class="lh-meta">
+          <div>{ORG_ADDRESS}<br />Phone: {ORG_PHONE} &middot; Email: {ORG_EMAIL}<br />{ORG_CDA_OFFICE}</div>
+          <div>CDA Reg. No.: {ORG_CDA_REG}<br />CIN: {ORG_CIN} &middot; TIN: {ORG_TIN}<br />{ORG_WEBSITE}</div>
+        </div>
+      )}
+    </div>
+  </div>
+  <div class="lh-rule"></div>
+</header>
+
+<style>
+  .lh { font-family: 'Montserrat', 'Segoe UI', system-ui, sans-serif; color: #111827; }
+  .lh-top { height: 3px; background: linear-gradient(to right, #010066, #FE9900, #FFC001); }
+  .lh-body { display: flex; align-items: center; gap: 16px; padding: 14px 0 10px; }
+  .lh-seal { width: 64px; height: 64px; flex: none; }
+  .lh-text { flex: 1; }
+  .lh-name { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: .01em; line-height: 1.25; color: #010066; text-transform: uppercase; }
+  .lh-meta { display: flex; justify-content: space-between; gap: 24px; margin-top: 6px; font-family: 'Open Sans', system-ui, sans-serif; font-size: 9.5px; color: #6B7280; }
+  .lh-meta div { line-height: 1.5; }
+  .lh-rule { height: 2px; background: linear-gradient(to right, #010066, #FE9900, #FFC001); }
+</style>
