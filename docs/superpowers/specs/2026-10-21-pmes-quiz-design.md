@@ -143,9 +143,10 @@ Session Results Sheet (Tier 1, lean header, no seal): session date, venue, code,
 
 ## 10. Security and privacy
 
-- Turnstile on `start`. Rate limit `start` to 10 per IP per 10 minutes (Workers rate-limit binding `PMES_RL`).
+- Turnstile on `start`. Rate limit `start` per IP with the Workers rate-limit binding `PMES_RL` (10 per 60 s window; the binding offers only 10 s or 60 s windows, and the attempt limit bounds the ten-minute budget).
+- Accepted tradeoff (v1): identity is self-declared, so anyone who knows the session code and another attendee's ID number could use up that attendee's attempts. The session code is only announced in the room, the roster shows every attempt with its time, and the presenter's override restores attempts; a pre-registered roster or one-time code is a v2 option if this is ever abused.
 - Correct answers never leave the server; the draw is server-side; scoring is server-side.
-- Admin cookie HMAC-signed; passwords PBKDF2; no self-registration; sessions can be closed early.
+- Admin cookie HMAC-signed, `HttpOnly; Secure; SameSite=None` (the site calls the Worker cross-site; every POST is gated by the Origin allowlist); passwords PBKDF2; no self-registration; sessions can be closed early.
 - Certificate page needs the per-certificate key; the public verify endpoint returns no contact details.
 - Privacy consent text: "I consent to ISATUCMPC processing my name, application or member number, mobile number, email and quiz answers for membership processing, under the Data Privacy Act of 2012 and the cooperative's privacy notice." Stored as `consent_at`.
 - Content Security Policy in `public/_headers` must allow the Worker origin and Turnstile, as the forms already do.
