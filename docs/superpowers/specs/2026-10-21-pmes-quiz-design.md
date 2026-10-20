@@ -6,7 +6,7 @@ Date: 2026-10-21 · Status: DRAFT for owner review · Repo: `isatucmpc-website` 
 
 After the Pre-Membership Education Seminar (PMES), every attendee takes a short multiple-choice quiz on their phone or the office kiosk. A code announced by the presenter in the room proves attendance. A pass issues a numbered Certificate of Completion that the applicant attaches to their membership application, and a per-session results sheet that the Education and Training Committee attaches to the Board resolution approving the batch of applicants. By-Laws Art. II Sec. 3(b) makes the PMES certificate a requirement for membership; this feature makes it verifiable and consistent.
 
-Owner decisions (fixed): platform is the website on Cloudflare Pages plus the existing `isatucmpc-forms` Worker with a D1 database; pass mark 80% (16 of 20) with up to two retakes; signatories are the session presenter and the Education and Training Committee Chairperson; identity is application number (or member number for existing members) plus full name, mobile number and email; results are shown on the page and emailed to the attendee and to `isatucmpc1964@gmail.com`; the score appears on the certificate.
+Owner decisions (fixed): platform is the website on Cloudflare Pages plus the existing `isatucmpc-forms` Worker with a D1 database; pass mark 80% (16 of 20) with up to two retakes; signatories are the session presenter and the Chair of the Education and Training Committee, who under By-Laws Art. VI is the Vice-Chairperson of the Board of Directors (not the Board Chairperson); identity is application number (or member number for existing members) plus full name, mobile number and email; results are shown on the page and emailed to the attendee and to `isatucmpc1964@gmail.com`; the score appears on the certificate.
 
 ## 2. Goals, non-goals, anti-goals
 
@@ -25,7 +25,7 @@ Anti-goals: a quiz that can be passed without attending (no valid code, no quiz)
 ### 3.1 Presenter (Education and Training Committee)
 
 1. Signs in at `/pmes/admin/` with a presenter username and password.
-2. Creates a session: date (default today, Asia/Manila), venue, presenter name (prefilled from the account's full name), the Education and Training Committee Chairperson's name as it should appear on the certificates (prefilled from the last session), timer on/off (default on, 20 minutes). The server issues the session code, format `PMES-XXXX`, four characters from the alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0, O, 1, I), unique among sessions of the same date. The code is valid from creation until 23:59:59 Asia/Manila on the session date, or until the presenter closes the session.
+2. Creates a session: date (default today, Asia/Manila), venue, presenter name (prefilled from the account's full name), the name of the Education and Training Committee Chair (the Board Vice-Chairperson) as it should appear on the certificates (prefilled from the last session; the form labels the field "Education and Training Committee Chair (BOD Vice-Chairperson)"), timer on/off (default on, 20 minutes). The server issues the session code, format `PMES-XXXX`, four characters from the alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789` (no 0, O, 1, I), unique among sessions of the same date. The code is valid from creation until 23:59:59 Asia/Manila on the session date, or until the presenter closes the session.
 3. Announces the code at the end of the seminar.
 4. Watches the roster fill: name, ID, attempts, best score, pass/fail, certificate number, time.
 5. Prints the PMES Session Results Sheet (Tier 1 letterhead) and exports CSV. Closes the session.
@@ -137,7 +137,7 @@ Draw: for each of the 10 sections pick 2 approved questions at random; shuffle t
 
 Both templates follow the `isatucmpc-letterhead` skill exactly: the organization name only as the two-line uppercase string "ILOILO SCIENCE AND TECHNOLOGY UNIVERSITY AND / COMMUNITY MULTI-PURPOSE COOPERATIVE (ISATUCMPC)"; `@page { size: A4 }`; brand tokens; Montserrat and Open Sans.
 
-Certificate of Completion (Tier 0, seal, ornate border, title 22pt): "This certifies that **[Full name]** ([Application No. / Member No.]) has completed the Pre-Membership Education Seminar held on [date] at [venue] and passed the certification quiz with a score of [n] of 20 ([%])." Certificate No., session code, issued date-time, two signature lines: "[Presenter name], Presenter, Education and Training Committee" and "[Chairperson name], Chairperson, Education and Training Committee" (chairperson name from the session's `chair_name`, entered by the presenter when the session is created). Footer: website QR at 12 mm bottom-right, verification URL, "This document is not valid without the signature of the authorized signatory."
+Certificate of Completion (Tier 0, seal, ornate border, title 22pt): "This certifies that **[Full name]** ([Application No. / Member No.]) has completed the Pre-Membership Education Seminar held on [date] at [venue] and passed the certification quiz with a score of [n] of 20 ([%])." Certificate No., session code, issued date-time, two signature lines: "[Presenter name], Presenter, Education and Training Committee" and "[Name], Chair, Education and Training Committee / Vice-Chairperson, Board of Directors" (name from the session's `chair_name`, entered by the presenter when the session is created). The Session Results Sheet carries the same two signature lines. Footer: website QR at 12 mm bottom-right, verification URL, "This document is not valid without the signature of the authorized signatory."
 
 Session Results Sheet (Tier 1, lean header, no seal): session date, venue, code, presenter; table of attendees sorted by name: No., Name, ID, Attempts, Best score, Result, Certificate No.; totals (attended, passed, failed); two signature lines as above; `Page X of Y`.
 
@@ -167,6 +167,6 @@ Visual design of the quiz screens within the brand; exact CSV column order; the 
 
 ## 14. Owner rulings on the open items (2026-10-21)
 
-1. The Chairperson's name is entered by the presenter when creating the session; it is not a deployment setting.
+1. The name of the Education and Training Committee Chair (the Board Vice-Chairperson, never the Board Chairperson) is entered by the presenter when creating the session; it is not a deployment setting.
 2. After three failed attempts the committee may override: the presenter grants another block of three attempts from the roster, with a reason, and the attendee takes the quiz again.
 3. Presenter accounts are identified by full name; the committee supplies the list of names before seeding.
