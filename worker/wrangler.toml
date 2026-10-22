@@ -2,6 +2,12 @@ name = "isatucmpc-forms"
 main = "src/index.ts"
 compatibility_date = "2026-05-27"
 
+# The membership office-packet template is bundled into the Worker (src/membership/).
+[[rules]]
+type = "Data"
+globs = ["**/*.pdf"]
+fallthrough = true
+
 [vars]
 # Comma-separated list of allowed Origin headers. Includes pages.dev for
 # pre-cutover (Task 27) and the custom domain for post-cutover.

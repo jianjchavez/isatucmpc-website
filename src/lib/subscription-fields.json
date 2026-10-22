@@ -1,0 +1,72 @@
+{
+  "date": {
+    "page": 0,
+    "x": 399.8,
+    "top": 159.0,
+    "maxWidth": 150.0,
+    "size": 9.0
+  },
+  "name": {
+    "page": 0,
+    "x": 94.5,
+    "top": 268.5,
+    "maxWidth": 230.0,
+    "size": 9.0
+  },
+  "address": {
+    "page": 0,
+    "x": 66.0,
+    "top": 287.2,
+    "maxWidth": 340.0,
+    "size": 9.0
+  },
+  "amountWords": {
+    "page": 0,
+    "x": 174.1,
+    "top": 391.5,
+    "maxWidth": 215.0,
+    "size": 9.0
+  },
+  "amount": {
+    "page": 0,
+    "x": 415.0,
+    "top": 391.5,
+    "maxWidth": 62.0,
+    "size": 9.0
+  },
+  "sharesWords": {
+    "page": 0,
+    "x": 79.5,
+    "top": 410.2,
+    "maxWidth": 185.0,
+    "size": 9.0
+  },
+  "shares": {
+    "page": 0,
+    "x": 269.7,
+    "top": 410.2,
+    "maxWidth": 40.0,
+    "size": 9.0
+  },
+  "yearsWords": {
+    "page": 0,
+    "x": 90.8,
+    "top": 428.2,
+    "maxWidth": 70.0,
+    "size": 9.0
+  },
+  "years": {
+    "page": 0,
+    "x": 166.0,
+    "top": 428.2,
+    "maxWidth": 22.0,
+    "size": 9.0
+  },
+  "printedName": {
+    "page": 0,
+    "x": 324.8,
+    "top": 662.2,
+    "maxWidth": 225.0,
+    "size": 8.5
+  }
+}

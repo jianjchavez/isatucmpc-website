@@ -1,4 +1,6 @@
 import type { PDFDocument as PDFDocumentType, PDFFont } from 'pdf-lib';
+import subscriptionFields from './subscription-fields.json';
+import { PAR_VALUE, numberToWords, formatAmount } from './subscription';
 
 // PDF page coordinates: origin at bottom-left, units in points (1 pt = 1/72 in).
 // Both application PDFs are A4 (595 × 842 pt).
@@ -47,6 +49,9 @@ export interface PdfFieldData {
   parentContact?: string;
   // Beneficiaries (up to 3)
   beneficiaries?: Array<{ name?: string; dob?: string; relationship?: string; age?: string }>;
+  // Share subscription (Membership Subscription Agreement)
+  sharesSubscribed?: number;
+  yearsToPay?: number;
   // Submitted
   dateAccomplished?: string;
 }
@@ -109,21 +114,17 @@ const REGULAR_COORDS: Record<string, Coord> = {
   parentDob:           { x: 300, top: 390, size: 8, maxWidth: 78 },
   parentContact:       { x: 423, top: 390, size: 8, maxWidth: 90 },
 
-  // Beneficiaries — column headers at top≈421; 3 data rows below (~13pt pitch)
-  ben1Name:            { x: 40,  top: 437, size: 8, maxWidth: 210 },
-  ben1Dob:             { x: 262, top: 437, size: 8, maxWidth: 120 },
-  ben1Rel:             { x: 393, top: 437, size: 8, maxWidth: 110 },
-  ben1Age:             { x: 512, top: 437, size: 8 },
+  // Beneficiaries — column headers at top≈421; the form has 2 ruled rows (bottom rules ≈448, ≈464)
+  ben1Name:            { x: 40,  top: 445, size: 8, maxWidth: 210 },
+  ben1Dob:             { x: 262, top: 445, size: 8, maxWidth: 120 },
+  ben1Rel:             { x: 393, top: 445, size: 8, maxWidth: 110 },
+  ben1Age:             { x: 512, top: 445, size: 8 },
 
-  ben2Name:            { x: 40,  top: 450, size: 8, maxWidth: 210 },
-  ben2Dob:             { x: 262, top: 450, size: 8, maxWidth: 120 },
-  ben2Rel:             { x: 393, top: 450, size: 8, maxWidth: 110 },
-  ben2Age:             { x: 512, top: 450, size: 8 },
+  ben2Name:            { x: 40,  top: 461, size: 8, maxWidth: 210 },
+  ben2Dob:             { x: 262, top: 461, size: 8, maxWidth: 120 },
+  ben2Rel:             { x: 393, top: 461, size: 8, maxWidth: 110 },
+  ben2Age:             { x: 512, top: 461, size: 8 },
 
-  ben3Name:            { x: 40,  top: 463, size: 8, maxWidth: 210 },
-  ben3Dob:             { x: 262, top: 463, size: 8, maxWidth: 120 },
-  ben3Rel:             { x: 393, top: 463, size: 8, maxWidth: 110 },
-  ben3Age:             { x: 512, top: 463, size: 8 },
 
   // Signature line — caption "DATE ACCOMPLISHED / APPLICANT'S SIGNATURE" at top≈501
   dateAccomplished:    { x: 100, top: 508, size: 9 },
@@ -176,21 +177,17 @@ const ASSOCIATE_COORDS: Record<string, Coord> = {
   parentDob:           { x: 300, top: 433, size: 8, maxWidth: 78 },
   parentContact:       { x: 423, top: 433, size: 8, maxWidth: 90 },
 
-  // Beneficiaries — column headers at top≈463.2; 3 data rows below (~13pt pitch)
-  ben1Name:            { x: 40,  top: 479, size: 8, maxWidth: 210 },
-  ben1Dob:             { x: 262, top: 479, size: 8, maxWidth: 120 },
-  ben1Rel:             { x: 393, top: 479, size: 8, maxWidth: 110 },
-  ben1Age:             { x: 512, top: 479, size: 8 },
+  // Beneficiaries — header row 459–475; the form has 2 ruled rows (bottom rules ≈491, ≈507)
+  ben1Name:            { x: 40,  top: 488, size: 8, maxWidth: 210 },
+  ben1Dob:             { x: 262, top: 488, size: 8, maxWidth: 120 },
+  ben1Rel:             { x: 393, top: 488, size: 8, maxWidth: 110 },
+  ben1Age:             { x: 512, top: 488, size: 8 },
 
-  ben2Name:            { x: 40,  top: 492, size: 8, maxWidth: 210 },
-  ben2Dob:             { x: 262, top: 492, size: 8, maxWidth: 120 },
-  ben2Rel:             { x: 393, top: 492, size: 8, maxWidth: 110 },
-  ben2Age:             { x: 512, top: 492, size: 8 },
+  ben2Name:            { x: 40,  top: 504, size: 8, maxWidth: 210 },
+  ben2Dob:             { x: 262, top: 504, size: 8, maxWidth: 120 },
+  ben2Rel:             { x: 393, top: 504, size: 8, maxWidth: 110 },
+  ben2Age:             { x: 512, top: 504, size: 8 },
 
-  ben3Name:            { x: 40,  top: 505, size: 8, maxWidth: 210 },
-  ben3Dob:             { x: 262, top: 505, size: 8, maxWidth: 120 },
-  ben3Rel:             { x: 393, top: 505, size: 8, maxWidth: 110 },
-  ben3Age:             { x: 512, top: 505, size: 8 },
 
   // Signature line — "DATE ACCOMPLISHED" at top≈533.3; signature caption at top≈547.7
   dateAccomplished:    { x: 100, top: 540, size: 9 },
@@ -355,8 +352,9 @@ export async function fillApplicationPdf(
   drawText(page, font, data.parentContact, coords.parentContact);
 
   // Beneficiaries
+  // The paper form has two beneficiary rows; a third beneficiary is only in the coop email.
   const bens = data.beneficiaries ?? [];
-  for (let i = 0; i < Math.min(3, bens.length); i++) {
+  for (let i = 0; i < Math.min(2, bens.length); i++) {
     const b = bens[i];
     const idx = i + 1;
     drawText(page, font, b.name,         coords[`ben${idx}Name`]);
@@ -378,7 +376,52 @@ export async function fillApplicationPdf(
     font,
   });
 
+  await addSubscriptionAgreement(pdf, font, data, printedFull);
+
   return await pdf.save();
+}
+
+type Field = { page: number; x: number; top: number; maxWidth: number; size: number };
+
+// Shrinks long values (addresses, amounts in words) down to 6pt before truncating.
+function drawField(page: ReturnType<PDFDocumentType['getPage']>, font: PDFFont, text: string, f: Field) {
+  let str = text.trim();
+  if (!str) return;
+  let size = f.size;
+  while (size > 6 && font.widthOfTextAtSize(str, size) > f.maxWidth) size -= 0.25;
+  while (str.length > 0 && font.widthOfTextAtSize(str, size) > f.maxWidth) str = str.slice(0, -1);
+  page.drawText(str, { x: f.x, y: page.getHeight() - f.top, size, font });
+}
+
+// Page 2 of the applicant's copy: the Membership Subscription Agreement.
+async function addSubscriptionAgreement(pdf: PDFDocumentType, font: PDFFont, data: PdfFieldData, name: string) {
+  const res = await fetch('/forms/Subscription_Agreement.pdf');
+  if (!res.ok) throw new Error(`Failed to load template PDF (${res.status})`);
+  const { PDFDocument } = await import('pdf-lib');
+  const template = await PDFDocument.load(new Uint8Array(await res.arrayBuffer()));
+  const [page] = await pdf.copyPages(template, [0]);
+  pdf.addPage(page);
+
+  const shares = data.sharesSubscribed ?? 0;
+  const years = data.yearsToPay ?? 0;
+  const date = data.dateAccomplished
+    ? new Date(`${data.dateAccomplished}T00:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : '';
+  const values: Record<keyof typeof subscriptionFields, string> = {
+    date,
+    name,
+    address: data.presentHomeAddress || data.homeAddress || '',
+    amountWords: shares ? `${numberToWords(shares * PAR_VALUE)} Pesos` : '',
+    amount: shares ? formatAmount(shares * PAR_VALUE) : '',
+    sharesWords: shares ? numberToWords(shares) : '',
+    shares: shares ? String(shares) : '',
+    yearsWords: years ? numberToWords(years) : '',
+    years: years ? String(years) : '',
+    printedName: name,
+  };
+  for (const [key, f] of Object.entries(subscriptionFields)) {
+    drawField(page, font, values[key as keyof typeof subscriptionFields], f);
+  }
 }
 
 export function triggerPdfDownload(bytes: Uint8Array, filename: string): void {

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { resend, escapeHtml } from './resend';
+import { resend, escapeHtml, type ResendMessage } from './resend';
+import { buildOfficePacket, parseApplicant, toBase64, validSubscription } from './membership/office-packet';
 import { verifyTurnstile } from './turnstile';
 import { pmes } from './pmes/routes';
 
@@ -46,15 +47,18 @@ app.post('/api/submit', async c => {
 
   if (!name || !email || !message || !token) return c.json({ error: 'missing-fields' }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return c.json({ error: 'invalid-email' }, 400);
+  if (source === 'membership' && !validSubscription(body.shares, body.years)) return c.json({ error: 'invalid-subscription' }, 400);
 
   if (!(await verifyTurnstile(c.env.TURNSTILE_SECRET, token))) return c.json({ error: 'turnstile-failed' }, 400);
 
   // Send via Resend to coop inbox
   const subject =
     source === 'membership' ? `[Membership inquiry] ${name}` : `[Contact form] ${name}`;
+  const office = source === 'membership' ? await officePacket(body.applicant) : null;
   const html = `
     <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
     <p><strong>Source:</strong> ${escapeHtml(source)}</p>
+    ${office?.note ?? ''}
     <p><strong>Message:</strong></p>
     <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
   `;
@@ -64,6 +68,7 @@ app.post('/api/submit', async c => {
     reply_to: email,
     subject,
     html,
+    attachments: office?.attachments,
   });
   if (!sent) return c.json({ error: 'send-failed' }, 502);
 
@@ -80,6 +85,26 @@ app.post('/api/submit', async c => {
 
   return c.json({ ok: true });
 });
+
+// Office pages for a membership application. A failure here never blocks the notification email.
+async function officePacket(raw: unknown): Promise<{ note: string; attachments?: ResendMessage['attachments'] }> {
+  const applicant = parseApplicant(raw);
+  const failed = {
+    note: "<p><strong>Office packet not attached</strong> (the applicant's details could not be read). Print the blank office forms from https://isatucmpc.coop/forms/Office_Packet.pdf.</p>",
+  };
+  if (!applicant) return failed;
+  try {
+    const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'long', day: 'numeric', year: 'numeric' });
+    const bytes = await buildOfficePacket(applicant, today);
+    const safe = [applicant.lastName, applicant.firstName].join('_').replace(/[^a-zA-Z0-9_-]/g, '') || 'applicant';
+    return {
+      note: "<p><strong>Office packet attached:</strong> print it and have the applicant sign the Data Privacy Consent, the Depositor's Information Sheet and the Signature Card at the office.</p>",
+      attachments: [{ filename: `ISATUCMPC_Office_Packet_${safe}.pdf`, content: toBase64(bytes) }],
+    };
+  } catch {
+    return failed;
+  }
+}
 
 app.route('/api/pmes', pmes);
 

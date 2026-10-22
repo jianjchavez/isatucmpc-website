@@ -1,0 +1,100 @@
+{
+  "consentDate": {
+    "page": 0,
+    "x": 323.5,
+    "top": 565.9,
+    "maxWidth": 120.0,
+    "size": 9.0
+  },
+  "noticeVersion": {
+    "page": 0,
+    "x": 52.3,
+    "top": 581.2,
+    "maxWidth": 55.0,
+    "size": 9.0
+  },
+  "consentName": {
+    "page": 0,
+    "x": 45.0,
+    "top": 167.0,
+    "maxWidth": 330.0,
+    "size": 9.0
+  },
+  "depSigName": {
+    "page": 1,
+    "x": 183.7,
+    "top": 723.2,
+    "maxWidth": 160.0,
+    "size": 7.5
+  },
+  "depName": {
+    "page": 1,
+    "x": 45.0,
+    "top": 164.1,
+    "maxWidth": 290.0,
+    "size": 9.0
+  },
+  "depCivil": {
+    "page": 1,
+    "x": 45.0,
+    "top": 209.9,
+    "maxWidth": 100.0,
+    "size": 9.0
+  },
+  "depSpouse": {
+    "page": 1,
+    "x": 169.9,
+    "top": 209.9,
+    "maxWidth": 190.0,
+    "size": 9.0
+  },
+  "depContact": {
+    "page": 1,
+    "x": 390.6,
+    "top": 209.9,
+    "maxWidth": 140.0,
+    "size": 9.0
+  },
+  "depAddress": {
+    "page": 1,
+    "x": 45.0,
+    "top": 237.6,
+    "maxWidth": 520.0,
+    "size": 9.0
+  },
+  "cardSigName": {
+    "page": 2,
+    "x": 84.6,
+    "top": 335.9,
+    "maxWidth": 200.0,
+    "size": 7.5
+  },
+  "cardSingle": {
+    "page": 2,
+    "x": 164.2,
+    "top": 465.5,
+    "maxWidth": 12.0,
+    "size": 9.0
+  },
+  "cardName": {
+    "page": 2,
+    "x": 45.0,
+    "top": 164.1,
+    "maxWidth": 290.0,
+    "size": 9.0
+  },
+  "cardAddress": {
+    "page": 2,
+    "x": 45.0,
+    "top": 200.5,
+    "maxWidth": 290.0,
+    "size": 9.0
+  },
+  "cardContact": {
+    "page": 2,
+    "x": 345.2,
+    "top": 200.5,
+    "maxWidth": 110.0,
+    "size": 9.0
+  }
+}

@@ -4,6 +4,7 @@ export type ResendMessage = {
   subject: string;
   html: string;
   reply_to?: string;
+  attachments?: { filename: string; content: string }[]; // content is base64
 };
 
 /** POSTs one message to Resend. Resolves false on a non-2xx or a thrown fetch; never throws. */

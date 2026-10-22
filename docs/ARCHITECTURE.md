@@ -4,7 +4,7 @@
 > site's architecture. Whenever you change the stack, hosting, build/deploy,
 > site structure, components/data, integrations, or security configuration,
 > **update the relevant section here in the same change** (see `CLAUDE.md`).
-> Last verified against the codebase: 2026-10-21.
+> Last verified against the codebase: 2026-10-23.
 
 ---
 
@@ -38,7 +38,7 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 - **Fonts:** Montserrat (display) + Open Sans (body), self-hosted via `@fontsource`
 - **Icons:** `lucide-astro`
 - **Map:** Leaflet 1.9.4 (contact page; tiles from OpenStreetMap, CSS/markers from unpkg)
-- **PDF generation:** `pdf-lib` (client-side application-form filling)
+- **PDF generation:** `pdf-lib` (client-side filling of the applicant's copy; the Worker also uses it for the office copy)
 - **QR codes:** `qrcode` 1.5.4 (build-time, vector website QR on PMES print documents; `@types/qrcode` dev)
 - **SEO/feeds:** `astro-seo`, `@astrojs/sitemap`, `@astrojs/rss`
 - **Path alias:** `~` → `src/` (configured in `astro.config.mjs`)
@@ -54,13 +54,14 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
   - `GET certificate?no=&key=` (full record, needs the per-certificate key) and `GET verify?no=` (public subset, no contact details)
   - admin `POST admin/login` → `{ presenter: { id, displayName }, token, expiresAt }`, `GET|POST admin/sessions`, `POST admin/sessions/:id/close`, `POST admin/sessions/:id/override`, `POST admin/sessions/:id/resend-email`, `GET admin/sessions/:id/roster` and `roster.csv` — presenter session = HMAC-signed bearer token (12 h) returned by login, sent as `Authorization: Bearer`; stored by the page in sessionStorage; no cookies, so it works in Safari and private windows (HMAC-SHA256 with `PMES_SESSION_SECRET`; logout is client-side; CSRF is blocked by the Origin allowlist on every POST)
   - modules in `worker/src/pmes/`: `bank.ts` (imports `src/data/pmes-questions.json` from the site, filtered by status), `draw.ts`, `score.ts`, `sessions.ts` (code `PMES-XXXX`, valid on its Asia/Manila day), `auth.ts` (PBKDF2-SHA256 passwords, session-token signing, `requirePresenter` middleware), `certificates.ts` (`PMES-YYYY-NNNN` from `pmes_counters`), `email.ts`, `env.ts`
-- **Shared:** `worker/src/resend.ts` (`resend()` + `escapeHtml()`) and `worker/src/turnstile.ts` (`verifyTurnstile()`), both extracted from `index.ts` and used by both route groups
+- **Membership office packet (`worker/src/membership/`):** for a membership submission the Worker re-checks the share subscription (`shares` ≥ 500 whole, `years` ≥ 1; else `400 invalid-subscription`, before Turnstile), then fills `office-packet.pdf` (Data Privacy Consent, Depositor's Information Sheet + Savings Terms, Signature Card) from the form's `applicant` JSON with `pdf-lib` and attaches it to the coop notification email (the applicant's acknowledgement has no attachment). The template is bundled as a Data module (`[[rules]] type = "Data"` for `**/*.pdf`; typed in `worker/src/pdf.d.ts`); field positions in `office-fields.json`. If the details cannot be read the email still goes out with a note to print blank forms.
+- **Shared:** `worker/src/resend.ts` (`resend()` + `escapeHtml()`; messages may carry base64 `attachments`) and `worker/src/turnstile.ts` (`verifyTurnstile()`), both extracted from `index.ts` and used by both route groups
 - **Config (`worker/wrangler.toml`):** `compatibility_date 2026-05-27`; vars `SITE_ORIGIN` (comma-separated allowlist: `https://isatucmpc.coop,https://isatucmpc.pages.dev`), `TO_EMAIL=isatucmpc1964@gmail.com`, `PMES_DRAW_STATUS` (`approved`; `draft` for rehearsals), `PMES_PASS_MARK=16`, `PMES_QUIZ_SIZE=20`, `PMES_MAX_ATTEMPTS=3`, `SITE_URL=https://isatucmpc.coop`
 - **Bindings:** D1 `PMES_DB` → database `isatucmpc-pmes` (`migrations_dir = "migrations"`, schema `migrations/0001_pmes.sql`: `pmes_presenters`, `pmes_sessions`, `pmes_attempts`, `pmes_certificates`, `pmes_counters`, `pmes_overrides`); rate limit `PMES_RL` (10/min per IP + identity) and `PMES_RL_IP` (60/min per IP) (`[[ratelimits]]`, 10 per IP per 60 s window — the binding only offers 10 s / 60 s periods, so the spec's 10-per-10-minutes budget is backed by the attempt limit)
 - **Secrets (via `wrangler secret put`):** `RESEND_API_KEY`, `TURNSTILE_SECRET`, `PMES_SESSION_SECRET`
 - **Presenter seeding:** `worker/scripts/seed-presenter.mjs "<Full Name>"` prompts for a password (hidden) and prints the `wrangler d1 execute` line; no self-registration. Owner-run deploy steps: `worker/README-pmes.md`.
 - **Tests:** Vitest + `@cloudflare/vitest-pool-workers` (`worker/vitest.config.ts` reads `migrations/` via `readD1Migrations`; `tests/setup.ts` applies them to an isolated `PMES_DB` per test file; `tests/env.d.ts` types `cloudflare:test` env through `Cloudflare.Env`). Covers CORS preflight, codes and Manila-day validity, draw composition, scoring, certificate numbering, auth, emails.
-- **Flow (forms):** browser → `public/forms.js` (JSON `POST`) → Turnstile verification → Resend send → notification email to coop **+** auto-acknowledgement to submitter
+- **Flow (forms):** browser → `public/forms.js` (JSON `POST`) → Turnstile verification → Resend send → notification email to coop (membership: + office packet PDF) **+** auto-acknowledgement to submitter
 - **Flow (PMES):** `/pmes/` page → `start` → quiz → `submit` → result on page + result email to the attendee and a copy (with contact details and attempt number, `reply_to` the attendee) to `TO_EMAIL`; a pass gets a certificate link `/pmes/certificate/?no=&key=`
 
 ## 5. Repository, tooling & build
@@ -104,7 +105,7 @@ The five `/pmes/` pages are static shells; all data comes from the Worker (`/api
 - **Data (`src/data/`, typed TS):** `services` (10), `benefits`, `board`, `faq`, `goals` (9), `principles` (7), `stats`, `timeline`. `stats` and `timeline` auto-compute from the 1964 founding year.
 - **PMES question bank (`src/data/pmes-questions.json`):** 10 sections, 63 questions, each with four options, the correct index, the deck slide and a `status` (`draft` → `approved` by the committee). The Worker bundles this same file (`worker/src/pmes/bank.ts`); `tests/pmes-questions.test.ts` enforces ≥4 questions per section. Correct answers never ship to the browser: the site build does not render them, and the Worker strips them before returning a draw.
 - **Content collection:** `src/content/news/` (MDX articles).
-- **Lib (`src/lib/`):** `brand.ts` (color/font tokens), `pdf-fill.ts` (PDF coordinate maps for Regular + Associate forms), `seo.ts` (schema.org Organization + LocalBusiness builders), `letterhead.ts` (organization identity strings copied from the `isatucmpc-letterhead` skill — two-line uppercase name, address, CDA/CIN/TIN, signature captions; never retype the name).
+- **Lib (`src/lib/`):** `brand.ts` (color/font tokens), `pdf-fill.ts` (PDF coordinate maps for Regular + Associate forms; appends the filled Subscription Agreement from `subscription-fields.json`), `subscription.ts` (PHP 50 par, 500-share minimum, amounts in words), `seo.ts` (schema.org Organization + LocalBusiness builders), `letterhead.ts` (organization identity strings copied from the `isatucmpc-letterhead` skill — two-line uppercase name, address, CDA/CIN/TIN, signature captions; never retype the name).
 
 ## 8. Design system
 
@@ -116,7 +117,7 @@ The five `/pmes/` pages are static shells; all data comes from the Worker (`/api
 
 ## 9. Key features
 
-- **Membership applications:** client-side eligibility check (`EligibilityCheck` + `eligibility-logic.ts`) and in-browser PDF form-fill (`pdf-lib`) for **Regular** and **Associate** forms (templates in `public/forms/`).
+- **Membership applications:** client-side eligibility check (`EligibilityCheck` + `eligibility-logic.ts`). On submit the applicant downloads a 2-page PDF filled in the browser: the **Regular** or **Associate** application + the Membership Subscription Agreement (shares ≥ 500 at PHP 50, years to pay). The coop email carries the 3-page office copy built by the Worker (§4). All templates use the Tier 0 letterhead and are generated by `scripts/forms/build.py` (Chrome + PyMuPDF via `uv`) from the HTML sources in `scripts/forms/` and the untouched originals in `scripts/forms/originals/`; it writes `public/forms/*.pdf` (incl. the blank `Office_Packet.pdf` for walk-ins and as the email fallback), `src/lib/subscription-fields.json`, `worker/src/membership/office-packet.pdf` and `office-fields.json`. Re-run it after editing any form source.
 - **Forms email pipeline:** Turnstile (explicit-render, with `localhost` test-key fallback) → Worker → Resend; dual email (notification + auto-ack).
 - **PMES certification quiz (`/pmes/*` + Worker `/api/pmes/*` + D1):** after the Pre-Membership Education Seminar an attendee enters identity (application or member number, name, mobile, email, consent), the presenter's session code (`PMES-XXXX`, valid only on its Asia/Manila date or until closed) and Turnstile, then answers 20 questions (2 per section, drawn and shuffled server-side, 20-minute timer by default). Pass mark 16/20; 3 attempts per identity per session, plus 3 more per presenter override with a reason. A pass issues certificate `PMES-YYYY-NNNN` (atomic counter per year) with a per-certificate key for the print page; `/pmes/verify/?no=` is the public check with no contact details. Results go to the page and by email to the attendee and the coop inbox. Presenters sign in by full name + password (PBKDF2, HMAC bearer token) at `/pmes/admin/`, run sessions and print the Session Results Sheet. Spec: `docs/superpowers/specs/2026-10-21-pmes-quiz-design.md`.
 - **News/blog:** MDX content collection + RSS feed.
