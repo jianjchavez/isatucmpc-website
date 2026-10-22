@@ -1,5 +1,6 @@
 ---
 import Button from '~/components/Button.astro';
+import { MIN_SHARES, PAR_VALUE } from '~/lib/subscription';
 
 const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao'];
 const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', 'Others'];
@@ -8,8 +9,9 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   <input type="hidden" name="form-source" value="membership" />
   <input type="hidden" name="name" value="" />
   <input type="hidden" name="message" value="" />
+  <input type="hidden" name="applicant" value="" />
 
-  <p class="text-xs text-slate -mt-2">Only fields marked <span class="text-orange" aria-hidden="true">*</span> are required. Fill what you can now — when you submit, we'll generate a pre-filled application form (PDF) for you to download, print, sign, and bring to the office for in-person verification.</p>
+  <p class="text-xs text-slate -mt-2">Only fields marked <span class="text-orange" aria-hidden="true">*</span> are required. Fill what you can now — when you submit, we'll generate your pre-filled application and subscription agreement (one 2-page PDF) for you to download, print, sign, and bring to the office for in-person verification.</p>
 
   <fieldset class="space-y-4">
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">1. Identity</legend>
@@ -191,8 +193,24 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     </div>
   </fieldset>
 
+  <fieldset class="space-y-3">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">6. Share subscription <span class="text-orange" aria-hidden="true">*</span></legend>
+    <p class="text-xs text-slate">Shares are PHP {PAR_VALUE}.00 each. The minimum subscription is {MIN_SHARES} shares.</p>
+    <div class="grid md:grid-cols-3 gap-3 items-end">
+      <div>
+        <label for="mf-shares" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Number of shares <span class="text-orange" aria-hidden="true">*</span></label>
+        <input id="mf-shares" name="shares" data-field="sharesSubscribed" type="number" min={MIN_SHARES} step="1" value={MIN_SHARES} required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-years" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Paid over (years) <span class="text-orange" aria-hidden="true">*</span></label>
+        <input id="mf-years" name="years" data-field="yearsToPay" type="number" min="1" step="1" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <p id="mf-amount" class="text-sm text-navy font-semibold pb-2" aria-live="polite"></p>
+    </div>
+  </fieldset>
+
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">6. Family information</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">7. Family information</legend>
     <div class="grid md:grid-cols-3 gap-3">
       <div>
         <label for="mf-spname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Spouse's name</label>
@@ -224,8 +242,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <fieldset class="space-y-3">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">7. Beneficiaries (up to 3)</legend>
-    {[1, 2, 3].map(i => (
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. Beneficiaries (up to 2)</legend>
+    {[1, 2].map(i => (
       <div class="grid grid-cols-2 md:grid-cols-[2fr_1.2fr_1.5fr_0.7fr] gap-2 items-end">
         <div>
           <label for={`mf-ben${i}-name`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">{`Beneficiary ${i} — name`}</label>
@@ -248,7 +266,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. A bit more</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">9. A bit more</legend>
     <div>
       <label for="mf-affiliation" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your connection to ISAT U or our community</label>
       <input id="mf-affiliation" data-field="affiliation" type="text" placeholder="e.g. Faculty since 2018, alumna 2010, child of member …" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
@@ -264,7 +282,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <input id="mf-consent" name="privacyConsent" type="checkbox" required class="mt-0.5" />
     <span>I have read the <a href="/privacy" class="underline underline-offset-2 text-navy font-semibold" target="_blank">Privacy Notice</a> and consent to ISATUCMPC collecting and processing the personal information in this form — including sensitive personal information such as my civil status — to process my membership application. <span class="text-orange" aria-hidden="true">*</span></span>
   </label>
-  <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll generate your pre-filled application form (PDF) for download. You'll still need to print, sign, and bring it to the cooperative office for verification and PMES scheduling.</div>
+  <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll generate your pre-filled application and subscription agreement (PDF) for download. Print both pages, sign them, and bring them to the cooperative office for verification and PMES scheduling. You'll sign the Data Privacy Consent and your savings account forms at the office.</div>
   <Button type="submit" variant="primary" size="md" showArrow>Submit &amp; download my application</Button>
   <div id="mf-result" class="hidden p-3 rounded text-sm" role="status" aria-live="polite"></div>
   <div id="mf-cooldown" class="hidden p-3 rounded text-sm bg-brand-bg border border-rule" role="status" aria-live="polite"></div>
@@ -272,6 +290,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
 <script>
   import { fillApplicationPdf, triggerPdfDownload, type PdfFieldData } from '~/lib/pdf-fill';
+  import { MIN_SHARES, PAR_VALUE, formatAmount } from '~/lib/subscription';
 
   const COOLDOWN_KEY = 'mf-last-submit-ts';
   const COOLDOWN_MS = 60_000; // 1 minute
@@ -332,6 +351,40 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     }
     applyCooldown();
 
+    // ---- share subscription: whole numbers, at least MIN_SHARES ----
+    const sharesInput = document.getElementById('mf-shares') as HTMLInputElement | null;
+    const yearsInput = document.getElementById('mf-years') as HTMLInputElement | null;
+    const amountEl = document.getElementById('mf-amount');
+    const wholeNumber = (el: HTMLInputElement | null) => (/^\d+$/.test(el?.value.trim() ?? '') ? Number(el!.value) : NaN);
+    function showAmount() {
+      const shares = wholeNumber(sharesInput);
+      if (amountEl) amountEl.textContent = shares >= MIN_SHARES ? `= PHP ${formatAmount(shares * PAR_VALUE)}` : '';
+    }
+    sharesInput?.addEventListener('input', showAmount);
+    showAmount();
+
+    // Runs first (capture phase on the form): a bad subscription stops the submit and the PDF.
+    form.addEventListener('submit', e => {
+      const shares = wholeNumber(sharesInput);
+      const years = wholeNumber(yearsInput);
+      const problem = !(shares >= MIN_SHARES)
+        ? { el: sharesInput, text: `Please subscribe to at least ${MIN_SHARES} shares (whole number).` }
+        : !(years >= 1)
+          ? { el: yearsInput, text: 'Please enter how many years you will pay your subscription (whole number).' }
+          : null;
+      if (!problem) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const resultEl = document.getElementById('mf-result');
+      if (resultEl) {
+        resultEl.style.background = '#FF3F00';
+        resultEl.style.color = 'white';
+        resultEl.textContent = problem.text;
+        resultEl.classList.remove('hidden');
+      }
+      problem.el?.focus();
+    }, true);
+
     // ---- capture-phase: pack hidden name + message before forms.js submit handler runs ----
     form.addEventListener('submit', () => {
       const first = val('[data-field="firstName"]');
@@ -369,13 +422,26 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         ['Parent', [val('[data-field="parentName"]'), val('[data-field="parentDob"]'), val('[data-field="parentContact"]')].filter(Boolean).join(' / ')],
         ['Beneficiary 1', [val('[data-field="ben1Name"]'), val('[data-field="ben1Dob"]'), val('[data-field="ben1Rel"]'), val('[data-field="ben1Age"]')].filter(Boolean).join(' / ')],
         ['Beneficiary 2', [val('[data-field="ben2Name"]'), val('[data-field="ben2Dob"]'), val('[data-field="ben2Rel"]'), val('[data-field="ben2Age"]')].filter(Boolean).join(' / ')],
-        ['Beneficiary 3', [val('[data-field="ben3Name"]'), val('[data-field="ben3Dob"]'), val('[data-field="ben3Rel"]'), val('[data-field="ben3Age"]')].filter(Boolean).join(' / ')],
         ['Connection', val('[data-field="affiliation"]')],
         ['Notes', val('[data-field="notes"]')],
+        ['Share subscription', `${val('#mf-shares')} shares (PHP ${formatAmount(Number(val('#mf-shares')) * PAR_VALUE)}), paid over ${val('#mf-years')} years`],
         ['Privacy consent', (form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked ? 'Given — Privacy Notice v2026-08' : ''],
       ];
       const message = rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n') || '(no details)';
       (form!.elements.namedItem('message') as HTMLInputElement).value = message;
+
+      // Structured copy for the worker, which fills the office pages from it.
+      (form!.elements.namedItem('applicant') as HTMLInputElement).value = JSON.stringify({
+        firstName: first,
+        middleName: middle,
+        lastName: last,
+        extension: val('[data-field="extension"]'),
+        civilStatus: (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value || '',
+        spouseName: val('[data-field="spouseName"]'),
+        contactNumber: val('[data-field="contactNumber"]'),
+        address: val('[data-field="presentHomeAddress"]') || val('[data-field="homeAddress"]'),
+        privacyConsent: !!(form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked,
+      });
     }, true);  // capture phase
 
     // ---- bubble-phase: after forms.js sends, also generate and download the PDF ----
@@ -395,7 +461,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         submitBtn.textContent = 'Generating PDF…';
       }
 
-      const bens = [1, 2, 3].map(i => ({
+      const bens = [1, 2].map(i => ({
         name: val(`[data-field="ben${i}Name"]`),
         dob: val(`[data-field="ben${i}Dob"]`),
         relationship: val(`[data-field="ben${i}Rel"]`),
@@ -437,7 +503,9 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         parentDob: val('[data-field="parentDob"]'),
         parentContact: val('[data-field="parentContact"]'),
         beneficiaries: bens,
-        dateAccomplished: new Date().toISOString().slice(0, 10),
+        sharesSubscribed: Number(val('#mf-shares')),
+        yearsToPay: Number(val('#mf-years')),
+        dateAccomplished: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD in the applicant's time zone
       };
 
       try {
