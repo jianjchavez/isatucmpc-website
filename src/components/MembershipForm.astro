@@ -242,8 +242,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <fieldset class="space-y-3">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. Beneficiaries (up to 3)</legend>
-    {[1, 2, 3].map(i => (
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. Beneficiaries (up to 2)</legend>
+    {[1, 2].map(i => (
       <div class="grid grid-cols-2 md:grid-cols-[2fr_1.2fr_1.5fr_0.7fr] gap-2 items-end">
         <div>
           <label for={`mf-ben${i}-name`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">{`Beneficiary ${i} — name`}</label>
@@ -422,7 +422,6 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         ['Parent', [val('[data-field="parentName"]'), val('[data-field="parentDob"]'), val('[data-field="parentContact"]')].filter(Boolean).join(' / ')],
         ['Beneficiary 1', [val('[data-field="ben1Name"]'), val('[data-field="ben1Dob"]'), val('[data-field="ben1Rel"]'), val('[data-field="ben1Age"]')].filter(Boolean).join(' / ')],
         ['Beneficiary 2', [val('[data-field="ben2Name"]'), val('[data-field="ben2Dob"]'), val('[data-field="ben2Rel"]'), val('[data-field="ben2Age"]')].filter(Boolean).join(' / ')],
-        ['Beneficiary 3', [val('[data-field="ben3Name"]'), val('[data-field="ben3Dob"]'), val('[data-field="ben3Rel"]'), val('[data-field="ben3Age"]')].filter(Boolean).join(' / ')],
         ['Connection', val('[data-field="affiliation"]')],
         ['Notes', val('[data-field="notes"]')],
         ['Share subscription', `${val('#mf-shares')} shares (PHP ${formatAmount(Number(val('#mf-shares')) * PAR_VALUE)}), paid over ${val('#mf-years')} years`],
@@ -462,7 +461,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         submitBtn.textContent = 'Generating PDF…';
       }
 
-      const bens = [1, 2, 3].map(i => ({
+      const bens = [1, 2].map(i => ({
         name: val(`[data-field="ben${i}Name"]`),
         dob: val(`[data-field="ben${i}Dob"]`),
         relationship: val(`[data-field="ben${i}Rel"]`),

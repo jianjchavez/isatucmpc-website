@@ -47,7 +47,7 @@ export interface PdfFieldData {
   parentName?: string;
   parentDob?: string;
   parentContact?: string;
-  // Beneficiaries (up to 3)
+  // Beneficiaries (up to 2 — the paper form has two rows)
   beneficiaries?: Array<{ name?: string; dob?: string; relationship?: string; age?: string }>;
   // Share subscription (Membership Subscription Agreement)
   sharesSubscribed?: number;
@@ -352,7 +352,6 @@ export async function fillApplicationPdf(
   drawText(page, font, data.parentContact, coords.parentContact);
 
   // Beneficiaries
-  // The paper form has two beneficiary rows; a third beneficiary is only in the coop email.
   const bens = data.beneficiaries ?? [];
   for (let i = 0; i < Math.min(2, bens.length); i++) {
     const b = bens[i];
