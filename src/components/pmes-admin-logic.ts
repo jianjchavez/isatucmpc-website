@@ -8,7 +8,6 @@ export interface AdminSession {
   venue: string;
   presenterName: string;
   chairName: string;
-  timerMinutes: number;
   status: string;
   createdAt: string;
   closedAt: string | null;
