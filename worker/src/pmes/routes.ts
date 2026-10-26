@@ -83,12 +83,18 @@ pmes.post('/start', async c => {
     b.email = application.email;
     b.mobile = mobile;
   }
-  const liveAttempt = () => db.prepare(`SELECT id, attempt_no FROM pmes_attempts
+  type Live = { id: string; attempt_no: number; mobile: string; email: string };
+  const liveAttempt = () => db.prepare(`SELECT id, attempt_no, mobile, email FROM pmes_attempts
     WHERE session_id = ? AND id_type = ? AND id_number = ? AND status IN ('started', 'submitting')
     ORDER BY attempt_no DESC LIMIT 1`)
-    .bind(session.id, b.idType, b.idNumber).first<{ id: string; attempt_no: number }>();
+    .bind(session.id, b.idType, b.idNumber).first<Live>();
+  // A member number is self-declared, so only the starter (same mobile and email) may continue a live attempt.
+  const continueOwn = async (live: Live) =>
+    live.mobile === b.mobile && live.email === b.email
+      ? c.json({ ...await currentState(c, live.id), attemptNo: live.attempt_no })
+      : c.json({ error: 'attempt-in-progress' }, 409);
   const live = await liveAttempt();
-  if (live) return c.json({ ...await currentState(c, live.id), attemptNo: live.attempt_no });
+  if (live) return continueOwn(live);
   const prior = await db
     .prepare('SELECT COUNT(*) AS n, MAX(passed) AS passed FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ?')
     .bind(session.id, b.idType, b.idNumber)
@@ -121,18 +127,14 @@ pmes.post('/start', async c => {
       .run();
     if (!inserted.meta.changes) {
       const winner = await liveAttempt();
-      if (winner) return c.json({ ...await currentState(c, winner.id), attemptNo: winner.attempt_no });
-      // The winning request may already have finalized; return its state as /resume would.
-      const completed = await db.prepare('SELECT id, attempt_no FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ? ORDER BY attempt_no DESC LIMIT 1')
-        .bind(session.id, b.idType, b.idNumber).first<{ id: string; attempt_no: number }>();
-      if (completed) return c.json({ ...await currentState(c, completed.id), attemptNo: completed.attempt_no });
-      return c.json({ error: 'attempts-exhausted' }, 409);
+      if (winner) return continueOwn(winner);
+      return c.json({ error: 'attempt-in-progress' }, 409);
     }
   } catch (err) {
     // Two concurrent starts for one identity both computed attempt_no N; the loser hits the UNIQUE constraint.
     if (/UNIQUE/.test(String((err as Error).message))) {
       const winner = await liveAttempt();
-      if (winner) return c.json({ ...await currentState(c, winner.id), attemptNo: winner.attempt_no });
+      if (winner) return continueOwn(winner);
       return c.json({ error: 'attempts-exhausted' }, 409);
     }
     throw err;

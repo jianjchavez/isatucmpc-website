@@ -45,6 +45,7 @@ const ERRORS: Record<string, string> = {
   'bank-not-ready': 'The quiz is not open yet. Please see the presenter.',
   'forbidden': 'This page must be opened from the cooperative website.',
   'rate-limited': 'Too many attempts from this connection. Please wait a few minutes and try again.',
+  'attempt-in-progress': 'A quiz for this number is already in progress on another phone or browser. Continue it there, or see the presenter.',
   'unknown-attempt': 'This attempt is no longer recognized. Please start again.',
   'attempt-finalizing': 'Your result is being prepared. Please try again in a moment.',
   'generic': 'Something went wrong. Please check your connection and try again.',

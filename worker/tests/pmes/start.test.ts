@@ -120,6 +120,15 @@ describe('POST /api/pmes/start', () => {
     expect(await db().prepare('SELECT COUNT(*) AS n FROM pmes_attempts').first()).toEqual({ n: 1 });
   });
 
+  it('someone else with the same member number cannot take over a live attempt', async () => {
+    const first = await (await start(okBody({ idType: 'member', idNumber: 'M-77', fullName: 'Owner', email: 'owner@example.com' }))).json<any>();
+    const res = await start(okBody({ idType: 'member', idNumber: 'M-77', fullName: 'Other', email: 'other@example.com' }));
+    expect(res.status).toBe(409);
+    const json = await res.json<any>();
+    expect(json).toEqual({ error: 'attempt-in-progress' });
+    expect(JSON.stringify(json)).not.toContain(first.attemptId);
+  });
+
   it('second start finalizes a fully expired live attempt instead of creating another', async () => {
     const first = await (await start(okBody())).json<any>();
     await db().prepare('UPDATE pmes_attempts SET served_at = ? WHERE id = ?')
