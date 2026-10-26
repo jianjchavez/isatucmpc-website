@@ -103,6 +103,7 @@ describe('office packet', () => {
     expect(toApplicant.html).toContain('APP-2026-0001');
     expect(toApplicant.html).toContain('0950 108 8310');
     expect(toApplicant.html).toContain('https://m.me/isatu.cmpc');
+    expect(toApplicant.html).toContain('<img src="https://isatucmpc.coop/qr/messenger.png"');
   });
 
   it('contact submit has no applicationNo', async () => {

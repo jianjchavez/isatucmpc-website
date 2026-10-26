@@ -92,7 +92,7 @@ app.post('/api/submit', async c => {
       source === 'membership'
         ? 'We received your membership inquiry'
         : 'We received your message',
-    html: `<p>Salamat gid, ${escapeHtml(name)}.</p>${applicationNo ? `<p>Your application number is <strong>${applicationNo}</strong>. Please bring it to the PMES.</p>` : ''}<p>We've received your message and will respond within 2 business days. For urgent matters, call (033) 330-2586 or 0950 108 8310 (call or text), or message us on Facebook Messenger: <a href="https://m.me/isatu.cmpc">m.me/isatu.cmpc</a>.</p><p>— ISATUCMPC</p>`,
+    html: `<p>Salamat gid, ${escapeHtml(name)}.</p>${applicationNo ? `<p>Your application number is <strong>${applicationNo}</strong>. Please bring it to the PMES.</p>` : ''}<p>We've received your message and will respond within 2 business days. For urgent matters, call (033) 330-2586 or 0950 108 8310 (call or text), or message us on Facebook Messenger: <a href="https://m.me/isatu.cmpc">m.me/isatu.cmpc</a>.</p><p><a href="https://m.me/isatu.cmpc"><img src="https://isatucmpc.coop/qr/messenger.png" width="120" height="120" alt="QR code: message ISATUCMPC on Messenger"></a><br>Scan to message us on Messenger.</p><p>— ISATUCMPC</p>`,
   });
 
   return c.json(applicationNo ? { ok: true, applicationNo } : { ok: true });
