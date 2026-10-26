@@ -1,7 +1,7 @@
 // Presenter (admin) routes, mounted at /api/pmes/admin (spec §3.1, §5 Admin).
 import { Hono } from 'hono';
 import { findPresenterByName, hashPassword, verifyPassword, signSession, requirePresenter, type PresenterApp } from './auth';
-import { createSession, closeSession, type SessionRow } from './sessions';
+import { createSession, closeSession, SESSION_COLUMNS, type SessionRow } from './sessions';
 import { attemptLimit } from './validate';
 import { sendResultEmails, type AttemptRow } from './email';
 import { issueCertificate } from './certificates';
@@ -17,11 +17,11 @@ const dummy = hashPassword('dummy');
 
 export type AdminSession = {
   id: number; code: string; sessionDate: string; venue: string; presenterName: string; chairName: string;
-  timerMinutes: number; status: string; createdAt: string; closedAt: string | null;
+  status: string; createdAt: string; closedAt: string | null;
 };
 const toAdminSession = (s: SessionRow): AdminSession => ({
   id: s.id, code: s.code, sessionDate: s.session_date, venue: s.venue, presenterName: s.presenter_name, chairName: s.chair_name,
-  timerMinutes: s.timer_minutes, status: s.status, createdAt: s.created_at, closedAt: s.closed_at,
+  status: s.status, createdAt: s.created_at, closedAt: s.closed_at,
 });
 
 admin.post('/login', async c => {
@@ -43,7 +43,7 @@ admin.use('/sessions', requirePresenter);
 admin.use('/sessions/*', requirePresenter);
 
 admin.get('/sessions', async c => {
-  const { results } = await c.env.PMES_DB.prepare('SELECT * FROM pmes_sessions ORDER BY session_date DESC, id DESC').all<SessionRow>();
+  const { results } = await c.env.PMES_DB.prepare(`SELECT ${SESSION_COLUMNS} FROM pmes_sessions ORDER BY session_date DESC, id DESC`).all<SessionRow>();
   return c.json({ sessions: results.map(toAdminSession) });
 });
 
@@ -55,13 +55,12 @@ admin.post('/sessions', async c => {
   const row = await createSession(c.env.PMES_DB, {
     ...input,
     presenterId: c.var.presenter.id,
-    timerMinutes: Number(raw.timerMinutes) === 0 ? 0 : 20,
   });
   return c.json(toAdminSession(row));
 });
 
 const loadSession = (db: D1Database, id: string) =>
-  /^\d+$/.test(id) ? db.prepare('SELECT * FROM pmes_sessions WHERE id = ?').bind(Number(id)).first<SessionRow>() : Promise.resolve(null);
+  /^\d+$/.test(id) ? db.prepare(`SELECT ${SESSION_COLUMNS} FROM pmes_sessions WHERE id = ?`).bind(Number(id)).first<SessionRow>() : Promise.resolve(null);
 
 admin.post('/sessions/:id/close', async c => {
   const s = await loadSession(c.env.PMES_DB, c.req.param('id'));

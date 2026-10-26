@@ -5,10 +5,12 @@ import type { PmesEnv } from './env';
 import { loadBank } from './bank';
 import { drawQuiz, presentDraw } from './draw';
 import { findOpenSession } from './sessions';
-import { isPhMobile, isEmail, attemptLimit } from './validate';
+import { isEmail, attemptLimit } from './validate';
 import { verifyTurnstile } from '../turnstile';
 import { submit } from './submit';
 import { admin } from './admin';
+import { findApplication, normalizeMobile } from '../membership/applications';
+import { QUESTION_SECONDS, type Step } from './flow';
 
 export const pmes = new Hono<{ Bindings: PmesEnv }>();
 
@@ -47,10 +49,14 @@ pmes.post('/start', async c => {
     consent: raw.consent,
     turnstile: str(raw.turnstile),
   };
-  if (!b.code || !b.idNumber || !b.fullName || !b.mobile || !b.email || !b.turnstile || !['application', 'member'].includes(b.idType))
+  if (!b.code || !b.idNumber || !b.mobile || !b.turnstile || !['application', 'member'].includes(b.idType))
     return c.json({ error: 'missing-fields' }, 400);
-  if (!isPhMobile(b.mobile)) return c.json({ error: 'invalid-mobile' }, 400);
-  if (!isEmail(b.email)) return c.json({ error: 'invalid-email' }, 400);
+  if (b.idType === 'member') {
+    if (!b.fullName || !b.email) return c.json({ error: 'missing-fields' }, 400);
+    b.mobile = normalizeMobile(b.mobile);
+    if (!b.mobile) return c.json({ error: 'invalid-mobile' }, 400);
+    if (!isEmail(b.email)) return c.json({ error: 'invalid-email' }, 400);
+  }
   if (b.consent !== true) return c.json({ error: 'consent-required' }, 400);
 
   const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
@@ -69,6 +75,14 @@ pmes.post('/start', async c => {
   if (session === 'code-expired') return c.json({ error: session }, 410);
 
   const db = c.env.PMES_DB;
+  if (b.idType === 'application') {
+    const application = await findApplication(db, b.idNumber);
+    const mobile = normalizeMobile(b.mobile);
+    if (!application || !mobile || mobile !== application.mobile) return c.json({ error: 'unknown-application' }, 400);
+    b.fullName = application.fullName;
+    b.email = application.email;
+    b.mobile = mobile;
+  }
   const prior = await db
     .prepare('SELECT COUNT(*) AS n, MAX(passed) AS passed FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ?')
     .bind(session.id, b.idType, b.idNumber)
@@ -90,14 +104,13 @@ pmes.post('/start', async c => {
 
   const attemptId = hexId();
   const attemptNo = count + 1;
-  const deadlineAt = session.timer_minutes > 0 ? new Date(now.getTime() + session.timer_minutes * 60e3).toISOString() : null;
   try {
     await db
       .prepare(
-        `INSERT INTO pmes_attempts (id, session_id, attempt_no, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, deadline_at, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'started')`,
+        `INSERT INTO pmes_attempts (id, session_id, attempt_no, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, deadline_at, status, current_n, served_at, answers_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'started', 1, ?, ?)`,
       )
-      .bind(attemptId, session.id, attemptNo, b.idType, b.idNumber, b.fullName, b.mobile, b.email, nowIso, JSON.stringify(draw.items), nowIso, deadlineAt)
+      .bind(attemptId, session.id, attemptNo, b.idType, b.idNumber, b.fullName, b.mobile, b.email, nowIso, JSON.stringify(draw.items), nowIso, nowIso, JSON.stringify(Array(draw.items.length).fill(null)))
       .run();
   } catch (err) {
     // Two concurrent starts for one identity both computed attempt_no N; the loser hits the UNIQUE constraint.
@@ -105,7 +118,8 @@ pmes.post('/start', async c => {
     throw err;
   }
 
-  return c.json({ attemptId, attemptNo, deadlineAt, questions: presentDraw(bank, draw) });
+  const step: Step = { attemptId, fullName: b.fullName, total: draw.items.length, question: presentDraw(bank, draw)[0], secondsLeft: QUESTION_SECONDS };
+  return c.json({ ...step, attemptNo });
 });
 
 pmes.route('/', submit);

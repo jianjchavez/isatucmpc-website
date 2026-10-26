@@ -13,7 +13,7 @@ const withWrong = (count: number) => correct.map((c, i) => (i < count ? (c + 1) 
 
 describe('scoreAttempt', () => {
   it('all correct scores 20 of 20 and passes with no review sections', () => {
-    expect(scoreAttempt(bank, draw, correct)).toEqual({ score: 20, total: 20, passed: true, reviewSections: [] });
+    expect(scoreAttempt(bank, draw, correct)).toEqual({ score: 20, total: 20, passed: true, reviewSections: [], missed: [] });
   });
 
   it('15 correct fails, 16 passes', () => {
@@ -43,4 +43,14 @@ describe('scoreAttempt', () => {
       reviewSections: bank.sections.map(s => s.id),
     });
   });
+});
+
+it('missed items resolve shuffled answers, null answers, correct text and slide', () => {
+  const items = draw.items.slice(0, 2);
+  const q = items.map(item => byId.get(item.id)!);
+  const wrong = (correct[0] + 1) % 4;
+  expect(scoreAttempt(bank, { items }, [wrong, null]).missed).toEqual([
+    { n: 1, text: q[0].text, yourAnswer: q[0].options[items[0].optionOrder[wrong]], correctAnswer: q[0].options[q[0].answer], slide: q[0].slide },
+    { n: 2, text: q[1].text, yourAnswer: null, correctAnswer: q[1].options[q[1].answer], slide: q[1].slide },
+  ]);
 });

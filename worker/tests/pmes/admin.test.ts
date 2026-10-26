@@ -71,7 +71,7 @@ describe('/api/pmes/admin', () => {
       .run();
     const row = await createSession(
       db(),
-      { sessionDate: manilaToday(), venue: 'Main Hall', presenterName: 'Presenter Name', chairName: 'Chair', presenterId: 1, timerMinutes: 20 },
+      { sessionDate: manilaToday(), venue: 'Main Hall', presenterName: 'Presenter Name', chairName: 'Chair', presenterId: 1 },
       () => 0, // PMES-AAAA
     );
     sessionId = row.id;
@@ -114,13 +114,14 @@ describe('/api/pmes/admin', () => {
     expect(res.status).toBe(200);
     const { sessions } = await res.json<any>();
     expect(sessions).toHaveLength(1);
-    expect(sessions[0]).toMatchObject({ id: sessionId, code: 'PMES-AAAA', sessionDate: manilaToday(), venue: 'Main Hall', presenterName: 'Presenter Name', chairName: 'Chair', timerMinutes: 20, status: 'open', closedAt: null });
+    expect(sessions[0]).toMatchObject({ id: sessionId, code: 'PMES-AAAA', sessionDate: manilaToday(), venue: 'Main Hall', presenterName: 'Presenter Name', chairName: 'Chair', status: 'open', closedAt: null });
+    expect(sessions[0]).not.toHaveProperty('timerMinutes');
     expect(typeof sessions[0].createdAt).toBe('string');
   });
 
-  it('create requires chairName and returns a code; timer coerced to 0 or 20', async () => {
+  it('create requires chairName and returns a code; legacy timer input ignored', async () => {
     const { token } = await login();
-    const body = { sessionDate: '2026-10-24', venue: 'Room 2', presenterName: 'Presenter Name', chairName: 'Vice Chair', timerMinutes: 20 };
+    const body = { sessionDate: '2026-10-24', venue: 'Room 2', presenterName: 'Presenter Name', chairName: 'Vice Chair' };
     let res = await call('/admin/sessions', { ...body, chairName: '' }, token);
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'missing-fields' });
@@ -130,10 +131,12 @@ describe('/api/pmes/admin', () => {
     res = await call('/admin/sessions', { ...body, timerMinutes: 0 }, token);
     expect(res.status).toBe(200);
     const s = await res.json<any>();
+    expect(s).not.toHaveProperty('timerMinutes');
     expect(s.code).toMatch(/^PMES-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/);
-    expect(s).toMatchObject({ sessionDate: '2026-10-24', venue: 'Room 2', chairName: 'Vice Chair', timerMinutes: 0, status: 'open' });
-    const row = await db().prepare('SELECT presenter_id FROM pmes_sessions WHERE id = ?').bind(s.id).first<any>();
+    expect(s).toMatchObject({ sessionDate: '2026-10-24', venue: 'Room 2', chairName: 'Vice Chair', status: 'open' });
+    const row = await db().prepare('SELECT presenter_id, timer_minutes FROM pmes_sessions WHERE id = ?').bind(s.id).first<any>();
     expect(row.presenter_id).toBe(1);
+    expect(row.timer_minutes).toBe(20); // untouched schema default, even for legacy timerMinutes: 0 input
   });
 
   it('close marks the session closed', async () => {
@@ -149,21 +152,21 @@ describe('/api/pmes/admin', () => {
   it('override inserts a row and lets a fourth start through; blank reason rejected', async () => {
     const { token } = await login();
     const start = () =>
-      call('/start', { code: 'PMES-AAAA', idType: 'application', idNumber: ' a-1 ', fullName: 'Attendee Name', mobile: '09171234567', email: 'a@example.com', consent: true, turnstile: 'tok' });
+      call('/start', { code: 'PMES-AAAA', idType: 'member', idNumber: ' a-1 ', fullName: 'Attendee Name', mobile: '09171234567', email: 'a@example.com', consent: true, turnstile: 'tok' });
     for (let i = 0; i < 3; i++) expect((await start()).status).toBe(200);
     expect((await start()).status).toBe(409);
 
-    let res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: 'a-1', reason: '  ' }, token);
+    let res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'member', idNumber: 'a-1', reason: '  ' }, token);
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'reason-required' });
     res = await call(`/admin/sessions/${sessionId}/override`, { idType: '', idNumber: 'a-1', reason: 'r' }, token);
     expect(await res.json()).toEqual({ error: 'missing-fields' });
 
-    res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'application', idNumber: ' a-1 ', reason: 'Committee decision' }, token);
+    res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'member', idNumber: ' a-1 ', reason: 'Committee decision' }, token);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ extraAttempts: 3 });
     const row = await db().prepare('SELECT * FROM pmes_overrides').first<any>();
-    expect(row).toMatchObject({ session_id: sessionId, id_type: 'application', id_number: 'A-1', extra_attempts: 3, reason: 'Committee decision', presenter_id: 1 });
+    expect(row).toMatchObject({ session_id: sessionId, id_type: 'member', id_number: 'A-1', extra_attempts: 3, reason: 'Committee decision', presenter_id: 1 });
     expect(row.created_at).toBeTruthy();
     const fourth = await start();
     expect(fourth.status).toBe(200);

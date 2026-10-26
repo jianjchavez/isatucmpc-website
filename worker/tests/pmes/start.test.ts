@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { env } from 'cloudflare:test';
 import worker from '../../src/index';
+import { issueApplicationNo } from '../../src/membership/applications';
 import { createSession } from '../../src/pmes/sessions';
 
 const ORIGIN = 'https://isatucmpc.coop';
@@ -22,7 +23,7 @@ const manilaToday = () => new Date(Date.now() + 8 * 3600e3).toISOString().slice(
 
 const body = (over: Record<string, unknown> = {}) => ({
   code: 'PMES-AB23',
-  idType: 'application',
+  idType: 'member',
   idNumber: 'a-1',
   fullName: ' Attendee Name ',
   mobile: '09171234567',
@@ -56,7 +57,7 @@ describe('POST /api/pmes/start', () => {
       .run();
     const row = await createSession(
       db(),
-      { sessionDate: manilaToday(), venue: 'Main Hall', presenterName: 'Presenter', chairName: 'Chair', presenterId: 1, timerMinutes: 20 },
+      { sessionDate: manilaToday(), venue: 'Main Hall', presenterName: 'Presenter', chairName: 'Chair', presenterId: 1 },
       () => 0, // PMES-AAAA
     );
     sessionId = row.id;
@@ -64,32 +65,49 @@ describe('POST /api/pmes/start', () => {
 
   const okBody = (over: Record<string, unknown> = {}) => body({ code: 'PMES-AAAA', ...over });
 
-  it('happy path: 20 questions without answers, attemptNo 1, deadline 20 min out', async () => {
-    const before = Date.now();
+  it('returns only question 1 with secondsLeft 30; member start unchanged', async () => {
     const res = await start(okBody());
     expect(res.status).toBe(200);
     const json = await res.json<any>();
     expect(json.attemptId).toMatch(/^[0-9a-f]{32}$/);
-    expect(json.attemptNo).toBe(1);
-    expect(json.questions).toHaveLength(20);
-    for (const q of json.questions) {
-      expect(Object.keys(q).sort()).toEqual(['id', 'n', 'options', 'section', 'text']);
-      expect(q.options).toHaveLength(4);
-    }
+    expect(json).toMatchObject({ fullName: 'Attendee Name', total: 20, secondsLeft: 30, question: { n: 1 } });
+    expect(json.questions).toBeUndefined();
+    expect(json.deadlineAt).toBeUndefined();
+    expect(Object.keys(json.question).sort()).toEqual(['id', 'n', 'options', 'section', 'text']);
+    expect(json.question.options).toHaveLength(4);
     expect(JSON.stringify(json)).not.toContain('"answer"');
-    const deadline = Date.parse(json.deadlineAt);
-    expect(deadline - before).toBeGreaterThanOrEqual(20 * 60e3 - 50);
-    expect(deadline - before).toBeLessThan(20 * 60e3 + 5000);
     const row = await db().prepare('SELECT * FROM pmes_attempts WHERE id = ?').bind(json.attemptId).first<any>();
-    expect(row).toMatchObject({ session_id: sessionId, attempt_no: 1, id_type: 'application', id_number: 'A-1', full_name: 'Attendee Name', email: 'attendee@example.com', status: 'started', deadline_at: json.deadlineAt });
+    expect(row).toMatchObject({ session_id: sessionId, attempt_no: 1, id_type: 'member', id_number: 'A-1', full_name: 'Attendee Name', email: 'attendee@example.com', status: 'started', deadline_at: null, current_n: 1 });
     expect(JSON.parse(row.draw_json)).toHaveLength(20);
+    expect(JSON.parse(row.answers_json)).toEqual(Array(20).fill(null));
+    expect(Number.isFinite(Date.parse(row.served_at))).toBe(true);
     expect(turnstile).toHaveBeenCalledOnce();
   });
 
-  it('no deadline when the session has no timer', async () => {
+  it('application start needs the matching mobile and uses the stored identity', async () => {
+    await db().prepare('DELETE FROM membership_applications').run();
+    await db().prepare('DELETE FROM application_counters').run();
+    const no = await issueApplicationNo(db(), { fullName: 'Application Name', mobile: '09171234567', email: 'stored@example.com' }, '2026-10-26T00:00:00Z');
+    expect(no).toBe('APP-2026-0001');
+    const appBody = (over = {}) => okBody({ idType: 'application', idNumber: no, fullName: undefined, email: undefined, ...over });
+    for (const mobile of ['+63 917 123 4567', '0917 123 4567']) {
+      const res = await start(appBody({ mobile }));
+      expect(res.status).toBe(200);
+      const json = await res.json<any>();
+      expect(json.fullName).toBe('Application Name');
+      expect(await db().prepare('SELECT full_name, mobile, email FROM pmes_attempts WHERE id = ?').bind(json.attemptId).first()).toEqual({ full_name: 'Application Name', mobile: '09171234567', email: 'stored@example.com' });
+    }
+    for (const over of [{ mobile: '09999999999' }, { idNumber: 'APP-2026-9999' }, { mobile: '12345' }]) {
+      const res = await start(appBody(over));
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({ error: 'unknown-application' });
+    }
+  });
+
+  it('legacy session timer does not change per-question time', async () => {
     await db().prepare('UPDATE pmes_sessions SET timer_minutes = 0').run();
     const json = await (await start(okBody())).json<any>();
-    expect(json.deadlineAt).toBeNull();
+    expect(json.secondsLeft).toBe(30);
   });
 
   it('second start by the same identity is attemptNo 2', async () => {
@@ -113,7 +131,7 @@ describe('POST /api/pmes/start', () => {
     expect(await res.json()).toEqual({ error: 'attempts-exhausted' });
 
     await db()
-      .prepare("INSERT INTO pmes_overrides (session_id, id_type, id_number, reason, presenter_id, created_at) VALUES (?, 'application', 'A-1', 'r', 1, '2026-10-21T00:00:00Z')")
+      .prepare("INSERT INTO pmes_overrides (session_id, id_type, id_number, reason, presenter_id, created_at) VALUES (?, 'member', 'A-1', 'r', 1, '2026-10-21T00:00:00Z')")
       .bind(sessionId)
       .run();
     for (const n of [4, 5, 6]) {
@@ -144,7 +162,7 @@ describe('POST /api/pmes/start', () => {
     const res = await start(okBody(), testEnv({ PMES_RL: { limit } }), { origin: ORIGIN, 'cf-connecting-ip': '203.0.113.9' });
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ error: 'rate-limited' });
-    expect(limit).toHaveBeenCalledWith({ key: '203.0.113.9:application:A-1' });
+    expect(limit).toHaveBeenCalledWith({ key: '203.0.113.9:member:A-1' });
   });
 
   it('rate-limited when the per-IP bucket refuses', async () => {
