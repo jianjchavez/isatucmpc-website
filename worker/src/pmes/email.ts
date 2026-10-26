@@ -29,7 +29,7 @@ export type AttemptRow = {
 export type Result = { score: number; total: number; passed: boolean; retakesLeft: number };
 
 const FROM = 'ISATUCMPC <noreply@isatucmpc.coop>';
-const CONTACT = '<p>Office: (033) 330-2586 · isatucmpc1964@gmail.com</p>';
+const CONTACT = '<p>Office: (033) 330-2586 · isatucmpc1964@gmail.com</p><p>Mobile: 0950 108 8310 (call or text) · Messenger: <a href="https://m.me/isatu.cmpc">m.me/isatu.cmpc</a></p>';
 const ID_LABEL: Record<string, string> = { application: 'Application No.', member: 'Member No.' };
 
 export async function sendResultEmails(
