@@ -124,18 +124,14 @@ describe('office packet', () => {
     expect(await res.json()).toEqual({ error: 'send-failed' });
   });
 
-  it('still emails the coop when the applicant details cannot be read', async () => {
+  it.each(['', '12345', 'garbled'])('rejects invalid applicant mobile %j before Turnstile or numbering', async mobile => {
     await clearApplications();
-    const sent: any[] = [];
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-      const url = String(input instanceof Request ? input.url : input);
-      if (url.includes('turnstile')) return Response.json({ success: true });
-      sent.push(JSON.parse(String(init?.body)));
-      return Response.json({ id: 'x' });
-    });
-    const res = await submit({ shares: '500', years: '5', applicant: 'garbled' });
-    expect(res.status).toBe(200);
-    expect(sent[0].attachments).toBeUndefined();
-    expect(sent[0].html).toContain('Office packet not attached');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ success: true, id: 'x' }));
+    const res = await submit({ shares: '500', years: '5', applicant: mobile === 'garbled' ? mobile : JSON.stringify({ ...applicant, contactNumber: mobile }) });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'invalid-mobile' });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(await testEnv.PMES_DB.prepare('SELECT COUNT(*) AS n FROM membership_applications').first()).toEqual({ n: 0 });
+    expect(await testEnv.PMES_DB.prepare('SELECT COUNT(*) AS n FROM application_counters').first()).toEqual({ n: 0 });
   });
 });

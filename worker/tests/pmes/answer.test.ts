@@ -3,6 +3,7 @@ import { env } from 'cloudflare:test';
 import worker from '../../src/index';
 import { createSession } from '../../src/pmes/sessions';
 import { loadBank } from '../../src/pmes/bank';
+import { issueCertificate } from '../../src/pmes/certificates';
 
 const ORIGIN = 'https://isatucmpc.coop';
 const BASE = 'https://forms.isatucmpc.coop/api/pmes';
@@ -125,6 +126,55 @@ describe('POST /api/pmes/answer', () => {
     expect(fetchStub.mock.calls).toHaveLength(calls);
   });
 
+  it.each([false, true])('resume recovers a 31-second-old claim (certificate exists: %s)', async existingCertificate => {
+    const { attemptId } = await start();
+    const answers = (await correctAnswers(attemptId)).map(a => a.choice);
+    const stamp = new Date(Date.now() - 31_000).toISOString();
+    await db().prepare(`UPDATE pmes_attempts SET status = 'submitting', current_n = 21,
+      answers_json = ?, score = 20, passed = 1, submitted_at = ? WHERE id = ?`)
+      .bind(JSON.stringify(answers), stamp, attemptId).run();
+    const existing = existingCertificate ? await issueCertificate(db(), attemptId, stamp) : null;
+    fetchStub.mockClear();
+    const responses = await Promise.all([post('/resume', { attemptId }), post('/resume', { attemptId })]);
+    expect(responses.map(r => r.status)).toEqual([200, 200]);
+    const finals = await Promise.all(responses.map(r => r.json<any>()));
+    expect(finals[0]).toMatchObject({ score: 20, passed: true, certificateNo: `PMES-${manilaYear()}-0001` });
+    expect(finals[1]).toEqual(finals[0]);
+    if (existing) expect(finals[0]).toMatchObject({ certificateNo: existing.no, certificateKey: existing.key });
+    expect(await attemptRow(attemptId)).toMatchObject({ status: 'submitted' });
+    expect((await attemptRow(attemptId)).submitted_at).not.toBe(stamp);
+    expect(await db().prepare('SELECT COUNT(*) AS n FROM pmes_certificates').first()).toEqual({ n: 1 });
+    expect(await db().prepare('SELECT next_seq FROM pmes_counters').first()).toEqual({ next_seq: 2 });
+    expect(fetchStub.mock.calls.filter(([u]) => String(u).includes('api.resend.com'))).toHaveLength(2);
+  });
+
+  it('recovery preserves the stored pass decision when the configured pass mark changes', async () => {
+    const { attemptId } = await start();
+    const answers = (await correctAnswers(attemptId)).map(a => a.choice);
+    await db().prepare(`UPDATE pmes_attempts SET status = 'submitting', current_n = 21,
+      answers_json = ?, score = 20, passed = 1, submitted_at = ? WHERE id = ?`)
+      .bind(JSON.stringify(answers), new Date(Date.now() - 31_000).toISOString(), attemptId).run();
+    const res = await worker.fetch(new Request(`${BASE}/resume`, {
+      method: 'POST', headers: { origin: ORIGIN, 'content-type': 'application/json' }, body: JSON.stringify({ attemptId }),
+    }), testEnv({ PMES_PASS_MARK: '21' }), {} as any);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ score: 20, passed: true, certificateNo: `PMES-${manilaYear()}-0001` });
+  });
+
+  it('does not reclaim a claim at exactly 30 seconds', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    const { attemptId } = await start();
+    const stamp = new Date(Date.now() - 30_000).toISOString();
+    await db().prepare(`UPDATE pmes_attempts SET status = 'submitting', current_n = 21,
+      score = 0, passed = 0, submitted_at = ? WHERE id = ?`).bind(stamp, attemptId).run();
+    fetchStub.mockClear();
+    const res = await post('/resume', { attemptId });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'attempt-finalizing' });
+    expect(await attemptRow(attemptId)).toMatchObject({ status: 'submitting', submitted_at: stamp });
+    expect(fetchStub).not.toHaveBeenCalled();
+  });
+
   it('answer at 33 seconds still counts within grace', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     const { attemptId } = await start();
@@ -144,7 +194,7 @@ describe('POST /api/pmes/answer', () => {
     const row = await attemptRow(attemptId);
     expect(row.current_n).toBe(2);
     expect(JSON.parse(row.answers_json)).toEqual(Array(20).fill(null));
-    expect((await start()).attemptNo).toBe(2);
+    expect(await start()).toMatchObject({ attemptId, attemptNo: 1 });
   });
 
   it.each([[180_000, 6, 0], [186_000, 7, 24]])('resume after %i ms shows question %i with %i seconds left', async (elapsed, n, secondsLeft) => {
@@ -228,8 +278,10 @@ describe('POST /api/pmes/answer', () => {
   });
 
   it('third failed attempt → retakesLeft 0 with the committee message', async () => {
-    await start();
-    await start();
+    for (let i = 0; i < 2; i++) {
+      const prior = await start();
+      await finish(prior.attemptId, nullAnswers());
+    }
     const { attemptId, attemptNo } = await start();
     expect(attemptNo).toBe(3);
     const json = await (await finish(attemptId, nullAnswers())).json<any>();

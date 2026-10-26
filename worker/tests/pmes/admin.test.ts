@@ -153,7 +153,10 @@ describe('/api/pmes/admin', () => {
     const { token } = await login();
     const start = () =>
       call('/start', { code: 'PMES-AAAA', idType: 'member', idNumber: ' a-1 ', fullName: 'Attendee Name', mobile: '09171234567', email: 'a@example.com', consent: true, turnstile: 'tok' });
-    for (let i = 0; i < 3; i++) expect((await start()).status).toBe(200);
+    for (let i = 0; i < 3; i++) {
+      expect((await start()).status).toBe(200);
+      await db().prepare("UPDATE pmes_attempts SET status = 'submitted', passed = 0").run();
+    }
     expect((await start()).status).toBe(409);
 
     let res = await call(`/admin/sessions/${sessionId}/override`, { idType: 'member', idNumber: 'a-1', reason: '  ' }, token);

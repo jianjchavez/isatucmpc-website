@@ -50,13 +50,15 @@ app.post('/api/submit', async c => {
   if (!name || !email || !message || !token) return c.json({ error: 'missing-fields' }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return c.json({ error: 'invalid-email' }, 400);
   if (source === 'membership' && !validSubscription(body.shares, body.years)) return c.json({ error: 'invalid-subscription' }, 400);
+  const mobile = source === 'membership' ? normalizeMobile(parseApplicant(body.applicant)?.contactNumber ?? '') : '';
+  if (source === 'membership' && !mobile) return c.json({ error: 'invalid-mobile' }, 400);
 
   if (!(await verifyTurnstile(c.env.TURNSTILE_SECRET, token))) return c.json({ error: 'turnstile-failed' }, 400);
 
   const applicationNo = source === 'membership'
     ? await issueApplicationNo(c.env.PMES_DB, {
       fullName: name,
-      mobile: normalizeMobile(parseApplicant(body.applicant)?.contactNumber ?? ''),
+      mobile,
       email,
     }, new Date().toISOString())
     : null;

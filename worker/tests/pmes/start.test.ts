@@ -110,22 +110,50 @@ describe('POST /api/pmes/start', () => {
     expect(json.secondsLeft).toBe(30);
   });
 
-  it('second start by the same identity is attemptNo 2', async () => {
-    await start(okBody());
-    const json = await (await start(okBody({ idNumber: ' A-1 ' }))).json<any>();
-    expect(json.attemptNo).toBe(2);
+  it('second start resumes the same attempt and advances elapsed questions', async () => {
+    const first = await (await start(okBody())).json<any>();
+    await db().prepare('UPDATE pmes_attempts SET served_at = ? WHERE id = ?')
+      .bind(new Date(Date.now() - 36_000).toISOString(), first.attemptId).run();
+    const res = await start(okBody({ idNumber: ' A-1 ' }));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ attemptId: first.attemptId, attemptNo: 1, question: { n: 2 } });
+    expect(await db().prepare('SELECT COUNT(*) AS n FROM pmes_attempts').first()).toEqual({ n: 1 });
+  });
+
+  it('second start finalizes a fully expired live attempt instead of creating another', async () => {
+    const first = await (await start(okBody())).json<any>();
+    await db().prepare('UPDATE pmes_attempts SET served_at = ? WHERE id = ?')
+      .bind(new Date(Date.now() - 606_000).toISOString(), first.attemptId).run();
+    const res = await start(okBody());
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ attemptNo: 1, score: 0, passed: false, retakesLeft: 2 });
+    expect(await db().prepare('SELECT COUNT(*) AS n FROM pmes_attempts').first()).toEqual({ n: 1 });
+  });
+
+  it('second start recovers a stale submitting attempt without creating another', async () => {
+    const first = await (await start(okBody())).json<any>();
+    await db().prepare(`UPDATE pmes_attempts SET status = 'submitting', current_n = 21,
+      score = 0, passed = 0, submitted_at = ? WHERE id = ?`)
+      .bind(new Date(Date.now() - 31_000).toISOString(), first.attemptId).run();
+    const res = await start(okBody());
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ attemptNo: 1, score: 0, passed: false });
+    expect(await db().prepare('SELECT COUNT(*) AS n FROM pmes_attempts').first()).toEqual({ n: 1 });
   });
 
   it('already-passed after a passed attempt', async () => {
     const first = await (await start(okBody())).json<any>();
-    await db().prepare('UPDATE pmes_attempts SET passed = 1 WHERE id = ?').bind(first.attemptId).run();
+    await db().prepare("UPDATE pmes_attempts SET passed = 1, status = 'submitted' WHERE id = ?").bind(first.attemptId).run();
     const res = await start(okBody());
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ error: 'already-passed' });
   });
 
   it('attempts-exhausted after 3 attempts; an override grants 3 more', async () => {
-    for (let i = 0; i < 3; i++) expect((await start(okBody())).status).toBe(200);
+    for (let i = 0; i < 3; i++) {
+      expect((await start(okBody())).status).toBe(200);
+      await db().prepare("UPDATE pmes_attempts SET status = 'submitted', passed = 0").run();
+    }
     let res = await start(okBody());
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({ error: 'attempts-exhausted' });
@@ -138,6 +166,7 @@ describe('POST /api/pmes/start', () => {
       res = await start(okBody());
       expect(res.status).toBe(200);
       expect((await res.json<any>()).attemptNo).toBe(n);
+      await db().prepare("UPDATE pmes_attempts SET status = 'submitted', passed = 0").run();
     }
     res = await start(okBody());
     expect(res.status).toBe(409);
@@ -170,14 +199,15 @@ describe('POST /api/pmes/start', () => {
     expect(res.status).toBe(429);
   });
 
-  it('409 attempts-exhausted when a concurrent start takes the next attempt_no between the count and the INSERT', async () => {
+  it('resumes the winner when a concurrent start takes the next attempt_no between the count and the INSERT', async () => {
     const first = await (await start(okBody())).json<any>();
+    await db().prepare("UPDATE pmes_attempts SET status = 'submitted', passed = 0 WHERE id = ?").bind(first.attemptId).run();
     // Race: after start has counted 1 attempt, a rival start lands attempt_no 2 just before this INSERT runs.
     const raceRow = () =>
       db()
         .prepare(
           `INSERT INTO pmes_attempts (id, session_id, attempt_no, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, status)
-           SELECT 'race', session_id, 2, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, status FROM pmes_attempts WHERE id = ?`,
+           SELECT 'race', session_id, 2, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, 'started' FROM pmes_attempts WHERE id = ?`,
         )
         .bind(first.attemptId)
         .run();
@@ -199,8 +229,8 @@ describe('POST /api/pmes/start', () => {
             },
     });
     const res = await start(okBody(), testEnv({ PMES_DB: racedDb }));
-    expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ error: 'attempts-exhausted' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ attemptId: 'race', attemptNo: 2, question: { n: 1 } });
     expect((await db().prepare('SELECT COUNT(*) AS n FROM pmes_attempts').first<any>()).n).toBe(2);
   });
 

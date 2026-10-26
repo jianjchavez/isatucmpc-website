@@ -7,7 +7,7 @@ import { drawQuiz, presentDraw } from './draw';
 import { findOpenSession } from './sessions';
 import { isEmail, attemptLimit } from './validate';
 import { verifyTurnstile } from '../turnstile';
-import { submit } from './submit';
+import { submit, currentState } from './submit';
 import { admin } from './admin';
 import { findApplication, normalizeMobile } from '../membership/applications';
 import { QUESTION_SECONDS, type Step } from './flow';
@@ -83,6 +83,12 @@ pmes.post('/start', async c => {
     b.email = application.email;
     b.mobile = mobile;
   }
+  const liveAttempt = () => db.prepare(`SELECT id, attempt_no FROM pmes_attempts
+    WHERE session_id = ? AND id_type = ? AND id_number = ? AND status IN ('started', 'submitting')
+    ORDER BY attempt_no DESC LIMIT 1`)
+    .bind(session.id, b.idType, b.idNumber).first<{ id: string; attempt_no: number }>();
+  const live = await liveAttempt();
+  if (live) return c.json({ ...await currentState(c, live.id), attemptNo: live.attempt_no });
   const prior = await db
     .prepare('SELECT COUNT(*) AS n, MAX(passed) AS passed FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ?')
     .bind(session.id, b.idType, b.idNumber)
@@ -105,16 +111,30 @@ pmes.post('/start', async c => {
   const attemptId = hexId();
   const attemptNo = count + 1;
   try {
-    await db
+    const inserted = await db
       .prepare(
         `INSERT INTO pmes_attempts (id, session_id, attempt_no, id_type, id_number, full_name, mobile, email, consent_at, draw_json, started_at, deadline_at, status, current_n, served_at, answers_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'started', 1, ?, ?)`,
+         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 'started', 1, ?, ?
+         WHERE NOT EXISTS (SELECT 1 FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ? AND status IN ('started', 'submitting'))`,
       )
-      .bind(attemptId, session.id, attemptNo, b.idType, b.idNumber, b.fullName, b.mobile, b.email, nowIso, JSON.stringify(draw.items), nowIso, nowIso, JSON.stringify(Array(draw.items.length).fill(null)))
+      .bind(attemptId, session.id, attemptNo, b.idType, b.idNumber, b.fullName, b.mobile, b.email, nowIso, JSON.stringify(draw.items), nowIso, nowIso, JSON.stringify(Array(draw.items.length).fill(null)), session.id, b.idType, b.idNumber)
       .run();
+    if (!inserted.meta.changes) {
+      const winner = await liveAttempt();
+      if (winner) return c.json({ ...await currentState(c, winner.id), attemptNo: winner.attempt_no });
+      // The winning request may already have finalized; return its state as /resume would.
+      const completed = await db.prepare('SELECT id, attempt_no FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ? ORDER BY attempt_no DESC LIMIT 1')
+        .bind(session.id, b.idType, b.idNumber).first<{ id: string; attempt_no: number }>();
+      if (completed) return c.json({ ...await currentState(c, completed.id), attemptNo: completed.attempt_no });
+      return c.json({ error: 'attempts-exhausted' }, 409);
+    }
   } catch (err) {
     // Two concurrent starts for one identity both computed attempt_no N; the loser hits the UNIQUE constraint.
-    if (/UNIQUE/.test(String((err as Error).message))) return c.json({ error: 'attempts-exhausted' }, 409);
+    if (/UNIQUE/.test(String((err as Error).message))) {
+      const winner = await liveAttempt();
+      if (winner) return c.json({ ...await currentState(c, winner.id), attemptNo: winner.attempt_no });
+      return c.json({ error: 'attempts-exhausted' }, 409);
+    }
     throw err;
   }
 

@@ -490,7 +490,9 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         applicationNo = json.applicationNo;
         localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       } catch (err) {
-        showResult("We couldn't send your message. Please try again or email isatucmpc1964@gmail.com.", false);
+        showResult((err as Error).message === 'invalid-mobile'
+          ? 'Please enter your mobile number as 09XX XXX XXXX. We use it to confirm your identity at the PMES.'
+          : "We couldn't send your message. Please try again or email isatucmpc1964@gmail.com.", false);
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
         submitting = false;
         if (submitBtn) {

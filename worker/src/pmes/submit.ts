@@ -38,15 +38,18 @@ async function finalResult(c: PmesContext, attempt: TimedAttempt): Promise<Final
   };
 }
 
-/** A competing request owns finalization. Never issue a second certificate or send emails here. */
+/** Wait for the current finalizer, or recover an interrupted claim after 30 seconds. */
 async function waitForFinal(c: PmesContext, id: string): Promise<Final> {
   for (let retry = 0; retry < 100; retry++) {
     const attempt = await loadAttempt(c.env.PMES_DB, id);
     if (!attempt) throw new HTTPException(404, { res: c.json({ error: 'unknown-attempt' }, 404) });
     if (attempt.status !== 'submitting') return finalResult(c, attempt);
+    if (attempt.submitted_at && Date.now() - Date.parse(attempt.submitted_at) > 30_000) {
+      return finalize(c, attempt, storedAnswers(attempt), new Date().toISOString());
+    }
     await new Promise(resolve => setTimeout(resolve, 25));
   }
-  // Bound the wait if the claiming worker was interrupted. Admin resend can recover a scored pass.
+  // A fresh claim may still be running; clients can retry until it completes or expires.
   throw new HTTPException(503, { res: c.json({ error: 'attempt-finalizing' }, 503, { 'Retry-After': '1' }) });
 }
 
@@ -54,8 +57,17 @@ async function finalize(c: PmesContext, attempt: TimedAttempt, answers: (number 
   const db = c.env.PMES_DB;
   const draw: Draw = { items: JSON.parse(attempt.draw_json) };
   const result = scoreAttempt(fullBank(), draw, answers, Number(c.env.PMES_PASS_MARK) || 16);
+  if (attempt.status === 'submitting') {
+    // Recovery completes the stored decision, even if configuration changed since the claim.
+    result.score = attempt.score ?? result.score;
+    result.passed = attempt.passed === 1;
+  }
   // Claim AND store the score atomically; only the winner may perform external side effects.
-  const claim = await db.prepare(`UPDATE pmes_attempts
+  const claim = attempt.status === 'submitting'
+    ? await db.prepare(`UPDATE pmes_attempts SET submitted_at = ?
+        WHERE id = ? AND status = 'submitting' AND submitted_at = ?`)
+      .bind(nowIso, attempt.id, attempt.submitted_at).run()
+    : await db.prepare(`UPDATE pmes_attempts
     SET status = 'submitting', answers_json = ?, score = ?, passed = ?, submitted_at = ?
     WHERE id = ? AND current_n = ? AND status = 'started'`)
     .bind(JSON.stringify(answers), result.score, result.passed ? 1 : 0, nowIso, attempt.id, draw.items.length + 1).run();
@@ -67,8 +79,8 @@ async function finalize(c: PmesContext, attempt: TimedAttempt, answers: (number 
   } finally {
     // Keep a scored attempt recoverable by the existing admin resend route if issuance fails.
     // Publish the final result only after the certificate is available to competing requests.
-    await db.prepare("UPDATE pmes_attempts SET status = 'submitted' WHERE id = ? AND current_n = ? AND status = 'submitting'")
-      .bind(attempt.id, draw.items.length + 1).run();
+    await db.prepare("UPDATE pmes_attempts SET status = 'submitted' WHERE id = ? AND current_n = ? AND status = 'submitting' AND submitted_at = ?")
+      .bind(attempt.id, draw.items.length + 1, nowIso).run();
   }
   const final = await finalResult(c, { ...attempt, answers_json: JSON.stringify(answers), score: result.score, passed: result.passed ? 1 : 0 });
   const emailStatus = await sendResultEmails(c.env, attempt, final, certificate);
@@ -76,7 +88,7 @@ async function finalize(c: PmesContext, attempt: TimedAttempt, answers: (number 
   return final;
 }
 
-async function currentState(c: PmesContext, id: string, answer?: Answer): Promise<(Step | Final) & { stale?: true }> {
+export async function currentState(c: PmesContext, id: string, answer?: Answer): Promise<(Step | Final) & { stale?: true }> {
   let stale = false;
   let input = answer;
   for (;;) {
