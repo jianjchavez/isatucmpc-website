@@ -8,6 +8,7 @@ import { PAR_VALUE, numberToWords, formatAmount } from './subscription';
 // then convert to PDF y = 842 - top inside the draw helper.
 
 export interface PdfFieldData {
+  applicationNo?: string;
   // Identity
   firstName?: string;
   middleName?: string;
@@ -269,6 +270,13 @@ function drawCheckmark(
   page.drawText('X', { x: coord.x, y: PAGE_HEIGHT - coord.top, size: 8, font });
 }
 
+// Right-aligned to the letterhead's right margin, in the gap under the header rule.
+function drawApplicationNo(page: ReturnType<PDFDocumentType['getPage']>, font: PDFFont, no: string | undefined, top: number) {
+  if (!no) return;
+  const text = `APPLICATION NO. ${no}`;
+  drawText(page, font, text, { x: 559 - font.widthOfTextAtSize(text, 9), top, size: 9 });
+}
+
 export async function fillApplicationPdf(
   variant: 'Regular' | 'Associate',
   data: PdfFieldData,
@@ -284,6 +292,7 @@ export async function fillApplicationPdf(
   const pdf = await PDFDocument.load(bytes);
   const page = pdf.getPage(0);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
+  drawApplicationNo(page, font, data.applicationNo, 96);
 
   const isRegular = variant === 'Regular';
   const coords: Record<string, Coord> = isRegular ? REGULAR_COORDS : ASSOCIATE_COORDS;
@@ -400,6 +409,7 @@ async function addSubscriptionAgreement(pdf: PDFDocumentType, font: PDFFont, dat
   const template = await PDFDocument.load(new Uint8Array(await res.arrayBuffer()));
   const [page] = await pdf.copyPages(template, [0]);
   pdf.addPage(page);
+  drawApplicationNo(page, font, data.applicationNo, 146);
 
   const shares = data.sharesSubscribed ?? 0;
   const years = data.yearsToPay ?? 0;

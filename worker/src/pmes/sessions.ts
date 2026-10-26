@@ -1,5 +1,7 @@
 // Session codes and Manila-day validity (spec §3.1 step 2).
 
+export const SESSION_COLUMNS = 'id, code, session_date, venue, presenter_name, chair_name, presenter_id, status, created_at, closed_at';
+
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
 
@@ -13,7 +15,6 @@ export type SessionRow = {
   presenter_name: string;
   chair_name: string;
   presenter_id: number;
-  timer_minutes: number;
   status: 'open' | 'closed';
   created_at: string;
   closed_at: string | null;
@@ -25,7 +26,6 @@ export type SessionInput = {
   presenterName: string;
   chairName: string;
   presenterId: number;
-  timerMinutes: number;
 };
 
 const cryptoRandom: Random = n => {
@@ -65,10 +65,10 @@ export async function createSession(
     try {
       const row = await db
         .prepare(
-          `INSERT INTO pmes_sessions (code, session_date, venue, presenter_name, chair_name, presenter_id, timer_minutes, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+          `INSERT INTO pmes_sessions (code, session_date, venue, presenter_name, chair_name, presenter_id, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING ${SESSION_COLUMNS}`,
         )
-        .bind(code, input.sessionDate, input.venue, input.presenterName, input.chairName, input.presenterId, input.timerMinutes, createdAt)
+        .bind(code, input.sessionDate, input.venue, input.presenterName, input.chairName, input.presenterId, createdAt)
         .first<SessionRow>();
       if (row) return row;
     } catch (err) {
@@ -84,7 +84,7 @@ export async function findOpenSession(
   nowIso: string,
 ): Promise<SessionRow | 'invalid-code' | 'session-closed' | 'code-expired'> {
   const { results } = await db
-    .prepare('SELECT * FROM pmes_sessions WHERE code = ? ORDER BY session_date DESC, id DESC')
+    .prepare(`SELECT ${SESSION_COLUMNS} FROM pmes_sessions WHERE code = ? ORDER BY session_date DESC, id DESC`)
     .bind(code.trim().toUpperCase())
     .all<SessionRow>();
   if (results.length === 0) return 'invalid-code';

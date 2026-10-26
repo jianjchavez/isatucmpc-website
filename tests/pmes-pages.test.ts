@@ -8,6 +8,34 @@ const VERIFY = 'dist/pmes/verify/index.html';
 const built = existsSync(CERT) && existsSync(VERIFY);
 if (!built) console.warn(`Skipping PMES page tests: ${CERT} absent. Run ./node_modules/.bin/astro build first.`);
 
+describe('timed quiz page contract', () => {
+  const page = readFileSync('src/pages/pmes/index.astro', 'utf8');
+  const admin = readFileSync('src/pages/pmes/admin/index.astro', 'utf8');
+  it('keeps application identity fields optional and explains the APP number', () => {
+    expect(page).toContain('The APP- number printed on your application form.');
+    expect(page).toMatch(/nameFields\.classList\.toggle\('hidden', isApplication\)/);
+    expect(page).toMatch(/nameInput\.required = !isApplication/);
+    expect(page).toMatch(/emailInput\.required = !isApplication/);
+  });
+  it('hidden result buttons stay hidden despite the global .pq-btn display rule', () => {
+    expect(page).toMatch(/\.pq-btn\.hidden\s*\{\s*display:\s*none;?\s*\}/);
+  });
+  it('a /start that comes back as a result shows the result and stores no attempt id', () => {
+    expect(page).toMatch(/if \(isStep\(response\)\) sessionStorage\.setItem\(STORE, response\.attemptId\);\s*showResponse\(response\);/);
+  });
+  it('presents one question with a single Next or Finish action', () => {
+    expect(page).not.toContain('id="pq-back"');
+    expect(page).not.toContain('id="pq-confirm"');
+    expect(page).toContain('id="pq-next"');
+    expect(page).toContain('Questions you missed');
+    expect(page).toContain('20 questions, 30 seconds each, pass mark 16.');
+  });
+  it('uses a fixed per-question timer in the presenter view', () => {
+    expect(admin).not.toContain('name="timer"');
+    expect(admin).toContain('30 s per question');
+  });
+});
+
 describe.skipIf(!built)('built PMES pages', () => {
   it('certificate carries the letterhead, A4 page size and the Vice-Chairperson caption', () => {
     const html = readFileSync(CERT, 'utf8');

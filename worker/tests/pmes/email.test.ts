@@ -63,6 +63,8 @@ describe('sendResultEmails', () => {
     expect(attendee.html).toContain('PMES-AB23');
     expect(attendee.html).toContain('18 of 20');
     expect(attendee.html).toContain('(033) 330-2586 · isatucmpc1964@gmail.com');
+    expect(attendee.html).toContain('0950 108 8310');
+    expect(attendee.html).toContain('https://m.me/isatu.cmpc');
     expect(attendee.html).not.toContain('09171234567');
 
     const coop = sent.find(m => m.to[0] === 'isatucmpc1964@gmail.com')!;

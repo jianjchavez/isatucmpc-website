@@ -15,7 +15,6 @@ const input = (sessionDate: string) => ({
   presenterName: 'Presenter One',
   chairName: 'Chair One',
   presenterId: 1,
-  timerMinutes: 20,
 });
 
 beforeAll(async () => {
@@ -49,7 +48,7 @@ describe('sessions', () => {
     expect(row.session_date).toBe('2026-11-05');
     expect(row.status).toBe('open');
     expect(row.presenter_id).toBe(1);
-    expect(row.timer_minutes).toBe(20);
+    expect(row).not.toHaveProperty('timer_minutes');
   });
 
   it('two sessions on the same date get different codes', async () => {

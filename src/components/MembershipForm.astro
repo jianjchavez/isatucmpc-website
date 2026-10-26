@@ -294,6 +294,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
   const COOLDOWN_KEY = 'mf-last-submit-ts';
   const COOLDOWN_MS = 60_000; // 1 minute
+  const WORKER_URL = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/submit';
 
   const form = document.getElementById('membership-form') as HTMLFormElement | null;
   if (form) {
@@ -305,6 +306,16 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const campusRow = document.getElementById('mf-campus-row');
     const recommender = document.getElementById('mf-recname') as HTMLInputElement | null;
     const assocOrgRow = document.getElementById('mf-assocorg-row');
+    const resultEl = document.getElementById('mf-result');
+    let submitting = false;
+
+    function showResult(text: string, success: boolean) {
+      if (!resultEl) return;
+      resultEl.style.background = success ? '#23CD63' : '#FF3F00';
+      resultEl.style.color = 'white';
+      resultEl.textContent = text;
+      resultEl.classList.remove('hidden');
+    }
 
     function val(sel: string): string {
       const el = form!.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
@@ -385,7 +396,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       problem.el?.focus();
     }, true);
 
-    // ---- capture-phase: pack hidden name + message before forms.js submit handler runs ----
+    // ---- capture-phase: pack hidden name + message before submitting ----
     form.addEventListener('submit', () => {
       const first = val('[data-field="firstName"]');
       const middle = val('[data-field="middleName"]');
@@ -444,22 +455,55 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       });
     }, true);  // capture phase
 
-    // ---- bubble-phase: after forms.js sends, also generate and download the PDF ----
+    // ---- bubble-phase: wait for the application number before building the PDF ----
     form.addEventListener('submit', async (e) => {
-      // forms.js calls e.preventDefault() and handles the fetch; we just piggy-back
-      // on the same event to generate + download the filled PDF.
+      e.preventDefault();
+      if (submitting) return;
       const variant = (form!.querySelector('input[name="mf-membertype"]:checked') as HTMLInputElement | null)?.value;
-      if (variant !== 'Regular' && variant !== 'Associate') return; // membership type is required, but be defensive
+      if (variant !== 'Regular' && variant !== 'Associate') { showResult('Please choose Regular or Associate membership.', false); return; }
 
       // Block multiple submits during cooldown
       const last = Number(localStorage.getItem(COOLDOWN_KEY) || '0');
       if (last && Date.now() - last < COOLDOWN_MS) { e.preventDefault(); applyCooldown(); return; }
 
+      submitting = true;
+      resultEl?.classList.add('hidden');
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.setAttribute('aria-busy', 'true');
-        submitBtn.textContent = 'Generating PDF…';
+        submitBtn.textContent = 'Submitting application…';
       }
+
+      let applicationNo: string;
+      try {
+        const formData = Object.fromEntries(new FormData(form!).entries());
+        formData['cf-turnstile-response'] = formData['cf-turnstile-response'] || val('[name="cf-turnstile-response"]');
+        const response = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const json = await response.json();
+        if (!response.ok || !json.ok || typeof json.applicationNo !== 'string' || !/^APP-\d{4}-\d{4,}$/.test(json.applicationNo)) {
+          throw new Error(json.error || 'submit-failed');
+        }
+        applicationNo = json.applicationNo;
+        localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
+      } catch (err) {
+        showResult((err as Error).message === 'invalid-mobile'
+          ? 'Please enter your mobile number as 09XX XXX XXXX. We use it to confirm your identity at the PMES.'
+          : "We couldn't send your message. Please try again or email isatucmpc1964@gmail.com.", false);
+        (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
+        submitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.removeAttribute('aria-busy');
+          submitBtn.textContent = 'Submit & download my application';
+        }
+        return;
+      }
+
+      if (submitBtn) submitBtn.textContent = 'Generating PDF…';
 
       const bens = [1, 2].map(i => ({
         name: val(`[data-field="ben${i}Name"]`),
@@ -469,6 +513,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       })).filter(b => b.name);
 
       const data: PdfFieldData = {
+        applicationNo,
         firstName: val('[data-field="firstName"]'),
         middleName: val('[data-field="middleName"]'),
         lastName: val('[data-field="lastName"]'),
@@ -512,18 +557,16 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         const bytes = await fillApplicationPdf(variant, data);
         const safe = [data.lastName, data.firstName].filter(Boolean).join('_').replace(/[^a-zA-Z0-9_-]/g, '') || 'applicant';
         triggerPdfDownload(bytes, `ISATUCMPC_${variant}_Application_${safe}.pdf`);
-        localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
-        applyCooldown();
+        showResult(`Application number ${applicationNo}: your application PDF is downloading. Bring the printed, signed form and this number to the PMES.`, true);
+        form!.reset();
+        (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } catch (err) {
         console.error('PDF fill failed', err);
-        const resultEl = document.getElementById('mf-result');
-        if (resultEl) {
-          resultEl.style.background = '#FF3F00';
-          resultEl.style.color = 'white';
-          resultEl.textContent = "We couldn't generate the PDF. Your form has been submitted — please email isatucmpc1964@gmail.com to request the blank form.";
-          resultEl.classList.remove('hidden');
-        }
+        showResult(`Application number ${applicationNo}: we received your form but couldn't generate the PDF. Please email isatucmpc1964@gmail.com and include your application number.`, false);
+        // The token was spent on the successful submit.
+        (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } finally {
+        submitting = false;
         if (submitBtn) {
           submitBtn.removeAttribute('aria-busy');
           submitBtn.textContent = 'Submit & download my application';

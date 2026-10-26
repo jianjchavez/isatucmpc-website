@@ -62,13 +62,14 @@ function draw(pages: PDFPage[], font: PDFFont, text: string, f: Field) {
 }
 
 /** `consentDate` is the Manila date the application was submitted, e.g. "October 23, 2026". */
-export async function buildOfficePacket(a: Applicant, consentDate: string): Promise<Uint8Array> {
+export async function buildOfficePacket(a: Applicant, consentDate: string, applicationNo: string): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(template);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const pages = pdf.getPages();
   const name = [a.firstName, a.middleName, a.lastName, a.extension].filter(Boolean).join(' ');
   const lastFirst = `${[a.lastName, a.extension].filter(Boolean).join(' ')}, ${[a.firstName, a.middleName].filter(Boolean).join(' ')}`;
   const values: Record<keyof typeof fields, string> = {
+    applicationNo: `Application No. ${applicationNo}`,
     consentName: lastFirst,
     consentDate: a.privacyConsent ? consentDate : '',
     noticeVersion: a.privacyConsent ? PRIVACY_NOTICE_VERSION : '',
@@ -84,7 +85,9 @@ export async function buildOfficePacket(a: Applicant, consentDate: string): Prom
     cardSigName: name,
     cardSingle: 'X',
   };
-  for (const [key, f] of Object.entries(fields)) draw(pages, font, values[key as keyof typeof fields], f);
+  for (const [key, f] of Object.entries(fields)) {
+    for (const location of Array.isArray(f) ? f : [f]) draw(pages, font, values[key as keyof typeof fields], location);
+  }
   return pdf.save();
 }
 

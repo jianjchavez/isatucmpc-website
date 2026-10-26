@@ -37,6 +37,10 @@ export async function issueCertificate(
   attemptId: string,
   nowIso: string,
 ): Promise<{ no: string; key: string }> {
+  const existing = () => db.prepare('SELECT no, key FROM pmes_certificates WHERE attempt_id = ?')
+    .bind(attemptId).first<{ no: string; key: string }>();
+  const certificate = await existing();
+  if (certificate) return certificate;
   const ok = await db
     .prepare('SELECT 1 AS ok FROM pmes_attempts WHERE id = ? AND passed = 1')
     .bind(attemptId)
@@ -52,10 +56,11 @@ export async function issueCertificate(
   const no = `PMES-${year}-${String(seq).padStart(4, '0')}`;
   const key = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
   await db
-    .prepare('INSERT INTO pmes_certificates (no, year, seq, attempt_id, key, issued_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .prepare('INSERT INTO pmes_certificates (no, year, seq, attempt_id, key, issued_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(attempt_id) DO NOTHING')
     .bind(no, year, seq, attemptId, key, nowIso)
     .run();
-  return { no, key };
+  // An older finalizer may still finish after its claim was recovered. Return the winner's certificate.
+  return (await existing())!;
 }
 
 const CERT_SELECT = `SELECT c.no, c.key, c.issued_at, a.full_name, a.id_type, a.id_number, a.score, a.passed, a.draw_json,

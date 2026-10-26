@@ -55,9 +55,6 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
         <label class="block text-sm font-semibold">Education and Training Committee Chair (BOD Vice-Chairperson)
           <input name="chairName" type="text" required class={field} />
         </label>
-        <label class="flex items-center gap-2 text-sm font-semibold">
-          <input name="timer" type="checkbox" checked class="h-4 w-4" /> 20-minute timer
-        </label>
         <div class="flex gap-2">
           <button type="submit" class={primary}>Create session</button>
           <button type="button" id="create-cancel" class={outline}>Cancel</button>
@@ -239,7 +236,6 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
         const s = await api<AdminSession>('/sessions', {
           sessionDate: fd.get('sessionDate'), venue: String(fd.get('venue')).trim(),
           presenterName: String(fd.get('presenterName')).trim(), chairName: String(fd.get('chairName')).trim(),
-          timerMinutes: fd.get('timer') ? 20 : 0,
         });
         sessions = [s, ...sessions];
         openSession(s);
@@ -250,7 +246,7 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
     function renderHeader() {
       const s = current!;
       $('s-code').textContent = s.code;
-      $('s-meta').textContent = `${s.sessionDate} · ${s.venue} · ${s.presenterName} · ${s.timerMinutes ? `${s.timerMinutes}-minute timer` : 'no timer'} · ${s.status}`;
+      $('s-meta').textContent = `${s.sessionDate} · ${s.venue} · ${s.presenterName} · 30 s per question · ${s.status}`;
       $<HTMLAnchorElement>('sheet-link').href = `/pmes/admin/results-sheet/?id=${encodeURIComponent(s.id)}`;
       $('close-session').classList.toggle('hidden', s.status !== 'open');
     }

@@ -15,7 +15,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
         <div>
           <Eyebrow>PMES</Eyebrow>
           <h1 class="mt-2 text-3xl">Certification Quiz</h1>
-          <p class="mt-2 text-sm text-slate">20 questions, pass mark 16. Enter your details and the session code from the presenter.</p>
+          <p class="mt-2 text-sm text-slate">20 questions, 30 seconds each, pass mark 16. Enter your details and the session code from the presenter.</p>
         </div>
         <div>
           <label for="pf-idtype" class={label}>Identity</label>
@@ -27,18 +27,19 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
         <div>
           <label for="pf-idnumber" class={label}>Number</label>
           <input id="pf-idnumber" name="idNumber" type="text" required autocomplete="off" class={input} />
+          <p id="pf-number-help" class="mt-1 text-xs text-slate">The APP- number printed on your application form.</p>
         </div>
-        <div>
+        <div id="pf-name-fields" class="hidden">
           <label for="pf-name" class={label}>Full name</label>
-          <input id="pf-name" name="fullName" type="text" required autocomplete="name" class={input} />
+          <input id="pf-name" name="fullName" type="text" autocomplete="name" class={input} />
         </div>
         <div>
           <label for="pf-mobile" class={label}>Mobile number</label>
-          <input id="pf-mobile" name="mobile" type="tel" required inputmode="numeric" pattern="09[0-9]{9}" maxlength="11" placeholder="09XXXXXXXXX" autocomplete="tel-national" class={input} />
+          <input id="pf-mobile" name="mobile" type="tel" required placeholder="09XXXXXXXXX" autocomplete="tel-national" class={input} />
         </div>
-        <div>
+        <div id="pf-email-fields" class="hidden">
           <label for="pf-email" class={label}>Email</label>
-          <input id="pf-email" name="email" type="email" required autocomplete="email" class={input} />
+          <input id="pf-email" name="email" type="email" autocomplete="email" class={input} />
         </div>
         <label class="flex items-start gap-2 text-sm">
           <input id="pf-consent" name="consent" type="checkbox" required class="mt-0.5" />
@@ -55,6 +56,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
 
       <!-- 2. Quiz -->
       <div id="pmes-quiz" class="hidden bg-white border-t-[3px] border-navy rounded-b-lg p-6 md:p-8 space-y-5">
+        <p id="pq-name" class="font-display font-semibold text-navy"></p>
         <div class="flex items-center justify-between text-sm">
           <div id="pq-progress" class="font-display font-bold text-navy" aria-live="polite"></div>
           <div id="pq-timer" class="hidden font-display font-bold text-navy tabular-nums" role="timer" aria-live="polite"></div>
@@ -63,20 +65,12 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
         <fieldset id="pq-question" class="space-y-3">
           <legend class="mb-3">
             <span id="pq-section" class="block font-display font-bold text-[11px] uppercase tracking-[0.2em] text-orange"></span>
-            <span id="pq-text" class="block text-lg font-display font-semibold text-navy mt-1"></span>
+            <span id="pq-text" class="block text-lg font-display font-semibold text-navy mt-1 select-none"></span>
           </legend>
           <div id="pq-options" class="space-y-2"></div>
         </fieldset>
-        <div id="pq-confirm" class="hidden p-4 rounded-lg bg-brand-bg border border-rule text-sm" role="status" aria-live="polite">
-          <p id="pq-confirm-text" class="font-semibold text-navy"></p>
-          <div class="mt-3 flex gap-2">
-            <button type="button" id="pq-submit" class="pq-btn bg-orange text-white">Submit answers</button>
-            <button type="button" id="pq-review" class="pq-btn border-2 border-navy text-navy">Go back</button>
-          </div>
-        </div>
-        <div class="flex justify-between gap-2">
-          <button type="button" id="pq-back" class="pq-btn border-2 border-navy text-navy">Back</button>
-          <button type="button" id="pq-next" class="pq-btn bg-navy text-white">Next</button>
+        <div class="flex justify-end">
+          <button type="button" id="pq-next" class="pq-btn bg-navy text-white" disabled>Next</button>
         </div>
         <div id="pq-error" class="hidden p-3 rounded text-sm bg-error text-white" role="alert"></div>
       </div>
@@ -89,6 +83,10 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
         <div id="pr-review-wrap" class="hidden">
           <div class={label}>Sections to review</div>
           <ul id="pr-review" class="list-disc pl-5 text-sm space-y-1"></ul>
+        </div>
+        <div id="pr-missed-wrap" class="hidden">
+          <h3 class={label}>Questions you missed</h3>
+          <ul id="pr-missed" class="space-y-3 text-sm"></ul>
         </div>
         <div class="flex flex-wrap gap-2 pt-2">
           <a id="pr-cert" class="hidden pq-btn bg-orange text-white no-underline" href="#">Open certificate</a>
@@ -108,7 +106,8 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
     font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.02em; cursor: pointer;
   }
   .pq-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .pq-opt { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 1rem; border: 2px solid #E8E8E8; border-radius: 0.5rem; cursor: pointer; font-size: 0.95rem; }
+  .pq-btn.hidden { display: none; } /* .pq-btn's display would otherwise beat Tailwind's .hidden */
+  .pq-opt { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.75rem 1rem; border: 2px solid #E8E8E8; border-radius: 0.5rem; cursor: pointer; font-size: 0.95rem; user-select: none; }
   .pq-opt:has(input:checked) { border-color: #010066; background: rgba(1, 0, 102, 0.05); }
   .pq-opt:has(input:focus-visible) { outline: 2px solid #FE9900; outline-offset: 2px; }
   .pq-opt input { margin-top: 0.3rem; accent-color: #010066; }
@@ -116,20 +115,38 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
 
 <script>
   import {
-    createQuizState, answer, remainingSeconds, isExpired, toSubmitPayload, renderResult,
-    formatClock, sectionTitle, errorMessage, type QuizState, type StartResponse, type SubmitResponse,
+    deadlineFromStep, isStep, renderResult, formatClock, sectionTitle, errorMessage,
+    type StartRequest, type Step, type Final, type QuizResponse,
   } from '~/components/pmes-logic';
 
   const WORKER = 'https://isatucmpc-forms.jianjchavez.workers.dev';
+  const STORE = 'pmes-attempt';
   const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
   const form = $<HTMLFormElement>('pmes-form');
   const quiz = $('pmes-quiz'), result = $('pmes-result');
   const turnstileEl = form.querySelector<HTMLElement>('.cf-turnstile')!;
-
-  let state: QuizState | null = null;
-  let index = 0;
+  const idType = $<HTMLSelectElement>('pf-idtype');
+  const nameInput = $<HTMLInputElement>('pf-name');
+  const emailInput = $<HTMLInputElement>('pf-email');
+  const nameFields = $('pf-name-fields');
+  const emailFields = $('pf-email-fields');
+  const next = $<HTMLButtonElement>('pq-next');
+  let step: Step | null = null;
+  let selected: number | null = null;
+  let deadlineMs = 0;
   let timer: ReturnType<typeof setInterval> | undefined;
-  let submitting = false;
+  let inFlight = false;
+
+  function identityChanged() {
+    const isApplication = idType.value === 'application';
+    nameFields.classList.toggle('hidden', isApplication);
+    emailFields.classList.toggle('hidden', isApplication);
+    nameInput.required = !isApplication;
+    emailInput.required = !isApplication;
+    $('pf-number-help').classList.toggle('hidden', !isApplication);
+  }
+  idType.addEventListener('change', identityChanged);
+  identityChanged();
 
   function show(screen: HTMLElement) {
     for (const el of [form, quiz, result]) el.classList.toggle('hidden', el !== screen);
@@ -140,19 +157,27 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
     el.classList.toggle('hidden', !msg);
   }
   class ApiError extends Error {
-    constructor(code: string, readonly body: Record<string, unknown> = {}) { super(code); }
+    constructor(code: string) { super(code); }
   }
   async function post<T>(path: string, body: unknown): Promise<T> {
-    let res: Response;
-    try {
-      res = await fetch(`${WORKER}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-    } catch { throw new ApiError('generic'); }
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new ApiError(json.error || (res.status === 429 ? 'rate-limited' : 'generic'), json);
-    return json as T;
+    for (let retries = 0; ; retries++) {
+      let res: Response;
+      try {
+        res = await fetch(`${WORKER}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      } catch { throw new ApiError('generic'); }
+      const json = await res.json().catch(() => ({}));
+      if (res.status === 503 && json.error === 'attempt-finalizing' && retries < 5) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+      if (!res.ok) throw new ApiError(json.error || (res.status === 429 ? 'rate-limited' : 'generic'));
+      return json as T;
+    }
+  }
+  function resetTurnstile() {
+    (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(turnstileEl);
   }
 
-  // ---- 1. start ----
   form.addEventListener('submit', async e => {
     e.preventDefault();
     setError($('pf-error'), null);
@@ -161,132 +186,134 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
     const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
     btn.disabled = true;
     try {
-      const data = await post<StartResponse>('/api/pmes/start', {
+      const common = {
         code: String(fd.get('code')).trim().toUpperCase(),
-        idType: fd.get('idType'),
         idNumber: String(fd.get('idNumber')).trim(),
-        fullName: String(fd.get('fullName')).trim(),
         mobile: String(fd.get('mobile')).trim(),
-        email: String(fd.get('email')).trim(),
-        consent: fd.get('consent') === 'on',
+        consent: true as const,
         turnstile: turnstileEl.querySelector<HTMLInputElement>('[name="cf-turnstile-response"]')?.value ?? '',
-      });
-      state = createQuizState(data.questions, data.deadlineAt, data.attemptId);
-      index = 0;
-      show(quiz);
-      renderQuestion();
-      startTimer();
+      };
+      const body: StartRequest = idType.value === 'application'
+        ? { ...common, idType: 'application' }
+        : { ...common, idType: 'member', fullName: String(fd.get('fullName')).trim(), email: String(fd.get('email')).trim() };
+      const response = await post<QuizResponse>('/api/pmes/start', body);
+      // A live attempt that ran out of time comes back from /start as its result.
+      if (isStep(response)) sessionStorage.setItem(STORE, response.attemptId);
+      showResponse(response);
     } catch (err) {
       setError($('pf-error'), errorMessage((err as Error).message));
       resetTurnstile();
-    } finally {
-      btn.disabled = false;
-    }
+    } finally { btn.disabled = false; }
   });
 
-  function resetTurnstile() {
-    (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(turnstileEl);
-  }
-
-  // ---- 2. quiz ----
-  function renderQuestion() {
-    if (!state) return;
-    const q = state.questions[index]!;
-    const total = state.questions.length;
-    $('pq-progress').textContent = `Question ${index + 1} of ${total}`;
-    $('pq-bar').style.width = `${((index + 1) / total) * 100}%`;
-    $('pq-section').textContent = sectionTitle(q.section);
-    $('pq-text').textContent = q.text;
-    const options = $('pq-options');
-    options.replaceChildren(...q.options.map((text, i) => {
-      const lab = document.createElement('label');
-      lab.className = 'pq-opt';
+  function showStep(current: Step) {
+    step = current;
+    selected = null;
+    deadlineMs = deadlineFromStep(current, Date.now());
+    $('pq-name').textContent = current.fullName;
+    $('pq-progress').textContent = `Question ${current.question.n} of ${current.total}`;
+    $('pq-bar').style.width = `${(current.question.n / current.total) * 100}%`;
+    $('pq-section').textContent = sectionTitle(current.question.section);
+    $('pq-text').textContent = current.question.text;
+    $('pq-options').replaceChildren(...current.question.options.map((option, i) => {
+      const label = document.createElement('label');
+      label.className = 'pq-opt';
       const radio = document.createElement('input');
       radio.type = 'radio'; radio.name = 'choice'; radio.value = String(i);
-      radio.checked = state!.answers[q.n] === i;
-      radio.addEventListener('change', () => { state = answer(state!, q.n, i); });
-      lab.append(radio, document.createTextNode(text));
-      return lab;
+      radio.addEventListener('change', () => { selected = i; next.disabled = inFlight; });
+      label.append(radio, document.createTextNode(option));
+      return label;
     }));
-    $<HTMLButtonElement>('pq-back').disabled = index === 0;
-    $('pq-next').textContent = index === total - 1 ? 'Submit' : 'Next';
-    $('pq-confirm').classList.add('hidden');
+    next.textContent = current.question.n === current.total ? 'Finish' : 'Next';
+    next.disabled = true;
     setError($('pq-error'), null);
+    show(quiz);
+    startTimer();
   }
-
-  $('pq-back').addEventListener('click', () => { index--; renderQuestion(); });
-  $('pq-next').addEventListener('click', () => {
-    if (!state) return;
-    if (index < state.questions.length - 1) { index++; renderQuestion(); return; }
-    const n = state.unanswered;
-    $('pq-confirm-text').textContent = n === 0
-      ? 'All 20 questions answered. Submit now?'
-      : `${n} ${n === 1 ? 'question is' : 'questions are'} unanswered and will count as wrong. Submit anyway?`;
-    $('pq-confirm').classList.remove('hidden');
-    $('pq-submit').focus();
-  });
-  $('pq-review').addEventListener('click', () => $('pq-confirm').classList.add('hidden'));
-  $('pq-submit').addEventListener('click', () => submit());
-
   function startTimer() {
     clearInterval(timer);
-    const el = $('pq-timer');
     const tick = () => {
-      if (!state) return;
-      const s = remainingSeconds(state, Date.now());
-      el.classList.toggle('hidden', s === null);
-      if (s === null) return;
-      el.textContent = formatClock(s);
-      el.classList.toggle('text-error', s <= 60);
-      if (isExpired(state, Date.now())) submit();
+      if (!step) return;
+      const remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+      const el = $('pq-timer');
+      el.classList.remove('hidden');
+      el.textContent = formatClock(remaining);
+      el.classList.toggle('text-error', remaining <= 10);
+      el.classList.toggle('text-navy', remaining > 10);
+      if (remaining === 0 && !inFlight) void sendAnswer(null);
     };
     tick();
-    if (state?.deadlineMs !== null) timer = setInterval(tick, 1000);
+    timer = setInterval(tick, 250);
   }
+  next.addEventListener('click', () => {
+    if (selected !== null || Date.now() >= deadlineMs) void sendAnswer(Date.now() >= deadlineMs ? null : selected);
+  });
 
-  async function submit() {
-    if (!state || submitting) return;
-    submitting = true;
+  async function sendAnswer(choice: number | null) {
+    if (!step || inFlight) return;
+    const current = step;
+    inFlight = true;
+    next.disabled = true;
     clearInterval(timer);
-    $<HTMLButtonElement>('pq-submit').disabled = true;
     try {
-      showResult(await post<SubmitResponse>('/api/pmes/submit', toSubmitPayload(state)));
+      const response = await post<QuizResponse>('/api/pmes/answer', {
+        attemptId: current.attemptId, n: current.question.n, choice,
+      });
+      showResponse(response);
     } catch (err) {
-      const code = (err as Error).message;
-      if (code === 'expired') showExpired((err as ApiError).body.retakesLeft);
-      else { setError($('pq-error'), errorMessage(code)); $<HTMLButtonElement>('pq-submit').disabled = false; submitting = false; }
-    }
+      setError($('pq-error'), errorMessage((err as Error).message));
+      next.disabled = selected === null && choice !== null;
+    } finally { inFlight = false; }
+  }
+  function showResponse(response: QuizResponse) {
+    if (isStep(response)) showStep(response);
+    else showResult(response);
   }
 
-  // ---- 3. result ----
-  function showResult(r: SubmitResponse) {
+  function showResult(r: Final) {
+    clearInterval(timer);
+    step = null;
+    sessionStorage.removeItem(STORE);
     const view = renderResult(r);
     result.classList.toggle('border-success', r.passed);
     result.classList.toggle('border-error', !r.passed);
     $('pr-headline').textContent = view.headline;
     $('pr-detail').textContent = view.detail;
-    $('pr-review').replaceChildren(...view.reviewLines.map(t => { const li = document.createElement('li'); li.textContent = t; return li; }));
+    $('pr-review').replaceChildren(...view.reviewLines.map(t => {
+      const li = document.createElement('li'); li.textContent = t; return li;
+    }));
     $('pr-review-wrap').classList.toggle('hidden', view.reviewLines.length === 0);
+    $('pr-missed').replaceChildren(...view.missedLines.map(line => {
+      const li = document.createElement('li');
+      li.className = 'rounded-lg border border-rule p-3 space-y-1';
+      const question = document.createElement('p'); question.className = 'font-semibold text-navy'; question.textContent = line.question;
+      const yours = document.createElement('p'); yours.textContent = `Your answer: ${line.yours}`;
+      const correct = document.createElement('p'); correct.textContent = `Correct answer: ${line.correct}`;
+      const slide = document.createElement('p'); slide.textContent = `Slide ${line.slide}`;
+      li.append(question, yours, correct, slide);
+      return li;
+    }));
+    $('pr-missed-wrap').classList.toggle('hidden', view.missedLines.length === 0);
     const cert = $<HTMLAnchorElement>('pr-cert');
     cert.classList.toggle('hidden', !r.passed);
     if (r.passed) cert.href = `/pmes/certificate/?no=${encodeURIComponent(r.certificateNo ?? '')}&key=${encodeURIComponent(r.certificateKey ?? '')}`;
     $('pr-retry').classList.toggle('hidden', r.passed || r.retakesLeft <= 0);
     show(result);
   }
-  function showExpired(retakesLeft: unknown) {
-    result.classList.remove('border-success'); result.classList.add('border-error');
-    $('pr-headline').textContent = 'Time is up.';
-    $('pr-detail').textContent = errorMessage('expired');
-    $('pr-review-wrap').classList.add('hidden');
-    $('pr-cert').classList.add('hidden');
-    $('pr-retry').classList.toggle('hidden', retakesLeft === 0);
-    show(result);
-  }
   $('pr-retry').addEventListener('click', () => {
-    state = null; submitting = false;
-    $<HTMLButtonElement>('pq-submit').disabled = false;
-    resetTurnstile(); // a fresh token is needed for the next start
+    resetTurnstile();
     show(form);
     $('pf-code').focus();
   });
+
+  const saved = sessionStorage.getItem(STORE);
+  if (saved) {
+    post<QuizResponse>('/api/pmes/resume', { attemptId: saved })
+      .then(showResponse)
+      .catch(err => {
+        if ((err as Error).message === 'unknown-attempt') sessionStorage.removeItem(STORE);
+        else setError($('pf-error'), errorMessage((err as Error).message));
+        show(form);
+      });
+  }
 </script>
