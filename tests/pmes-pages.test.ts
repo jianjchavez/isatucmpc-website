@@ -17,6 +17,9 @@ describe('timed quiz page contract', () => {
     expect(page).toMatch(/nameInput\.required = !isApplication/);
     expect(page).toMatch(/emailInput\.required = !isApplication/);
   });
+  it('hidden result buttons stay hidden despite the global .pq-btn display rule', () => {
+    expect(page).toMatch(/\.pq-btn\.hidden\s*\{\s*display:\s*none;?\s*\}/);
+  });
   it('presents one question with a single Next or Finish action', () => {
     expect(page).not.toContain('id="pq-back"');
     expect(page).not.toContain('id="pq-confirm"');
