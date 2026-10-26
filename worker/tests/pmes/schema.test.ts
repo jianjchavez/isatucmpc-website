@@ -16,3 +16,14 @@ describe('pmes schema', () => {
     ]);
   });
 });
+
+describe('applications and timed-attempt schema', () => {
+  const cols = async (table: string) =>
+    (await env.PMES_DB.prepare(`PRAGMA table_info(${table})`).all<{ name: string }>()).results.map(r => r.name);
+
+  it('has application tables and timed-attempt columns', async () => {
+    expect(await cols('membership_applications')).toEqual(['no', 'year', 'seq', 'full_name', 'mobile', 'email', 'created_at']);
+    expect(await cols('application_counters')).toEqual(['year', 'next_seq']);
+    expect(await cols('pmes_attempts')).toEqual(expect.arrayContaining(['current_n', 'served_at']));
+  });
+});
