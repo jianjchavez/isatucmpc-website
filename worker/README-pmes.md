@@ -103,3 +103,24 @@ enforces four per section and four distinct options per question).
 - [ ] Deploy Worker from `worker/`; merge PR to deploy Pages.
 - [ ] Seed the presenters from the committee's list of names; set `PMES_DRAW_STATUS=draft` on preview, `approved` on production once the committee marks questions approved.
 - [ ] Rehearsal session with the committee: 3 attendees, one pass, one fail-then-pass, one three-fail then override then pass; print both documents; confirm emails arrive at the coop inbox.
+
+## 2026-10-26 update: application numbers and the timed quiz
+
+Plan: `docs/superpowers/plans/2026-10-26-application-no-pmes-timer.md`.
+
+- Membership submits issue `APP-YYYY-NNNN` (table `membership_applications`) and need a readable
+  09XX mobile number. The PMES start with an application number asks for that number and the mobile
+  on file; the name and email come from the application.
+- The quiz is server-driven: `POST /api/pmes/start` serves question 1, `POST /api/pmes/answer`
+  records one answer and serves the next, `POST /api/pmes/resume` continues after a reload.
+  30 seconds per question (+5 s grace); a late or missing answer counts as wrong. `/submit` is gone.
+  The session timer checkbox is gone; `timer_minutes` is no longer read.
+
+Deploy order (Mac, in `worker/`), **not during a PMES session** (an attempt in progress on the old page breaks):
+
+```bash
+./node_modules/.bin/wrangler d1 migrations apply isatucmpc-pmes --remote   # adds 0002
+./node_modules/.bin/wrangler deploy --var PMES_DRAW_STATUS:draft           # keep draft until the bank is approved
+```
+
+Then merge the PR (Pages). Between the two, the old membership page still works (`ok: true` is kept).
