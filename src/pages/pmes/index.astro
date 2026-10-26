@@ -116,7 +116,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
 <script>
   import {
     deadlineFromStep, isStep, renderResult, formatClock, sectionTitle, errorMessage,
-    type StartRequest, type StartResponse, type Step, type Final, type QuizResponse,
+    type StartRequest, type Step, type Final, type QuizResponse,
   } from '~/components/pmes-logic';
 
   const WORKER = 'https://isatucmpc-forms.jianjchavez.workers.dev';
@@ -196,9 +196,10 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       const body: StartRequest = idType.value === 'application'
         ? { ...common, idType: 'application' }
         : { ...common, idType: 'member', fullName: String(fd.get('fullName')).trim(), email: String(fd.get('email')).trim() };
-      const response = await post<StartResponse>('/api/pmes/start', body);
-      sessionStorage.setItem(STORE, response.attemptId);
-      showStep(response);
+      const response = await post<QuizResponse>('/api/pmes/start', body);
+      // A live attempt that ran out of time comes back from /start as its result.
+      if (isStep(response)) sessionStorage.setItem(STORE, response.attemptId);
+      showResponse(response);
     } catch (err) {
       setError($('pf-error'), errorMessage((err as Error).message));
       resetTurnstile();

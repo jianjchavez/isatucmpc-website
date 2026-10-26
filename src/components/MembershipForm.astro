@@ -563,6 +563,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       } catch (err) {
         console.error('PDF fill failed', err);
         showResult(`Application number ${applicationNo}: we received your form but couldn't generate the PDF. Please email isatucmpc1964@gmail.com and include your application number.`, false);
+        // The token was spent on the successful submit.
+        (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } finally {
         submitting = false;
         if (submitBtn) {

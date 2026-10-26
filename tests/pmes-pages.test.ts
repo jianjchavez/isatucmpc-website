@@ -20,6 +20,9 @@ describe('timed quiz page contract', () => {
   it('hidden result buttons stay hidden despite the global .pq-btn display rule', () => {
     expect(page).toMatch(/\.pq-btn\.hidden\s*\{\s*display:\s*none;?\s*\}/);
   });
+  it('a /start that comes back as a result shows the result and stores no attempt id', () => {
+    expect(page).toMatch(/if \(isStep\(response\)\) sessionStorage\.setItem\(STORE, response\.attemptId\);\s*showResponse\(response\);/);
+  });
   it('presents one question with a single Next or Finish action', () => {
     expect(page).not.toContain('id="pq-back"');
     expect(page).not.toContain('id="pq-confirm"');
