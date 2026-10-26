@@ -21,7 +21,7 @@ export const SERVICES: Service[] = [
     howToAccess: [
       'Be a member in good standing (paid-up minimum share capital, no delinquent accounts).',
       'Apply at the cooperative office or via the MemberFolio portal.',
-      'Submit required documents; BOD/Credit Committee reviews.',
+      'Submit required documents; the Loans Department assesses, and the General Manager or the Board approves.',
       'Loan released according to approved terms.',
     ],
     status: 'active',
