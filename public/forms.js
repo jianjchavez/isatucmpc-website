@@ -40,7 +40,6 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    attach('membership-form', 'mf-result');
     attach('contact-form', 'cf-result');
   });
 })();
