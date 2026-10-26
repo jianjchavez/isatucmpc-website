@@ -557,7 +557,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         const bytes = await fillApplicationPdf(variant, data);
         const safe = [data.lastName, data.firstName].filter(Boolean).join('_').replace(/[^a-zA-Z0-9_-]/g, '') || 'applicant';
         triggerPdfDownload(bytes, `ISATUCMPC_${variant}_Application_${safe}.pdf`);
-        showResult(`Application number ${applicationNo}: your application PDF is downloading. Use this number with your mobile number to take the online PMES quiz at isatucmpc.coop/pmes, and bring the printed, signed form to the office.`, true);
+        showResult(`Application number ${applicationNo}: your application PDF is downloading. Bring the printed, signed form and this number to the PMES.`, true);
         form!.reset();
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } catch (err) {

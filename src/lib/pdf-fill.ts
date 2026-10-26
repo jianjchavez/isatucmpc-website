@@ -271,13 +271,10 @@ function drawCheckmark(
 }
 
 // Right-aligned to the letterhead's right margin, in the gap under the header rule.
-function drawApplicationNo(page: ReturnType<PDFDocumentType['getPage']>, font: PDFFont, no: string | undefined, top: number, oneLineNote = false) {
+function drawApplicationNo(page: ReturnType<PDFDocumentType['getPage']>, font: PDFFont, no: string | undefined, top: number) {
   if (!no) return;
   const text = `APPLICATION NO. ${no}`;
   drawText(page, font, text, { x: 559 - font.widthOfTextAtSize(text, 9), top, size: 9 });
-  const note = ['Use this number with your mobile no.', 'for the PMES quiz: isatucmpc.coop/pmes'];
-  (oneLineNote ? [note.join(' ')] : note).forEach((line, i) =>
-    drawText(page, font, line, { x: 559 - font.widthOfTextAtSize(line, 7), top: top + 10 + i * 8, size: 7 }));
 }
 
 export async function fillApplicationPdf(
@@ -412,7 +409,7 @@ async function addSubscriptionAgreement(pdf: PDFDocumentType, font: PDFFont, dat
   const template = await PDFDocument.load(new Uint8Array(await res.arrayBuffer()));
   const [page] = await pdf.copyPages(template, [0]);
   pdf.addPage(page);
-  drawApplicationNo(page, font, data.applicationNo, 146, true); // two lines would cross the DATE rule
+  drawApplicationNo(page, font, data.applicationNo, 146);
 
   const shares = data.sharesSubscribed ?? 0;
   const years = data.yearsToPay ?? 0;

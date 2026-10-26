@@ -101,7 +101,6 @@ describe('office packet', () => {
     expect(pdf.getPageCount()).toBe(3);
     expect(toApplicant.attachments).toBeUndefined();
     expect(toApplicant.html).toContain('APP-2026-0001');
-    expect(toApplicant.html).toContain('Use it with your mobile number to take the online PMES quiz at <a href="https://isatucmpc.coop/pmes/">isatucmpc.coop/pmes</a>');
     expect(toApplicant.html).toContain('0950 108 8310');
     expect(toApplicant.html).toContain('https://m.me/isatu.cmpc');
     expect(toApplicant.html).toContain('<img src="https://isatucmpc.coop/qr/messenger.png"');

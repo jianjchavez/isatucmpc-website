@@ -26,8 +26,6 @@ describe('pdf-fill', () => {
         .filter((stream): stream is PDFRawStream => stream instanceof PDFRawStream)
         .map(stream => Buffer.from(decodePDFRawStream(stream).decode()).toString());
       expect(streams.some(stream => stream.includes(`<${textHex}> Tj`))).toBe(true);
-      const noteHex = Buffer.from('for the PMES quiz: isatucmpc.coop/pmes').toString('hex').toUpperCase();
-      expect(streams.some(stream => stream.includes(`${noteHex}> Tj`))).toBe(true); // page 2 prints the note on one line
     }
   });
 });
