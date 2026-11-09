@@ -5,6 +5,7 @@ import worker from '../../src/index';
 import { hashPassword } from '../../src/pmes/auth';
 import { createSession, findOpenSession } from '../../src/pmes/sessions';
 import { issueCertificate, getVerification } from '../../src/pmes/certificates';
+import { issueApplicationNo } from '../../src/membership/applications';
 
 const ORIGIN = 'https://isatucmpc.coop';
 const API = 'https://forms.isatucmpc.coop/api/pmes';
@@ -158,11 +159,34 @@ describe('switch on', () => {
     expect((await call('/online-session', 'on')).status).toBe(404);
   });
 
-  it('/start accepts this month\'s online code', async () => {
+  it('a month session refuses member-number identities and writes no attempt', async () => {
     await session(thisMonth(), () => 0);
+    const member = { code: 'PMES-AAAA', idType: 'member', idNumber: 'M-1', fullName: 'Attendee Name', mobile: '09171234567', email: 'a@example.com', consent: true, turnstile: 't' };
+    for (let i = 0; i < 4; i++) {
+      const res = await call('/start', 'on', member);
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ error: 'online-session-applicants-only' });
+    }
+    expect((await db().prepare('SELECT COUNT(*) AS n FROM pmes_attempts').first<{ n: number }>())!.n).toBe(0);
+  });
+
+  it('a month session accepts an application number with the mobile on file, and rejects a wrong mobile', async () => {
+    await session(thisMonth(), () => 0);
+    const no = await issueApplicationNo(db(), { fullName: 'Applicant Name', mobile: '09171234567', email: 'app@example.com' }, new Date().toISOString());
+    const app = { code: 'PMES-AAAA', idType: 'application', idNumber: no, mobile: '09171234567', consent: true, turnstile: 't' };
+    const wrong = await call('/start', 'on', { ...app, mobile: '09170000000' });
+    expect(wrong.status).toBe(400);
+    expect(await wrong.json()).toEqual({ error: 'unknown-application' });
+    const res = await call('/start', 'on', app);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ fullName: 'Applicant Name', attemptNo: 1 });
+  });
+
+  it('a per-day session still accepts member numbers with the switch on', async () => {
+    await session(today(), () => 0);
     const res = await call('/start', 'on', { code: 'PMES-AAAA', idType: 'member', idNumber: 'M-1', fullName: 'Attendee Name', mobile: '09171234567', email: 'a@example.com', consent: true, turnstile: 't' });
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ total: 20, secondsLeft: 30, attemptNo: 1 });
+    expect(await res.json()).toMatchObject({ fullName: 'Attendee Name', attemptNo: 1 });
   });
 
   it('a certificate from a month session shows the Manila day the attempt was submitted', async () => {

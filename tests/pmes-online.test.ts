@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { videoEmbed, markWatched, codeUnlocked, mountOnline } from '~/components/pmes-online';
 import { PMES_SELF_PACED, PMES_VIDEO_MODULES } from '~/data/pmes-online';
+import { errorMessage } from '~/components/pmes-logic';
 
 const modules = [
   { title: 'Module 1 of 3', url: 'https://youtu.be/abcDEF12345' },
@@ -82,6 +83,12 @@ describe('module order', () => {
     mountOnline(root, { modules, fetchCode, storage: memory({ 'pmes-online-reached': '-4' }) });
     expect(visible(root)).toBe(1);
     expect(fetchCode).not.toHaveBeenCalled();
+  });
+});
+
+describe('online session errors', () => {
+  it('tells a member to use an in-person session', () => {
+    expect(errorMessage('online-session-applicants-only')).toContain('Members take the PMES at an in-person session.');
   });
 });
 

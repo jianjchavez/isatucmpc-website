@@ -4,7 +4,7 @@ import { cors } from 'hono/cors';
 import { selfPaced, type PmesEnv } from './env';
 import { loadBank } from './bank';
 import { drawQuiz, presentDraw } from './draw';
-import { findOpenSession, findOnlineSession } from './sessions';
+import { findOpenSession, findOnlineSession, isMonthSession } from './sessions';
 import { isEmail, attemptLimit } from './validate';
 import { verifyTurnstile } from '../turnstile';
 import { submit, currentState } from './submit';
@@ -73,6 +73,10 @@ pmes.post('/start', async c => {
   if (session === 'invalid-code') return c.json({ error: session }, 400);
   if (session === 'session-closed') return c.json({ error: session }, 409);
   if (session === 'code-expired') return c.json({ error: session }, 410);
+  // The online session's code is public, and a member number is self-declared: on a month session only an
+  // application number verified against the mobile on file may start, so nobody can burn or take another
+  // person's attempts. Refused before any read or write of attempts.
+  if (isMonthSession(session.session_date) && b.idType !== 'application') return c.json({ error: 'online-session-applicants-only' }, 403);
 
   const db = c.env.PMES_DB;
   if (b.idType === 'application') {
