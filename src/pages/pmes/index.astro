@@ -2,6 +2,8 @@
 import PageLayout from '~/layouts/PageLayout.astro';
 import Eyebrow from '~/components/Eyebrow.astro';
 import Button from '~/components/Button.astro';
+import PmesOnline from '~/components/PmesOnline.astro';
+import { PMES_SELF_PACED } from '~/data/pmes-online';
 
 const input = 'w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm';
 const label = 'block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1';
@@ -9,6 +11,8 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
 <PageLayout title="PMES Certification Quiz" description="Pre-Membership Education Seminar certification quiz for ISATUCMPC applicants and members." noIndex={true}>
   <section class="bg-brand-bg min-h-screen py-10 md:py-16">
     <div class="max-w-xl mx-auto px-4">
+
+      {PMES_SELF_PACED && <PmesOnline />}
 
       <!-- 1. Identity + session code -->
       <form id="pmes-form" class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-5" novalidate>

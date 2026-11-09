@@ -124,3 +124,22 @@ Deploy order (Mac, in `worker/`), **not during a PMES session** (an attempt in p
 ```
 
 Then merge the PR (Pages). Between the two, the old membership page still works (`ok: true` is kept).
+
+## 2026-11-09 update: self-paced online PMES (board paper Item 3), switch OFF
+
+- Switch: `PMES_SELF_PACED` in `wrangler.toml` (`"off"`) and `PMES_SELF_PACED` in `src/data/pmes-online.ts`
+  (`false`). Turn both on together, only after the Board and the Education and Training Committee approve.
+- On: a presenter creates an **Online (whole month)** session at `/pmes/admin/` (one per Manila month; it is a
+  normal session row whose `session_date` is `YYYY-MM`). `/pmes/` shows the three video modules, then fetches
+  this month's code from `GET /api/pmes/online-session` and fills it into the quiz form.
+- Video URLs: paste them into `PMES_VIDEO_MODULES` in `src/data/pmes-online.ts` (YouTube unlisted, or a direct
+  MP4 URL; for a direct file host also add it to a `media-src` directive in `public/_headers`).
+
+Deploy order (Mac, in `worker/`), not during a PMES session:
+
+```bash
+./node_modules/.bin/wrangler d1 migrations apply isatucmpc-pmes --remote   # adds 0003 (one online session per month)
+./node_modules/.bin/wrangler deploy --var PMES_DRAW_STATUS:draft           # keep draft until the bank is approved
+```
+
+The Worker works with or without `0003` applied (it adds only a unique index); apply it before switching on.
