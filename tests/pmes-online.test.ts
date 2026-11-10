@@ -161,10 +161,10 @@ describe('switch off: /pmes/ unchanged', () => {
     for (const [index, module] of PMES_VIDEO_MODULES.entries()) {
       const base = `https://media.isatucmpc.coop/pmes/pmes-module-${index + 1}`;
       expect(module).toMatchObject({
-        url: `${base}-1080p.mp4`,
-        mobileUrl: `${base}-720p.mp4`,
-        captions: `${base}.en.vtt`,
-        poster: `${base}-poster.jpg`,
+        url: `${base}-1080p.mp4?v=20261110e`,
+        mobileUrl: `${base}-720p.mp4?v=20261110e`,
+        captions: `${base}.en.vtt?v=20261110e`,
+        poster: `${base}-poster.jpg?v=20261110e`,
       });
     }
   });

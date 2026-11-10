@@ -1,6 +1,6 @@
 export interface FaqItem { q: string; a: string; }
 export const FAQ: FaqItem[] = [
-  { q: 'How much does it cost to join?', a: 'A one-time ₱500 membership fee, plus minimum share subscription of 50 shares at ₱50 par value (₱2,500 total subscribed). At least 25 shares (₱1,250) must be paid up upon approval — the rest can be paid over time.' },
+  { q: 'How much does it cost to join?', a: 'A one-time ₱500 membership fee, plus minimum share subscription of 50 shares at ₱50 par value (₱2,500 total subscribed). At least 25 shares (₱1,250) are paid with the application, before Board approval; the rest can be paid over time.' },
   { q: 'How long does the Pre-Membership Education Seminar (PMES) take?', a: 'PMES is typically a half-day session covering the cooperative principles, your rights and duties as a member, and how cooperatives work. Schedule depends on demand — inquire at the office for the next session.' },
   { q: 'Can I withdraw later?', a: 'Yes. You can voluntarily withdraw your membership by giving 60 days\' written notice to the Board of Directors. Your paid-up share capital is refunded subject to the cooperative\'s ability to maintain its required reserves.' },
   { q: 'How do I move from Associate to Regular member?', a: 'Associate members who meet the qualifications for regular membership and have patronized the cooperative continuously for two (2) years can apply to become regular members.' },
