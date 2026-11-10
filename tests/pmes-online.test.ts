@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { videoEmbed, markWatched, codeUnlocked, mountOnline } from '~/components/pmes-online';
+import { videoEmbed, markWatched, codeUnlocked, mountOnline, hasWatchedEnough } from '~/components/pmes-online';
 import { PMES_SELF_PACED, PMES_VIDEO_MODULES } from '~/data/pmes-online';
 import { errorMessage } from '~/components/pmes-logic';
 
 const modules = [
   { title: 'Module 1 of 3', url: 'https://youtu.be/abcDEF12345' },
-  { title: 'Module 2 of 3', url: 'https://example-bucket.r2.dev/module-2.mp4' },
+  PMES_VIDEO_MODULES[1],
   { title: 'Module 3 of 3', url: 'PLACEHOLDER-module-3-url' },
 ];
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -29,6 +29,68 @@ describe('videoEmbed', () => {
     expect(videoEmbed('PLACEHOLDER-module-1-url')).toEqual({ kind: 'placeholder' });
     expect(videoEmbed('http://example.com/m1.mp4')).toEqual({ kind: 'placeholder' });
     expect(videoEmbed('https://www.youtube.com/watch')).toEqual({ kind: 'placeholder' });
+  });
+});
+
+describe('file playback', () => {
+  it('requires at least 90% played and a known positive duration', () => {
+    expect(hasWatchedEnough(89.9, 100)).toBe(false);
+    expect(hasWatchedEnough(90, 100)).toBe(true);
+    expect(hasWatchedEnough(95, 100)).toBe(true);
+    expect(hasWatchedEnough(0, 0)).toBe(false);
+    expect(hasWatchedEnough(100, 0)).toBe(false);
+    expect(hasWatchedEnough(100, NaN)).toBe(false);
+    expect(hasWatchedEnough(100, Infinity)).toBe(false);
+  });
+
+  it('renders responsive MP4 sources, poster and default English captions', () => {
+    const root = document.createElement('div');
+    mountOnline(root, { modules, fetchCode: async () => null });
+    const video = root.querySelector('video')!;
+    expect(video.getAttribute('crossorigin')).toBe('anonymous');
+    expect(video.controls).toBe(true);
+    expect(video.preload).toBe('metadata');
+    expect(video.playsInline).toBe(true);
+    expect(video.poster).toBe(modules[1].poster);
+    expect(video.hasAttribute('src')).toBe(false);
+    const sources = [...video.querySelectorAll('source')];
+    expect(sources.map(s => [s.src, s.type, s.media])).toEqual([
+      [modules[1].mobileUrl, 'video/mp4', '(max-width: 1024px)'],
+      [modules[1].url, 'video/mp4', ''],
+    ]);
+    const track = video.querySelector('track')!;
+    expect(track.src).toBe(modules[1].captions);
+    expect(track.kind).toBe('captions');
+    expect(track.srclang).toBe('en');
+    expect(track.label).toBe('English');
+    expect(track.default).toBe(true);
+  });
+
+  it('sums played ranges without counting seeks or repeated updates and stays enabled', () => {
+    const root = document.createElement('div');
+    const fetchCode = vi.fn(async () => 'PMES-AB23');
+    mountOnline(root, { modules, fetchCode });
+    button(root, 0).click();
+    const video = root.querySelector('video')!;
+    let ranges = [[0, 40], [50, 99]];
+    Object.defineProperties(video, {
+      duration: { value: 100 },
+      currentTime: { value: 99 },
+      played: { get: () => ({ length: ranges.length, start: (i: number) => ranges[i][0], end: (i: number) => ranges[i][1] }) },
+    });
+    video.dispatchEvent(new Event('timeupdate'));
+    video.dispatchEvent(new Event('timeupdate'));
+    expect(button(root, 1).disabled).toBe(true);
+    ranges = [[0, 40], [49, 99]];
+    video.dispatchEvent(new Event('timeupdate'));
+    expect(button(root, 1).disabled).toBe(false);
+    expect(visible(root)).toBe(2);
+    expect(fetchCode).not.toHaveBeenCalled();
+    ranges = [];
+    video.dispatchEvent(new Event('timeupdate'));
+    expect(button(root, 1).disabled).toBe(false);
+    button(root, 1).click();
+    expect(visible(root)).toBe(3);
   });
 });
 
@@ -93,9 +155,18 @@ describe('online session errors', () => {
 });
 
 describe('switch off: /pmes/ unchanged', () => {
-  it('ships off, with three placeholder modules', () => {
+  it('ships off, with three hosted modules', () => {
     expect(PMES_SELF_PACED).toBe(false);
     expect(PMES_VIDEO_MODULES.map(m => m.title)).toEqual(['Module 1 of 3', 'Module 2 of 3', 'Module 3 of 3']);
+    for (const [index, module] of PMES_VIDEO_MODULES.entries()) {
+      const base = `https://media.isatucmpc.coop/pmes/pmes-module-${index + 1}`;
+      expect(module).toMatchObject({
+        url: `${base}-1080p.mp4`,
+        mobileUrl: `${base}-720p.mp4`,
+        captions: `${base}.en.vtt`,
+        poster: `${base}-poster.jpg`,
+      });
+    }
   });
   it('the quiz page and the presenter form render the online parts only behind the switch', () => {
     expect(readFileSync('src/pages/pmes/index.astro', 'utf8')).toContain('{PMES_SELF_PACED && <PmesOnline />}');

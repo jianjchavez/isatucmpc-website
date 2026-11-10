@@ -132,8 +132,7 @@ Then merge the PR (Pages). Between the two, the old membership page still works 
 - On: a presenter creates an **Online (whole month)** session at `/pmes/admin/` (one per Manila month; it is a
   normal session row whose `session_date` is `YYYY-MM`). `/pmes/` shows the three video modules, then fetches
   this month's code from `GET /api/pmes/online-session` and fills it into the quiz form.
-- Video URLs: paste them into `PMES_VIDEO_MODULES` in `src/data/pmes-online.ts` (YouTube unlisted, or a direct
-  MP4 URL; for a direct file host also add it to a `media-src` directive in `public/_headers`).
+- Video URLs: `PMES_VIDEO_MODULES` in `src/data/pmes-online.ts` uses the hosted MP4s, English captions and posters at `https://media.isatucmpc.coop/pmes/`; re-publishing is documented in the video build folder.
 
 Deploy order (Mac, in `worker/`), not during a PMES session:
 

@@ -2,7 +2,7 @@
 // month's online session code. The gating is a nudge, not security: the code itself is public via
 // GET /api/pmes/online-session; identity, the server timer and the attempt limit are the controls.
 
-export type VideoModule = { title: string; url: string };
+export type VideoModule = { title: string; url: string; mobileUrl?: string; captions?: string; poster?: string };
 export type Embed = { kind: 'youtube'; src: string } | { kind: 'file'; src: string } | { kind: 'placeholder' };
 
 /** A YouTube link (watch, youtu.be, embed, shorts) becomes a privacy-enhanced embed; any other https URL plays as a file. */
@@ -21,6 +21,10 @@ export function videoEmbed(url: string): Embed {
 /** Modules 0..reached-1 are done; module `reached` is the one to watch. The code unlocks once all are done. */
 export const markWatched = (reached: number, index: number, total: number) => Math.min(total, Math.max(reached, index + 1));
 export const codeUnlocked = (reached: number, total: number) => reached >= total;
+
+/** Only actual playback counts; seeking ahead does not count as watching. */
+export const hasWatchedEnough = (playedSeconds: number, duration: number): boolean =>
+  Number.isFinite(duration) && duration > 0 && Number.isFinite(playedSeconds) && playedSeconds >= duration * 0.9;
 
 const KEY = 'pmes-online-reached';
 
@@ -59,13 +63,43 @@ export function mountOnline(root: HTMLElement, { modules, fetchCode, onCode, sto
       media = frame;
     } else if (embed.kind === 'file') {
       const video = document.createElement('video');
-      video.src = embed.src;
       video.controls = true;
       video.preload = 'metadata';
+      video.playsInline = true;
+      video.crossOrigin = 'anonymous';
+      if (m.poster) video.poster = m.poster;
+      if (m.mobileUrl) {
+        const mobile = document.createElement('source');
+        mobile.src = m.mobileUrl;
+        mobile.type = 'video/mp4';
+        mobile.media = '(max-width: 1024px)';
+        video.append(mobile);
+      }
+      const source = document.createElement('source');
+      source.src = embed.src;
+      source.type = 'video/mp4';
+      video.append(source);
+      if (m.captions) {
+        const track = document.createElement('track');
+        track.kind = 'captions';
+        track.srclang = 'en';
+        track.label = 'English';
+        track.default = true;
+        track.src = m.captions;
+        video.append(track);
+      }
       video.className = 'w-full aspect-video rounded bg-black';
-      // A direct file can tell when it ends, so the button waits for it (unless already watched).
+      // Enable after 90% played or ended (unless already watched).
       btn.disabled = i >= reached;
       video.addEventListener('ended', () => { btn.disabled = false; });
+      video.addEventListener('timeupdate', () => {
+        const played = video.played;
+        let playedSeconds = 0;
+        for (let range = 0; range < played.length; range++) {
+          playedSeconds += played.end(range) - played.start(range);
+        }
+        if (hasWatchedEnough(playedSeconds, video.duration)) btn.disabled = false;
+      });
       media = video;
     } else {
       media = document.createElement('p');
