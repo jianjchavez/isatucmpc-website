@@ -9,6 +9,7 @@ globs = ["**/*.pdf"]
 fallthrough = true
 
 [vars]
+WEBSITE_APP_PULL = "off"
 # Comma-separated list of allowed Origin headers. Includes pages.dev for
 # pre-cutover (Task 27) and the custom domain for post-cutover.
 SITE_ORIGIN = "https://isatucmpc.coop,https://isatucmpc.pages.dev"

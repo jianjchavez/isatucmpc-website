@@ -51,6 +51,7 @@ afterEach(() => vi.restoreAllMocks());
 
 async function clearApplications() {
   await testEnv.PMES_DB.batch([
+    testEnv.PMES_DB.prepare('DELETE FROM application_payloads'),
     testEnv.PMES_DB.prepare('DELETE FROM membership_applications'),
     testEnv.PMES_DB.prepare('DELETE FROM application_counters'),
   ]);
@@ -117,7 +118,7 @@ describe('office packet', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('attaches the office packet to the coop email only', async () => {
+  it('attaches the legacy nine-field office packet to the coop email only', async () => {
     await clearApplications();
     const sent: any[] = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
@@ -164,7 +165,7 @@ describe('office packet', () => {
       const url = String(input instanceof Request ? input.url : input);
       return Response.json(url.includes('turnstile') ? { success: true } : { error: 'failure' }, { status: url.includes('turnstile') ? 200 : 500 });
     });
-    const res = await submit({ shares: '500', years: '5', applicant: JSON.stringify(applicant) });
+    const res = await submit({ shares: '500', years: '5', applicant: JSON.stringify(fullRecord) });
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ error: 'send-failed' });
   });
@@ -172,7 +173,7 @@ describe('office packet', () => {
   it.each(['', '12345', 'garbled'])('rejects invalid applicant mobile %j before Turnstile or numbering', async mobile => {
     await clearApplications();
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ success: true, id: 'x' }));
-    const res = await submit({ shares: '500', years: '5', applicant: mobile === 'garbled' ? mobile : JSON.stringify({ ...applicant, contactNumber: mobile }) });
+    const res = await submit({ shares: '500', years: '5', applicant: mobile === 'garbled' ? mobile : JSON.stringify({ ...fullRecord, contactNumber: mobile }) });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid-mobile' });
     expect(fetchSpy).not.toHaveBeenCalled();

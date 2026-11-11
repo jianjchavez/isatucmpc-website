@@ -4,6 +4,7 @@ import type { PmesEnv } from '../src/pmes/env';
 declare global {
   namespace Cloudflare {
     interface Env extends PmesEnv {
+      WEBSITE_APP_PULL: string;
       TEST_MIGRATIONS: D1Migration[];
     }
   }
