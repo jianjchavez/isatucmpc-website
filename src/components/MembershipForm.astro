@@ -1,6 +1,7 @@
 ---
 import Button from '~/components/Button.astro';
 import { MIN_SHARES, PAR_VALUE } from '~/lib/subscription';
+import { VALID_ID_TYPES, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
 const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao'];
 const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', 'Others'];
@@ -93,6 +94,17 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         <input id="mf-tin" data-field="tinNumber" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
+        <label for="mf-gsis-sss" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">GSIS/SSS number</label>
+        <input id="mf-gsis-sss" data-field="gsisSssNumber" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-vid-type" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Valid ID type</label>
+        <select id="mf-vid-type" data-field="validIdType" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white">
+          <option value="">Select ID type…</option>
+          {VALID_ID_TYPES.map(type => <option value={type.value}>{type.label}</option>)}
+        </select>
+      </div>
+      <div>
         <label for="mf-vid" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Valid ID number (presented)</label>
         <input id="mf-vid" data-field="validIdNumber" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
@@ -115,7 +127,10 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <div class="grid md:grid-cols-2 gap-3">
       <div>
         <label for="mf-empstatus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Status of employment</label>
-        <input id="mf-empstatus" data-field="statusOfEmployment" type="text" placeholder="Regular, Part-time, Contractual…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <select id="mf-empstatus" data-field="statusOfEmployment" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white">
+          <option value="">Select status…</option>
+          {EMPLOYMENT_STATUSES.map(status => <option value={status.value}>{status.label}</option>)}
+        </select>
       </div>
       <div>
         <label for="mf-prof" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Profession</label>
@@ -291,6 +306,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 <script>
   import { fillApplicationPdf, triggerPdfDownload, type PdfFieldData } from '~/lib/pdf-fill';
   import { MIN_SHARES, PAR_VALUE, formatAmount } from '~/lib/subscription';
+  import { buildApplicantRecord, buildApplicantMessage, isAdultApplicant, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
   const COOLDOWN_KEY = 'mf-last-submit-ts';
   const COOLDOWN_MS = 60_000; // 1 minute
@@ -374,7 +390,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     sharesInput?.addEventListener('input', showAmount);
     showAmount();
 
-    // Runs first (capture phase on the form): a bad subscription stops the submit and the PDF.
+    // Runs first (capture phase on the form): invalid values stop the submit and PDF.
     form.addEventListener('submit', e => {
       const shares = wholeNumber(sharesInput);
       const years = wholeNumber(yearsInput);
@@ -382,7 +398,9 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         ? { el: sharesInput, text: `Please subscribe to at least ${MIN_SHARES} shares (whole number).` }
         : !(years >= 1)
           ? { el: yearsInput, text: 'Please enter how many years you will pay your subscription (whole number).' }
-          : null;
+          : !isAdultApplicant(val('[data-field="dob"]'))
+            ? { el: form!.querySelector('[data-field="dob"]') as HTMLInputElement | null, text: 'Applicants must be at least 18 years old.' }
+            : null;
       if (!problem) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -403,56 +421,17 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       const last = val('[data-field="lastName"]');
       (form!.elements.namedItem('name') as HTMLInputElement).value = [first, middle, last].filter(Boolean).join(' ') || '(no name)';
 
-      const memberType = (form!.querySelector('input[name="mf-membertype"]:checked') as HTMLInputElement | null)?.value || '';
-      const isReg = memberType === 'Regular';
-      const isAssoc = memberType === 'Associate';
-
-      const rows: Array<[string, string]> = [
-        ['Membership type', memberType],
-        ['Contact number', val('[data-field="contactNumber"]')],
-        ['Date of birth', val('[data-field="dob"]')],
-        ['Place of birth', val('[data-field="placeOfBirth"]')],
-        ['Gender', (form!.querySelector('input[name="mf-gender"]:checked') as HTMLInputElement | null)?.value || ''],
-        ['Civil status', (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value || ''],
-        ['Present home address', val('[data-field="presentHomeAddress"]')],
-        ['Permanent home address', val('[data-field="homeAddress"]')],
-        ['TIN', val('[data-field="tinNumber"]')],
-        ['Valid ID number', val('[data-field="validIdNumber"]')],
-        ['Employment category', (form!.querySelector('input[name="mf-empcat"]:checked') as HTMLInputElement | null)?.value || ''],
-        ['Status of employment', val('[data-field="statusOfEmployment"]')],
-        ['Profession', val('[data-field="profession"]')],
-        ['Emergency contact', [val('[data-field="emergencyName"]'), val('[data-field="emergencyContact"]'), val('[data-field="emergencyRelationship"]')].filter(Boolean).join(' / ')],
-        ['ISAT U employee', isReg ? (isatuChk?.checked ? 'Yes' : 'No') : ''],
-        ['Campus', isReg && isatuChk?.checked ? val('[data-field="campus"]') : ''],
-        ['Associate qualification', isAssoc ? (form!.querySelector('input[name="mf-assocqual"]:checked') as HTMLInputElement | null)?.value || '' : ''],
-        ['Associate specify', isAssoc ? val('[data-field="associateOrgSpecify"]') : ''],
-        ['Recommender', isAssoc ? val('[data-field="recommenderName"]') : ''],
-        ['Recommender relationship', isAssoc ? val('[data-field="recommenderRelationship"]') : ''],
-        ['Recommender campus', isAssoc ? val('[data-field="recommenderCampus"]') : ''],
-        ['Spouse', [val('[data-field="spouseName"]'), val('[data-field="spouseDob"]'), val('[data-field="spouseContact"]')].filter(Boolean).join(' / ')],
-        ['Parent', [val('[data-field="parentName"]'), val('[data-field="parentDob"]'), val('[data-field="parentContact"]')].filter(Boolean).join(' / ')],
-        ['Beneficiary 1', [val('[data-field="ben1Name"]'), val('[data-field="ben1Dob"]'), val('[data-field="ben1Rel"]'), val('[data-field="ben1Age"]')].filter(Boolean).join(' / ')],
-        ['Beneficiary 2', [val('[data-field="ben2Name"]'), val('[data-field="ben2Dob"]'), val('[data-field="ben2Rel"]'), val('[data-field="ben2Age"]')].filter(Boolean).join(' / ')],
-        ['Connection', val('[data-field="affiliation"]')],
-        ['Notes', val('[data-field="notes"]')],
-        ['Share subscription', `${val('#mf-shares')} shares (PHP ${formatAmount(Number(val('#mf-shares')) * PAR_VALUE)}), paid over ${val('#mf-years')} years`],
-        ['Privacy consent', (form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked ? 'Given — Privacy Notice v2026-08' : ''],
-      ];
-      const message = rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n') || '(no details)';
-      (form!.elements.namedItem('message') as HTMLInputElement).value = message;
-
-      // Structured copy for the worker, which fills the office pages from it.
-      (form!.elements.namedItem('applicant') as HTMLInputElement).value = JSON.stringify({
-        firstName: first,
-        middleName: middle,
-        lastName: last,
-        extension: val('[data-field="extension"]'),
-        civilStatus: (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value || '',
-        spouseName: val('[data-field="spouseName"]'),
-        contactNumber: val('[data-field="contactNumber"]'),
-        address: val('[data-field="presentHomeAddress"]') || val('[data-field="homeAddress"]'),
-        privacyConsent: !!(form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked,
-      });
+      const read = (field: string) => field === 'email' ? val('[name="email"]') : val(`[data-field="${field}"]`);
+      const checked = (field: string) =>
+        (form!.querySelector(`[data-field="${field}"]:checked`) as HTMLInputElement | null)?.value || '';
+      const flags = {
+        isatuEmployee: !!isatuChk?.checked,
+        consent: !!(form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked,
+        shares: wholeNumber(sharesInput),
+        years: wholeNumber(yearsInput),
+      };
+      (form!.elements.namedItem('message') as HTMLInputElement).value = buildApplicantMessage(read, checked, flags);
+      (form!.elements.namedItem('applicant') as HTMLInputElement).value = JSON.stringify(buildApplicantRecord(read, checked, flags));
     }, true);  // capture phase
 
     // ---- bubble-phase: wait for the application number before building the PDF ----
@@ -529,7 +508,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         tinNumber: val('[data-field="tinNumber"]'),
         validIdNumber: val('[data-field="validIdNumber"]'),
         employmentCategory: (form!.querySelector('input[name="mf-empcat"]:checked') as HTMLInputElement | null)?.value,
-        statusOfEmployment: val('[data-field="statusOfEmployment"]'),
+        statusOfEmployment: EMPLOYMENT_STATUSES.find(s => s.value === val('[data-field="statusOfEmployment"]'))?.label ?? val('[data-field="statusOfEmployment"]'),
         profession: val('[data-field="profession"]'),
         emergencyName: val('[data-field="emergencyName"]'),
         emergencyContact: val('[data-field="emergencyContact"]'),

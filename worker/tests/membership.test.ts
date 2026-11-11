@@ -18,6 +18,24 @@ const applicant = {
   address: '123 Rizal St., La Paz, Iloilo City', privacyConsent: true,
 };
 
+// Full form payload fixture, matching buildApplicantRecord without worker metadata.
+const fullRecord = {
+  firstName: 'Juan', middleName: 'Santos', lastName: 'Dela Cruz', extension: '',
+  email: 'juan@example.com', contactNumber: '09170000000',
+  dateOfBirth: '1990-01-01', placeOfBirth: 'Iloilo', gender: 'Male', civilStatus: 'Married',
+  presentAddress: '123 Present St., Iloilo', permanentAddress: '456 Permanent St., Iloilo',
+  tinNumber: '', gsisSssNumber: '', validIdType: 'PhilID', validIdNumber: '1234',
+  membershipType: 'Regular', isatuEmployee: true, campus: 'Leon',
+  employmentCategory: 'Employed', statusOfEmployment: 'part-time', profession: 'Teacher',
+  associateQualification: '', associateSpecify: '',
+  recommender: { name: '', relationship: '', campus: '' },
+  spouse: { name: 'Maria Dela Cruz', dateOfBirth: '1991-01-01', contact: '09170000001' },
+  parent: { name: '', dateOfBirth: '', contact: '' },
+  beneficiaries: [{ fullName: 'Fixture Child', dateOfBirth: '2015-01-01', relationship: 'Child' }],
+  emergencyContact: { name: 'Fixture Contact', phone: '09170000002', relationship: 'Sibling' },
+  notes: '', shares: 500, years: 5, privacyConsent: true,
+};
+
 function submit(extra: Record<string, string>) {
   return worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
     method: 'POST',
@@ -50,6 +68,30 @@ describe('membership subscription rules', () => {
 });
 
 describe('parseApplicant', () => {
+  it('retains the full record spouse and address for the office packet', () => {
+    expect(parseApplicant(JSON.stringify(fullRecord))).toMatchObject({
+      spouseName: 'Maria Dela Cruz', address: '123 Present St., Iloilo',
+    });
+  });
+  it('prefers the structured fields over legacy fields', () => {
+    expect(parseApplicant(JSON.stringify({ ...fullRecord, spouseName: 'Legacy spouse', address: 'Legacy address' })))
+      .toMatchObject({ spouseName: 'Maria Dela Cruz', address: '123 Present St., Iloilo' });
+  });
+  it('uses the permanent address when the present address is empty', () => {
+    expect(parseApplicant(JSON.stringify({ ...fullRecord, presentAddress: '' })))
+      .toMatchObject({ address: '456 Permanent St., Iloilo' });
+  });
+  it('falls back to legacy fields when the structured fields are empty', () => {
+    expect(parseApplicant(JSON.stringify({ ...fullRecord, spouse: { name: '' }, presentAddress: '', permanentAddress: '',
+      spouseName: 'Legacy spouse', address: 'Legacy address' })))
+      .toMatchObject({ spouseName: 'Legacy spouse', address: 'Legacy address' });
+  });
+  it.each([
+    { spouse: { name: 123 } }, { spouse: { name: 'x'.repeat(301) } },
+    { presentAddress: 123 }, { presentAddress: 'x'.repeat(301) },
+  ])('rejects invalid structured packet fields %#', invalid => {
+    expect(parseApplicant(JSON.stringify({ ...fullRecord, ...invalid }))).toBeNull();
+  });
   it('reads the form JSON', () => {
     expect(parseApplicant(JSON.stringify(applicant))).toEqual(applicant);
   });
