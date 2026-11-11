@@ -13,6 +13,9 @@ describe('website application privacy notice', () => {
     expect(notice).toContain('application number');
     expect(notice).toContain('mobile number');
     expect(notice).toContain('email address');
+    expect(notice).toContain('This website sets no cookies at all, none for advertising, analytics, or tracking.');
+    expect(notice).toContain('It keeps only a submission time in your browser to prevent duplicate applications and, during the PMES quiz, your attempt for that browser tab.');
+    expect(notice).not.toContain('stores nothing in your browser');
     expect(notice).not.toContain('This website itself keeps <strong>no database of submissions</strong>');
   });
 

@@ -97,8 +97,8 @@ describe.each(['GET', 'POST'])('%s MemberFolio application route', method => {
   });
 
   it('purges expired payloads opportunistically and returns expired', async () => {
-    const no = await seed(91);
-    const fresh = await seed(89);
+    const no = await seed(89);
+    const fresh = await seed(88);
     await expectError(await request(no, method), 410, 'expired');
     expect(await getApplicationPayload(db, no)).toBeNull();
     expect(await getApplicationPayload(db, fresh)).not.toBeNull();
@@ -149,12 +149,12 @@ it.each(['', '/ack'])('does not offer CORS preflight for %s', async suffix => {
   expect([...response.headers.keys()].filter(key => key.startsWith('access-control-'))).toEqual([]);
 });
 
-it('purges at the 90-day boundary, preserves younger records and summaries, and counts deletions', async () => {
+it('purges at the 89-day boundary, preserves younger records and summaries, and counts deletions', async () => {
   const { purgeExpiredPayloads } = await import('../src/membership/retention');
-  const expired = await seed(91);
-  const boundary = await seed(90);
-  const fresh = await seed(89);
-  const neverStored = await seed(91, false);
+  const expired = await seed(90);
+  const boundary = await seed(89);
+  const fresh = await seed(88);
+  const neverStored = await seed(90, false);
   expect(await purgeExpiredPayloads(db, NOW)).toBe(2);
   expect(await purgeExpiredPayloads(db, NOW)).toBe(0);
   expect(await getApplicationPayload(db, expired)).toBeNull();
@@ -174,8 +174,8 @@ it('supports an explicit retention period', async () => {
 });
 
 it('runs retention through the exported scheduled handler even with the pull switch off', async () => {
-  const expired = await seed(91);
-  const fresh = await seed(89);
+  const expired = await seed(89);
+  const fresh = await seed(88);
   const controller = { scheduledTime: Date.parse(NOW), cron: '0 18 * * *', noRetry() {} } as ScheduledController;
   await worker.scheduled(controller, bindings({ WEBSITE_APP_PULL: 'off' }), {} as ExecutionContext);
   expect(await getApplicationPayload(db, expired)).toBeNull();

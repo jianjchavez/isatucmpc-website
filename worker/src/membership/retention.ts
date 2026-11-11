@@ -1,5 +1,5 @@
 /** Delete expired payloads atomically with their non-PII expiry marker. */
-export async function purgeExpiredPayloads(db: D1Database, nowIso: string, days = 90): Promise<number> {
+export async function purgeExpiredPayloads(db: D1Database, nowIso: string, days = 89): Promise<number> {
   const cutoff = new Date(Date.parse(nowIso) - days * 86400000).toISOString();
   const results = await db.batch([
     db.prepare(`UPDATE membership_applications SET payload_expired_at = ?
