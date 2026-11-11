@@ -8,7 +8,7 @@ import fields from './office-fields.json';
 // Same rule as src/lib/subscription.ts; the form checks it first, this is the server copy.
 export const MIN_SHARES = 500;
 // Version of the website Privacy Notice the online consent checkbox refers to.
-export const PRIVACY_NOTICE_VERSION = '2026-08';
+export const PRIVACY_NOTICE_VERSION = '2026-11';
 
 export type Applicant = {
   firstName: string;

@@ -131,7 +131,7 @@ export function buildApplicantMessage(read: Read, checked: Checked, flags: Flags
     ]),
     ['Connection', read('affiliation').trim()], ['Notes', r.notes],
     ['Share subscription', `${r.shares} shares (PHP ${formatAmount(r.shares * PAR_VALUE)}), paid over ${r.years} years`],
-    ['Privacy consent', r.privacyConsent ? 'Given — Privacy Notice v2026-08' : ''],
+    ['Privacy consent', r.privacyConsent ? 'Given — Privacy Notice v2026-11' : ''],
   ];
   return rows.filter(([, value]) => value).map(([label, value]) => `${label}: ${value}`).join('\n') || '(no details)';
 }
