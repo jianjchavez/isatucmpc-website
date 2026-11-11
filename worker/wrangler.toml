@@ -19,6 +19,7 @@ TO_EMAIL = "isatucmpc1964@gmail.com"
 #   RESEND_API_KEY
 #   TURNSTILE_SECRET
 #   PMES_SESSION_SECRET   (random 32+ bytes; signs the presenter cookie)
+#   WEBSITE_APP_PULL_SECRET (random 32+ bytes; shared only with MemberFolio)
 
 # ---- PMES certification quiz (docs/superpowers/specs/2026-10-21-pmes-quiz-design.md) ----
 PMES_DRAW_STATUS = "approved"   # "draft" on preview until the committee approves the bank
@@ -46,3 +47,12 @@ simple = { limit = 10, period = 60 }
 name = "PMES_RL_IP"
 namespace_id = "1002"
 simple = { limit = 60, period = 60 }
+
+# MemberFolio is one server; requests share the constant "mf-pull" key.
+[[ratelimits]]
+name = "MF_PULL_RL"
+namespace_id = "1003"
+simple = { limit = 30, period = 60 }
+
+[triggers]
+crons = ["0 18 * * *"] # 02:00 Asia/Manila

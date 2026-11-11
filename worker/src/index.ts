@@ -4,6 +4,8 @@ import { resend, escapeHtml, type ResendMessage } from './resend';
 import { buildOfficePacket, parseApplicant, toBase64, validSubscription } from './membership/office-packet';
 import { issueApplicationNo, normalizeMobile } from './membership/applications';
 import { parseApplicationRecord } from './membership/record';
+import { pullRoutes } from './membership/pull-routes';
+import { purgeExpiredPayloads } from './membership/retention';
 import { verifyTurnstile } from './turnstile';
 import { pmes } from './pmes/routes';
 
@@ -14,6 +16,8 @@ export type Env = {
   TURNSTILE_SECRET: string;
   PMES_DB: D1Database;
   WEBSITE_APP_PULL?: string;
+  WEBSITE_APP_PULL_SECRET?: string;
+  MF_PULL_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -143,5 +147,16 @@ async function officePacket(raw: unknown, applicationNo: string): Promise<{ note
 }
 
 app.route('/api/pmes', pmes);
+app.route('/api/mf', pullRoutes);
 
-export default app;
+async function scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+  try {
+    // Retention continues while pulls are disabled; turning off access must not retain PII.
+    await purgeExpiredPayloads(env.PMES_DB, new Date(controller.scheduledTime).toISOString());
+  } catch {
+    // Preserve failure reporting/retries without propagating bound data from D1 errors.
+    throw new Error('retention-failed');
+  }
+}
+
+export default { fetch: app.fetch, scheduled };

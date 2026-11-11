@@ -51,12 +51,13 @@ export async function getApplicationPayload(db: D1Database, no: string): Promise
 }
 
 /** Acknowledge only an extant payload; repeat acknowledgements preserve the original timestamp. */
-export async function deletePayload(db: D1Database, no: string, nowIso: string): Promise<void> {
-  await db.batch([
+export async function deletePayload(db: D1Database, no: string, nowIso: string): Promise<boolean> {
+  const results = await db.batch([
     db.prepare(`UPDATE membership_applications SET pulled_at = ? WHERE no = ? AND pulled_at IS NULL
       AND EXISTS (SELECT 1 FROM application_payloads WHERE no = ?)`).bind(nowIso, no, no),
     db.prepare('DELETE FROM application_payloads WHERE no = ?').bind(no),
   ]);
+  return results[0].meta.changes === 1;
 }
 
 export async function findApplication(
