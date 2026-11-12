@@ -3,6 +3,9 @@ import { cors } from 'hono/cors';
 import { resend, escapeHtml, type ResendMessage } from './resend';
 import { buildOfficePacket, parseApplicant, toBase64, validSubscription } from './membership/office-packet';
 import { issueApplicationNo, normalizeMobile } from './membership/applications';
+import { parseApplicationRecord } from './membership/record';
+import { pullRoutes } from './membership/pull-routes';
+import { purgeExpiredPayloads } from './membership/retention';
 import { verifyTurnstile } from './turnstile';
 import { pmes } from './pmes/routes';
 
@@ -12,6 +15,9 @@ export type Env = {
   RESEND_API_KEY: string;
   TURNSTILE_SECRET: string;
   PMES_DB: D1Database;
+  WEBSITE_APP_PULL?: string;
+  WEBSITE_APP_PULL_SECRET?: string;
+  MF_PULL_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -37,7 +43,10 @@ app.post('/api/submit', async c => {
   if (!origin || !allowed.includes(origin)) return c.json({ error: 'forbidden' }, 403);
 
   const body = await c.req.json<Record<string, string>>().catch(() => null);
-  if (!body) return c.json({ error: 'invalid-body' }, 400);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return c.json({ error: 'invalid-body' }, 400);
+  for (const key of ['name', 'email', 'message', 'cf-turnstile-response', 'form-source']) {
+    if (body[key] !== undefined && typeof body[key] !== 'string') return c.json({ error: 'invalid-body' }, 400);
+  }
 
   const {
     name,
@@ -50,23 +59,42 @@ app.post('/api/submit', async c => {
   if (!name || !email || !message || !token) return c.json({ error: 'missing-fields' }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return c.json({ error: 'invalid-email' }, 400);
   if (source === 'membership' && !validSubscription(body.shares, body.years)) return c.json({ error: 'invalid-subscription' }, 400);
-  const mobile = source === 'membership' ? normalizeMobile(parseApplicant(body.applicant)?.contactNumber ?? '') : '';
+  if (source === 'membership' && typeof body.applicant === 'string' &&
+      new TextEncoder().encode(body.applicant).byteLength > 16 * 1024) {
+    return c.json({ error: 'invalid-applicant' }, 400);
+  }
+  const applicant = source === 'membership' ? parseApplicant(body.applicant) : null;
+  const mobile = normalizeMobile(applicant?.contactNumber ?? '');
   if (source === 'membership' && !mobile) return c.json({ error: 'invalid-mobile' }, 400);
+  const record = source === 'membership' ? parseApplicationRecord(body.applicant) : null;
+  if (source === 'membership') {
+    // Cached forms used only these packet fields. A failed modern record must not
+    // fall back and bypass its age, enum, or other contract validation.
+    const legacy = !record && applicant && Object.keys(JSON.parse(body.applicant))
+      .every(key => Object.hasOwn(applicant, key));
+    if ((!record && !legacy) || (record && (record.shares !== Number(body.shares) || record.years !== Number(body.years)))) {
+      return c.json({ error: 'invalid-applicant' }, 400);
+    }
+  }
 
   if (!(await verifyTurnstile(c.env.TURNSTILE_SECRET, token))) return c.json({ error: 'turnstile-failed' }, 400);
 
-  const applicationNo = source === 'membership'
-    ? await issueApplicationNo(c.env.PMES_DB, {
-      fullName: name,
-      mobile,
-      email,
-    }, new Date().toISOString())
-    : null;
+  let applicationNo: string | null = null;
+  if (source === 'membership') {
+    try {
+      applicationNo = await issueApplicationNo(c.env.PMES_DB, {
+        fullName: name, mobile, email,
+      }, new Date().toISOString(), c.env.WEBSITE_APP_PULL === 'on' && record ? record : undefined);
+    } catch {
+      // D1 errors may contain bound data. Do not pass them to Hono's default logger.
+      return c.json({ error: 'storage-failed' }, 503);
+    }
+  }
 
   // Send via Resend to coop inbox
   const subject =
     source === 'membership' ? `[Membership inquiry] ${name} (${applicationNo})` : `[Contact form] ${name}`;
-  const office = source === 'membership' ? await officePacket(body.applicant, applicationNo!) : null;
+  const office = source === 'membership' ? await officePacket(record ? JSON.stringify(record) : body.applicant, applicationNo!) : null;
   const html = `
     <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
     <p><strong>Source:</strong> ${escapeHtml(source)}</p>
@@ -119,5 +147,16 @@ async function officePacket(raw: unknown, applicationNo: string): Promise<{ note
 }
 
 app.route('/api/pmes', pmes);
+app.route('/api/mf', pullRoutes);
 
-export default app;
+async function scheduled(controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+  try {
+    // Retention continues while pulls are disabled; turning off access must not retain PII.
+    await purgeExpiredPayloads(env.PMES_DB, new Date(controller.scheduledTime).toISOString());
+  } catch {
+    // Preserve failure reporting/retries without propagating bound data from D1 errors.
+    throw new Error('retention-failed');
+  }
+}
+
+export default { fetch: app.fetch, scheduled };
