@@ -1,6 +1,7 @@
 ---
 import Button from '~/components/Button.astro';
 import { MIN_SHARES, PAR_VALUE } from '~/lib/subscription';
+import { VALID_ID_TYPES, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
 const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao'];
 const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', 'Others'];
@@ -18,19 +19,19 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <div class="grid md:grid-cols-4 gap-3">
       <div>
         <label for="mf-first" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">First name <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-first" data-field="firstName" type="text" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-first" data-field="firstName" type="text" maxlength="200" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-middle" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Middle name</label>
-        <input id="mf-middle" data-field="middleName" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-middle" data-field="middleName" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-last" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Last name <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-last" data-field="lastName" type="text" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-last" data-field="lastName" type="text" maxlength="200" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-ext" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Extension</label>
-        <input id="mf-ext" data-field="extension" type="text" placeholder="Jr., III…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-ext" data-field="extension" type="text" maxlength="200" placeholder="Jr., III…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
 
@@ -41,18 +42,18 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       </div>
       <div>
         <label for="mf-pob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Place of birth</label>
-        <input id="mf-pob" data-field="placeOfBirth" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-pob" data-field="placeOfBirth" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
 
     <div class="grid md:grid-cols-2 gap-3">
       <div>
         <label for="mf-email" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Email <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-email" name="email" type="email" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-email" name="email" type="email" maxlength="200" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-phone" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact number <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-phone" data-field="contactNumber" type="tel" required inputmode="tel" placeholder="09xx xxx xxxx" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-phone" data-field="contactNumber" type="tel" maxlength="200" required inputmode="tel" placeholder="09xx xxx xxxx" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
 
@@ -80,21 +81,32 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <div class="grid md:grid-cols-2 gap-3">
       <div>
         <label for="mf-paddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Present home address</label>
-        <input id="mf-paddr" data-field="presentHomeAddress" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-paddr" data-field="presentHomeAddress" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-haddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Permanent home address</label>
-        <input id="mf-haddr" data-field="homeAddress" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-haddr" data-field="homeAddress" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
     <div class="grid md:grid-cols-2 gap-3">
       <div>
         <label for="mf-tin" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">TIN number</label>
-        <input id="mf-tin" data-field="tinNumber" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-tin" data-field="tinNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-gsis-sss" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">GSIS/SSS number</label>
+        <input id="mf-gsis-sss" data-field="gsisSssNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label for="mf-vid-type" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Valid ID type</label>
+        <select id="mf-vid-type" data-field="validIdType" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white">
+          <option value="">Select ID type…</option>
+          {VALID_ID_TYPES.map(type => <option value={type.value}>{type.label}</option>)}
+        </select>
       </div>
       <div>
         <label for="mf-vid" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Valid ID number (presented)</label>
-        <input id="mf-vid" data-field="validIdNumber" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-vid" data-field="validIdNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
   </fieldset>
@@ -115,11 +127,14 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <div class="grid md:grid-cols-2 gap-3">
       <div>
         <label for="mf-empstatus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Status of employment</label>
-        <input id="mf-empstatus" data-field="statusOfEmployment" type="text" placeholder="Regular, Part-time, Contractual…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <select id="mf-empstatus" data-field="statusOfEmployment" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white">
+          <option value="">Select status…</option>
+          {EMPLOYMENT_STATUSES.map(status => <option value={status.value}>{status.label}</option>)}
+        </select>
       </div>
       <div>
         <label for="mf-prof" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Profession</label>
-        <input id="mf-prof" data-field="profession" type="text" placeholder="Faculty, Staff, etc." class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-prof" data-field="profession" type="text" maxlength="200" placeholder="Faculty, Staff, etc." class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
   </fieldset>
@@ -129,15 +144,15 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <div class="grid md:grid-cols-3 gap-3">
       <div>
         <label for="mf-eman" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Name</label>
-        <input id="mf-eman" data-field="emergencyName" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-eman" data-field="emergencyName" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-emph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact number</label>
-        <input id="mf-emph" data-field="emergencyContact" type="tel" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-emph" data-field="emergencyContact" type="tel" maxlength="200" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-emrel" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship</label>
-        <input id="mf-emrel" data-field="emergencyRelationship" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-emrel" data-field="emergencyRelationship" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
   </fieldset>
@@ -174,20 +189,20 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       </div>
       <div id="mf-assocorg-row" class="hidden">
         <label for="mf-assocorg" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Please specify</label>
-        <input id="mf-assocorg" data-field="associateOrgSpecify" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-assocorg" data-field="associateOrgSpecify" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div class="grid md:grid-cols-3 gap-3">
         <div>
           <label for="mf-recname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Recommended by <span class="text-orange" aria-hidden="true">*</span></label>
-          <input id="mf-recname" data-field="recommenderName" type="text" placeholder="Regular member's full name" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+          <input id="mf-recname" data-field="recommenderName" type="text" maxlength="200" placeholder="Regular member's full name" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
         </div>
         <div>
           <label for="mf-recrel" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship to that member</label>
-          <input id="mf-recrel" data-field="recommenderRelationship" type="text" placeholder="Parent, spouse, child, friend…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+          <input id="mf-recrel" data-field="recommenderRelationship" type="text" maxlength="200" placeholder="Parent, spouse, child, friend…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
         </div>
         <div>
           <label for="mf-reccampus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">If they're ISAT U: campus/college</label>
-          <input id="mf-reccampus" data-field="recommenderCampus" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+          <input id="mf-reccampus" data-field="recommenderCampus" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
         </div>
       </div>
     </div>
@@ -214,7 +229,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <div class="grid md:grid-cols-3 gap-3">
       <div>
         <label for="mf-spname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Spouse's name</label>
-        <input id="mf-spname" data-field="spouseName" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-spname" data-field="spouseName" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-spdob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
@@ -222,13 +237,13 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       </div>
       <div>
         <label for="mf-spph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact no.</label>
-        <input id="mf-spph" data-field="spouseContact" type="tel" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-spph" data-field="spouseContact" type="tel" maxlength="200" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
     <div class="grid md:grid-cols-3 gap-3">
       <div>
         <label for="mf-pname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Mother/father's name</label>
-        <input id="mf-pname" data-field="parentName" type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-pname" data-field="parentName" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-pdob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
@@ -236,7 +251,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       </div>
       <div>
         <label for="mf-pph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact no.</label>
-        <input id="mf-pph" data-field="parentContact" type="tel" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-pph" data-field="parentContact" type="tel" maxlength="200" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
     </div>
   </fieldset>
@@ -247,7 +262,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       <div class="grid grid-cols-2 md:grid-cols-[2fr_1.2fr_1.5fr_0.7fr] gap-2 items-end">
         <div>
           <label for={`mf-ben${i}-name`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">{`Beneficiary ${i} — name`}</label>
-          <input id={`mf-ben${i}-name`} data-field={`ben${i}Name`} type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+          <input id={`mf-ben${i}-name`} data-field={`ben${i}Name`} type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
         </div>
         <div>
           <label for={`mf-ben${i}-dob`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
@@ -255,7 +270,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         </div>
         <div>
           <label for={`mf-ben${i}-rel`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship</label>
-          <input id={`mf-ben${i}-rel`} data-field={`ben${i}Rel`} type="text" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+          <input id={`mf-ben${i}-rel`} data-field={`ben${i}Rel`} type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
         </div>
         <div>
           <label for={`mf-ben${i}-age`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Age</label>
@@ -269,11 +284,11 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">9. A bit more</legend>
     <div>
       <label for="mf-affiliation" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your connection to ISAT U or our community</label>
-      <input id="mf-affiliation" data-field="affiliation" type="text" placeholder="e.g. Faculty since 2018, alumna 2010, child of member …" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      <input id="mf-affiliation" data-field="affiliation" type="text" maxlength="200" placeholder="e.g. Faculty since 2018, alumna 2010, child of member …" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
     </div>
     <div>
       <label for="mf-notes" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Anything to add? <span class="text-slate font-normal normal-case tracking-normal">(optional)</span></label>
-      <textarea id="mf-notes" data-field="notes" rows="3" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm"></textarea>
+      <textarea id="mf-notes" maxlength="1000" data-field="notes" rows="3" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm"></textarea>
     </div>
   </fieldset>
 
@@ -291,6 +306,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 <script>
   import { fillApplicationPdf, triggerPdfDownload, type PdfFieldData } from '~/lib/pdf-fill';
   import { MIN_SHARES, PAR_VALUE, formatAmount } from '~/lib/subscription';
+  import { buildApplicantRecord, buildApplicantMessage, isAdultApplicant, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
   const COOLDOWN_KEY = 'mf-last-submit-ts';
   const COOLDOWN_MS = 60_000; // 1 minute
@@ -374,7 +390,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     sharesInput?.addEventListener('input', showAmount);
     showAmount();
 
-    // Runs first (capture phase on the form): a bad subscription stops the submit and the PDF.
+    // Runs first (capture phase on the form): invalid values stop the submit and PDF.
     form.addEventListener('submit', e => {
       const shares = wholeNumber(sharesInput);
       const years = wholeNumber(yearsInput);
@@ -382,7 +398,9 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         ? { el: sharesInput, text: `Please subscribe to at least ${MIN_SHARES} shares (whole number).` }
         : !(years >= 1)
           ? { el: yearsInput, text: 'Please enter how many years you will pay your subscription (whole number).' }
-          : null;
+          : !isAdultApplicant(val('[data-field="dob"]'))
+            ? { el: form!.querySelector('[data-field="dob"]') as HTMLInputElement | null, text: 'Applicants must be at least 18 years old.' }
+            : null;
       if (!problem) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -403,56 +421,17 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       const last = val('[data-field="lastName"]');
       (form!.elements.namedItem('name') as HTMLInputElement).value = [first, middle, last].filter(Boolean).join(' ') || '(no name)';
 
-      const memberType = (form!.querySelector('input[name="mf-membertype"]:checked') as HTMLInputElement | null)?.value || '';
-      const isReg = memberType === 'Regular';
-      const isAssoc = memberType === 'Associate';
-
-      const rows: Array<[string, string]> = [
-        ['Membership type', memberType],
-        ['Contact number', val('[data-field="contactNumber"]')],
-        ['Date of birth', val('[data-field="dob"]')],
-        ['Place of birth', val('[data-field="placeOfBirth"]')],
-        ['Gender', (form!.querySelector('input[name="mf-gender"]:checked') as HTMLInputElement | null)?.value || ''],
-        ['Civil status', (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value || ''],
-        ['Present home address', val('[data-field="presentHomeAddress"]')],
-        ['Permanent home address', val('[data-field="homeAddress"]')],
-        ['TIN', val('[data-field="tinNumber"]')],
-        ['Valid ID number', val('[data-field="validIdNumber"]')],
-        ['Employment category', (form!.querySelector('input[name="mf-empcat"]:checked') as HTMLInputElement | null)?.value || ''],
-        ['Status of employment', val('[data-field="statusOfEmployment"]')],
-        ['Profession', val('[data-field="profession"]')],
-        ['Emergency contact', [val('[data-field="emergencyName"]'), val('[data-field="emergencyContact"]'), val('[data-field="emergencyRelationship"]')].filter(Boolean).join(' / ')],
-        ['ISAT U employee', isReg ? (isatuChk?.checked ? 'Yes' : 'No') : ''],
-        ['Campus', isReg && isatuChk?.checked ? val('[data-field="campus"]') : ''],
-        ['Associate qualification', isAssoc ? (form!.querySelector('input[name="mf-assocqual"]:checked') as HTMLInputElement | null)?.value || '' : ''],
-        ['Associate specify', isAssoc ? val('[data-field="associateOrgSpecify"]') : ''],
-        ['Recommender', isAssoc ? val('[data-field="recommenderName"]') : ''],
-        ['Recommender relationship', isAssoc ? val('[data-field="recommenderRelationship"]') : ''],
-        ['Recommender campus', isAssoc ? val('[data-field="recommenderCampus"]') : ''],
-        ['Spouse', [val('[data-field="spouseName"]'), val('[data-field="spouseDob"]'), val('[data-field="spouseContact"]')].filter(Boolean).join(' / ')],
-        ['Parent', [val('[data-field="parentName"]'), val('[data-field="parentDob"]'), val('[data-field="parentContact"]')].filter(Boolean).join(' / ')],
-        ['Beneficiary 1', [val('[data-field="ben1Name"]'), val('[data-field="ben1Dob"]'), val('[data-field="ben1Rel"]'), val('[data-field="ben1Age"]')].filter(Boolean).join(' / ')],
-        ['Beneficiary 2', [val('[data-field="ben2Name"]'), val('[data-field="ben2Dob"]'), val('[data-field="ben2Rel"]'), val('[data-field="ben2Age"]')].filter(Boolean).join(' / ')],
-        ['Connection', val('[data-field="affiliation"]')],
-        ['Notes', val('[data-field="notes"]')],
-        ['Share subscription', `${val('#mf-shares')} shares (PHP ${formatAmount(Number(val('#mf-shares')) * PAR_VALUE)}), paid over ${val('#mf-years')} years`],
-        ['Privacy consent', (form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked ? 'Given — Privacy Notice v2026-08' : ''],
-      ];
-      const message = rows.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n') || '(no details)';
-      (form!.elements.namedItem('message') as HTMLInputElement).value = message;
-
-      // Structured copy for the worker, which fills the office pages from it.
-      (form!.elements.namedItem('applicant') as HTMLInputElement).value = JSON.stringify({
-        firstName: first,
-        middleName: middle,
-        lastName: last,
-        extension: val('[data-field="extension"]'),
-        civilStatus: (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value || '',
-        spouseName: val('[data-field="spouseName"]'),
-        contactNumber: val('[data-field="contactNumber"]'),
-        address: val('[data-field="presentHomeAddress"]') || val('[data-field="homeAddress"]'),
-        privacyConsent: !!(form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked,
-      });
+      const read = (field: string) => field === 'email' ? val('[name="email"]') : val(`[data-field="${field}"]`);
+      const checked = (field: string) =>
+        (form!.querySelector(`[data-field="${field}"]:checked`) as HTMLInputElement | null)?.value || '';
+      const flags = {
+        isatuEmployee: !!isatuChk?.checked,
+        consent: !!(form!.querySelector('#mf-consent') as HTMLInputElement | null)?.checked,
+        shares: wholeNumber(sharesInput),
+        years: wholeNumber(yearsInput),
+      };
+      (form!.elements.namedItem('message') as HTMLInputElement).value = buildApplicantMessage(read, checked, flags);
+      (form!.elements.namedItem('applicant') as HTMLInputElement).value = JSON.stringify(buildApplicantRecord(read, checked, flags));
     }, true);  // capture phase
 
     // ---- bubble-phase: wait for the application number before building the PDF ----
@@ -492,7 +471,9 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       } catch (err) {
         showResult((err as Error).message === 'invalid-mobile'
           ? 'Please enter your mobile number as 09XX XXX XXXX. We use it to confirm your identity at the PMES.'
-          : "We couldn't send your message. Please try again or email isatucmpc1964@gmail.com.", false);
+          : (err as Error).message === 'invalid-applicant'
+            ? 'Please check your entries and try again. Some details could not be read.'
+            : "We couldn't send your message. Please try again or email isatucmpc1964@gmail.com.", false);
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
         submitting = false;
         if (submitBtn) {
@@ -529,7 +510,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         tinNumber: val('[data-field="tinNumber"]'),
         validIdNumber: val('[data-field="validIdNumber"]'),
         employmentCategory: (form!.querySelector('input[name="mf-empcat"]:checked') as HTMLInputElement | null)?.value,
-        statusOfEmployment: val('[data-field="statusOfEmployment"]'),
+        statusOfEmployment: EMPLOYMENT_STATUSES.find(s => s.value === val('[data-field="statusOfEmployment"]'))?.label ?? val('[data-field="statusOfEmployment"]'),
         profession: val('[data-field="profession"]'),
         emergencyName: val('[data-field="emergencyName"]'),
         emergencyContact: val('[data-field="emergencyContact"]'),
