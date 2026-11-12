@@ -12,11 +12,14 @@
 #                                    + /pmes/* calls to /api/pmes/* on the same Worker origin (the presenter
 #                                    pages send the pmes_admin cookie with credentials: 'include'; no new host)
 #   frame   'self'                 → MemberFolio how-to iframe;  challenges.cloudflare → Turnstile widget iframe
+#           youtube-nocookie       → /pmes/ online video modules (only rendered when PMES_SELF_PACED is on;
+#                                    hosted MP4s/captions use media-src and posters use img-src below)
+#   media/img media.isatucmpc.coop  → hosted PMES videos, captions and posters
 #   ancestors 'self' + XFO SAMEORIGIN → allow the same-origin how-to iframe (still blocks external framing/clickjacking)
 # If you add a new third-party (font CDN, video embed, analytics), extend the matching directive.
 
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; font-src 'self' data:; connect-src 'self' https://isatucmpc-forms.jianjchavez.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src 'self' https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://isatucmpc-forms.jianjchavez.workers.dev; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com https://media.isatucmpc.coop; media-src 'self' https://media.isatucmpc.coop; font-src 'self' data:; connect-src 'self' https://isatucmpc-forms.jianjchavez.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src 'self' https://challenges.cloudflare.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://isatucmpc-forms.jianjchavez.workers.dev; object-src 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff

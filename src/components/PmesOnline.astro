@@ -1,0 +1,36 @@
+---
+// Rendered on /pmes/ only when PMES_SELF_PACED is on (src/data/pmes-online.ts).
+import Eyebrow from '~/components/Eyebrow.astro';
+import { PMES_VIDEO_MODULES } from '~/data/pmes-online';
+---
+<div class="space-y-5 mb-5">
+  <div class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8">
+    <Eyebrow>PMES online</Eyebrow>
+    <h2 class="mt-2 text-2xl">Watch the seminar</h2>
+    <p class="mt-2 text-sm text-slate">Watch the {PMES_VIDEO_MODULES.length} modules in order. After the last one, this month's session code appears. Then take the quiz below with your application number and the mobile number on your application.</p>
+  </div>
+  <div id="pmes-online" data-modules={JSON.stringify(PMES_VIDEO_MODULES)} class="space-y-5"></div>
+</div>
+
+<script>
+  import { mountOnline } from '~/components/pmes-online';
+
+  const WORKER = 'https://isatucmpc-forms.jianjchavez.workers.dev';
+  const root = document.getElementById('pmes-online')!;
+  let storage: Storage | undefined;
+  try { storage = localStorage; } catch { storage = undefined; }
+  mountOnline(root, {
+    modules: JSON.parse(root.dataset.modules ?? '[]'),
+    storage,
+    fetchCode: async () => {
+      const res = await fetch(`${WORKER}/api/pmes/online-session`);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error('online-session');
+      return ((await res.json()) as { code: string }).code;
+    },
+    onCode: code => {
+      const input = document.getElementById('pf-code') as HTMLInputElement | null;
+      if (input) input.value = code;
+    },
+  });
+</script>

@@ -48,6 +48,7 @@ const ERRORS: Record<string, string> = {
   'attempt-in-progress': 'A quiz for this number is already in progress on another phone or browser. Continue it there, or see the presenter.',
   'unknown-attempt': 'This attempt is no longer recognized. Please start again.',
   'attempt-finalizing': 'Your result is being prepared. Please try again in a moment.',
+  'online-session-applicants-only': 'The online session is for membership applicants, using the application number and mobile number. Members take the PMES at an in-person session.',
   'generic': 'Something went wrong. Please check your connection and try again.',
 };
 export function errorMessage(code: string): string { return ERRORS[code] ?? ERRORS['generic']!; }

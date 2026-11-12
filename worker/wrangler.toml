@@ -26,6 +26,9 @@ PMES_DRAW_STATUS = "approved"   # "draft" on preview until the committee approve
 PMES_PASS_MARK = "16"
 PMES_QUIZ_SIZE = "20"
 PMES_MAX_ATTEMPTS = "3"
+# "on" opens the standing monthly online session (board paper Item 3). Keep "off" until the Board and the
+# Education and Training Committee approve; flip together with PMES_SELF_PACED in src/data/pmes-online.ts.
+PMES_SELF_PACED = "off"
 SITE_URL = "https://isatucmpc.coop"
 
 [[d1_databases]]
