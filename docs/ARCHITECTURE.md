@@ -4,7 +4,7 @@
 > site's architecture. Whenever you change the stack, hosting, build/deploy,
 > site structure, components/data, integrations, or security configuration,
 > **update the relevant section here in the same change** (see `CLAUDE.md`).
-> Last verified against the codebase: 2026-10-23.
+> Last verified against the codebase: 2026-11-12.
 
 ---
 
@@ -33,7 +33,7 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 
 ## 3. Frontend stack
 
-- **Framework:** Astro **6.3.8** (static output) + MDX (`@astrojs/mdx`)
+- **Framework:** Astro **7.3.3** (static output) + MDX (`@astrojs/mdx` **8.0.0**)
 - **Styling:** Tailwind CSS **4.3** via `@tailwindcss/vite` — CSS-first `@theme` config in `src/styles/global.css` (no `tailwind.config.js`)
 - **Fonts:** Montserrat (display) + Open Sans (body), self-hosted via `@fontsource`
 - **Icons:** `lucide-astro`
@@ -42,7 +42,7 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 - **QR codes:** `qrcode` 1.5.4 (build-time, vector website QR on PMES print documents; `@types/qrcode` dev)
 - **SEO/feeds:** `astro-seo`, `@astrojs/sitemap`, `@astrojs/rss`
 - **Path alias:** `~` → `src/` (configured in `astro.config.mjs`)
-- **`astro.config.mjs`:** `site: 'https://isatucmpc.coop'`; sitemap filters out `/404` and `/pmes/*` (all five PMES pages are `noindex`); `inlineStylesheets: 'auto'`.
+- **`astro.config.mjs`:** `site: 'https://isatucmpc.coop'`; sitemap filters out `/404` and `/pmes/*` (all five PMES pages are `noindex`); `inlineStylesheets: 'auto'`; `compressHTML: true` preserves pre-Astro-7 whitespace.
 
 ## 4. Forms + PMES backend (Cloudflare Worker)
 
@@ -66,11 +66,14 @@ DNS cutover (Gandi → Cloudflare) completed 2026-06-02 — see `docs/T27-DNS-CU
 
 ## 5. Repository, tooling & build
 
-- **Node:** `>=22.12` (CI runs Node **24**). **pnpm 11.0.4** (`packageManager`).
-- **Build output:** **15** static pages → `dist/`.
+- **Node:** `>=22.19` (the resolved Undici 8 dependency requires this; CI runs Node **24**). **pnpm 11.0.4** (`packageManager`). Security overrides live in `pnpm-workspace.yaml`, which includes only the site root; `worker/` retains its separate lockfile.
+- **Build output:** **16** generated pages → `dist/` (**17** HTML files including the copied public how-to page).
 - **Scripts:** `dev`, `build`, `preview`, `check` (astro check), `test` (vitest), `lint` (eslint), `format` (prettier), `a11y` (pa11y-ci).
 - **Quality gates:** `astro check` (target 0 errors / 0 warnings), ESLint 10 + `eslint-plugin-astro`, Prettier, pa11y-ci accessibility (`.pa11yci.json`).
-- ⚠️ **pnpm v11 gotcha:** installs need `--ignore-workspace --ignore-scripts`; invoke binaries via `./node_modules/.bin/` (astro, wrangler) because pnpm's strict-build policy otherwise silently exits. See `[[reference_pnpm_v11_ci_workaround]]`.
+- **Whitespace regression:** `tests/astro-config.test.ts` validates the actual Astro config and requires `compressHTML: true`; it runs without build artifacts and cannot skip when `dist/` is absent.
+- ⚠️ **pnpm v11 gotcha:** root installs use `pnpm install --frozen-lockfile --ignore-scripts`; invoke binaries via `./node_modules/.bin/` (astro, wrangler) because pnpm's strict-build policy otherwise silently exits. See `[[reference_pnpm_v11_ci_workaround]]`.
+  Keep workspace loading enabled: `pnpm-workspace.yaml` isolates the site and supplies its security overrides.
+  The independently locked Worker uses `cd worker && pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts`.
 
 ## 6. Site structure (pages)
 

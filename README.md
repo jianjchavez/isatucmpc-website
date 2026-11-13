@@ -3,11 +3,11 @@
 Public-facing website for the **Iloilo Science and Technology University and Community Multi-Purpose Cooperative (ISATUCMPC)**.
 
 - **Live:** https://isatucmpc.pages.dev (custom domain `isatucmpc.coop` pending DotCoop `.coop` eligibility — see `docs/T27-DNS-CUTOVER.md`)
-- **Stack:** Astro 6 + Tailwind 4 + MDX, deployed on Cloudflare Pages. Form submissions go to a Cloudflare Worker (`worker/`) + Resend, protected by Turnstile.
+- **Stack:** Astro 7 + Tailwind 4 + MDX, deployed on Cloudflare Pages. Form submissions go to a Cloudflare Worker (`worker/`) + Resend, protected by Turnstile.
 - **Deploy:** automatic on push to `main` via GitHub Actions → Cloudflare Pages.
 - **PMES certification quiz** (`/pmes/*`, Worker `/api/pmes/*`, D1): design in `docs/superpowers/specs/2026-10-21-pmes-quiz-design.md`; owner-run deploy notes in `worker/README-pmes.md`.
 
-> This is a **standalone git repo** nested under the CoopSuite pnpm workspace. It is **not** part of the monorepo and must be worked on with the flags below.
+> This is a **standalone git repo** with its own root-only pnpm workspace, excluded from the surrounding CoopSuite workspace.
 
 ## Local development
 
@@ -15,7 +15,7 @@ Run everything from the repo root (`~/Code/CoopSuite/Website`):
 
 ```sh
 # install deps (the flags matter — see Gotchas)
-pnpm install --ignore-workspace --ignore-scripts
+pnpm install --frozen-lockfile --ignore-scripts
 
 # local dev server with hot reload  → http://localhost:4321
 ./node_modules/.bin/astro dev
@@ -30,10 +30,9 @@ pnpm install --ignore-workspace --ignore-scripts
 
 ## ⚠️ Gotchas (read before installing or running tools)
 
-1. **Always use the install flags:** `pnpm install --ignore-workspace --ignore-scripts`.
-   This repo is nested inside the monorepo's pnpm workspace; without `--ignore-workspace`
-   pnpm tries to resolve workspace siblings, and pnpm v11's strict-builds policy turns
-   ignored postinstalls into a hard error without `--ignore-scripts`.
+1. **Root install:** `pnpm install --frozen-lockfile --ignore-scripts`.
+   Keep workspace loading enabled: `pnpm-workspace.yaml` isolates the site and supplies its security overrides.
+   The independently locked Worker still uses `cd worker && pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts`.
 2. **Run binaries via `./node_modules/.bin/<tool>`** (e.g. `./node_modules/.bin/astro`,
    `./node_modules/.bin/wrangler`). `pnpm dlx` / `pnpm exec` silently fail to compile
    esbuild/workerd under pnpm v11 and exit without running.

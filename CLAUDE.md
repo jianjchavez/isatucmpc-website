@@ -28,9 +28,11 @@ no structural impact), you don't need to touch the doc — use judgment.
 - **Deploys to production on merge to `main`** (GitHub Actions → Cloudflare Pages).
   Use a feature branch → PR → squash-merge → delete branch. Direct push to `main`
   is blocked; use `gh pr merge`.
-- **pnpm v11 gotcha:** run installs with `--ignore-workspace --ignore-scripts`, and
+- **pnpm v11 gotcha:** at the site root run `pnpm install --frozen-lockfile --ignore-scripts`, and
   invoke `astro`/`wrangler` via `./node_modules/.bin/` (pnpm's strict-build policy
   otherwise silently exits to shell).
+  Keep workspace loading enabled: `pnpm-workspace.yaml` isolates the site and supplies its security overrides.
+  The independently locked Worker uses `cd worker && pnpm install --ignore-workspace --frozen-lockfile --ignore-scripts`.
 - **Verify before claiming done:** `./node_modules/.bin/astro check` (0 errors /
   0 warnings) + `./node_modules/.bin/astro build`, and confirm rendered output in
   `dist/`.
