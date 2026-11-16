@@ -30,6 +30,14 @@ export type Result = { score: number; total: number; passed: boolean; retakesLef
 
 const FROM = 'ISATUCMPC <noreply@isatucmpc.coop>';
 const CONTACT = '<p>Office: (033) 330-2586 · isatucmpc1964@gmail.com</p><p>Mobile: 0950 108 8310 (call or text) · Messenger: <a href="https://m.me/isatu.cmpc">m.me/isatu.cmpc</a></p>';
+// Fee and minimum paid-up shares: PMES deck slide 30 (owner ruling 2026-11-16: 50 shares, 25 paid).
+const OFFICE_VISIT =
+  '<p><strong>Next step: one visit to the cooperative office</strong> (Burgos St., La Paz, Iloilo City). Bring:</p>' +
+  '<ul><li>your application number and a valid ID;</li>' +
+  '<li>PHP 1,750.00: the PHP 500.00 membership fee and PHP 1,250.00 for 25 paid-up shares.</li></ul>' +
+  '<p>At the office you sign your application papers. ISAT U employees joining as regular members also sign the ' +
+  'Authority to Deduct from Salary for the rest of the capital share (and the Welfare Fund, if enrolled). ' +
+  'The Board of Directors then acts on your application within 30 days.</p>';
 const ID_LABEL: Record<string, string> = { application: 'Application No.', member: 'Member No.' };
 
 export async function sendResultEmails(
@@ -55,12 +63,14 @@ export async function sendResultEmails(
 
   const common =
     `<p>Session: ${e(attempt.session_date)}, code ${e(attempt.code)}</p>` + outcome;
+  // Applicants (not members retaking the seminar) are told what the one office visit needs.
+  const nextStep = result.passed && attempt.id_type === 'application' ? OFFICE_VISIT : '';
 
   const toAttendee = resend(env, {
     from: FROM,
     to: [attempt.email],
     subject,
-    html: `<p>Dear ${e(attempt.full_name)},</p>${common}${CONTACT}<p>— ISATUCMPC</p>`,
+    html: `<p>Dear ${e(attempt.full_name)},</p>${common}${nextStep}${CONTACT}<p>— ISATUCMPC</p>`,
   });
   const toCoop = resend(env, {
     from: FROM,

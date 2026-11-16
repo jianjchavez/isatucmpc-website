@@ -1,4 +1,4 @@
-import { PAR_VALUE, formatAmount } from './subscription';
+import { MIN_SHARES, PAR_VALUE, ageOn, formatAmount, monthlyDeduction } from './subscription';
 
 export const VALID_ID_TYPES = [
   { value: 'PhilID', label: 'Philippine Identification (PhilID)' },
@@ -41,6 +41,8 @@ export type WebsiteApplicationRecord = {
   validIdType: string; validIdNumber: string;
   membershipType: '' | 'Regular' | 'Associate';
   isatuEmployee: boolean; campus: string;
+  employeeNumber: string; office: string;
+  pmesMode: '' | 'online' | 'in-person';
   employmentCategory: string; statusOfEmployment: string; profession: string;
   associateQualification: '' | 'relationship' | 'integrity' | 'organization';
   associateSpecify: string;
@@ -80,6 +82,9 @@ export function buildApplicantRecord(read: Read, checked: Checked, flags: Flags)
     validIdType: value('validIdType'), validIdNumber: value('validIdNumber'),
     membershipType, isatuEmployee: regular && flags.isatuEmployee,
     campus: regular && flags.isatuEmployee ? value('campus') : '',
+    employeeNumber: regular && flags.isatuEmployee ? value('employeeNumber') : '',
+    office: regular && flags.isatuEmployee ? value('office') : '',
+    pmesMode: selected('pmesMode', ['online', 'in-person'] as const),
     employmentCategory: selected('employmentCategory', ['Employed', 'Self-Employed', 'Retired', 'Unemployed', 'Others']),
     statusOfEmployment: value('statusOfEmployment'), profession: value('profession'),
     associateQualification: associate ? selected('associateQualification', ['relationship', 'integrity', 'organization'] as const) : '',
@@ -104,6 +109,14 @@ export function buildApplicantRecord(read: Read, checked: Checked, flags: Flags)
   };
 }
 
+/** "PHP 52.08 capital share + PHP 200.00 Welfare Fund = PHP 252.08 a month" for an ISAT U regular applicant. */
+export function deductionLine(r: Pick<ApplicantRecord, 'isatuEmployee' | 'shares' | 'years' | 'dateOfBirth'>, today = new Date().toLocaleDateString('en-CA')): string {
+  if (!r.isatuEmployee || !(r.shares >= MIN_SHARES) || !(r.years >= 1) || !/^\d{4}-\d{2}-\d{2}$/.test(r.dateOfBirth)) return '';
+  const d = monthlyDeduction(r.shares, r.years, ageOn(r.dateOfBirth, today));
+  return `PHP ${formatAmount(d.capital)} capital share` + (d.welfare ? ` + PHP ${formatAmount(d.welfare)} Welfare Fund` : '') +
+    ` = PHP ${formatAmount(d.total)} a month for ${d.months} months`;
+}
+
 export function buildApplicantMessage(read: Read, checked: Checked, flags: Flags): string {
   const r = buildApplicantRecord(read, checked, flags);
   const person = (p: { name: string; dateOfBirth: string; contact: string }) =>
@@ -121,7 +134,8 @@ export function buildApplicantMessage(read: Read, checked: Checked, flags: Flags
     ['Profession', r.profession],
     ['Emergency contact', [r.emergencyContact.name, r.emergencyContact.phone, r.emergencyContact.relationship].filter(Boolean).join(' / ')],
     ['ISAT U employee', r.membershipType === 'Regular' ? (r.isatuEmployee ? 'Yes' : 'No') : ''],
-    ['Campus', r.campus], ['Associate qualification', r.associateQualification],
+    ['Campus', r.campus], ['Employee no.', r.employeeNumber], ['Office/college', r.office],
+    ['Associate qualification', r.associateQualification],
     ['Associate specify', r.associateSpecify], ['Recommender', r.recommender.name],
     ['Recommender relationship', r.recommender.relationship], ['Recommender campus', r.recommender.campus],
     ['Spouse', person(r.spouse)], ['Parent', person(r.parent)],
@@ -131,6 +145,8 @@ export function buildApplicantMessage(read: Read, checked: Checked, flags: Flags
     ]),
     ['Connection', read('affiliation').trim()], ['Notes', r.notes],
     ['Share subscription', `${r.shares} shares (PHP ${formatAmount(r.shares * PAR_VALUE)}), paid over ${r.years} years`],
+    ['Salary deduction', deductionLine(r)],
+    ['PMES', r.pmesMode === 'online' ? 'Online (videos and quiz)' : r.pmesMode === 'in-person' ? 'In-person seminar' : ''],
     ['Privacy consent', r.privacyConsent ? 'Given — Privacy Notice v2026-11' : ''],
   ];
   return rows.filter(([, value]) => value).map(([label, value]) => `${label}: ${value}`).join('\n') || '(no details)';

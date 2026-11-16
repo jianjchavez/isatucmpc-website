@@ -1,0 +1,162 @@
+{
+  "atdApplicationNo": [
+    {
+      "page": 0,
+      "x": 283.9,
+      "top": 150.8,
+      "maxWidth": 150.0,
+      "size": 8.0
+    },
+    {
+      "page": 1,
+      "x": 249.8,
+      "top": 150.8,
+      "maxWidth": 150.0,
+      "size": 8.0
+    }
+  ],
+  "atdName": [
+    {
+      "page": 0,
+      "x": 94.5,
+      "top": 198.0,
+      "maxWidth": 220.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 94.5,
+      "top": 198.0,
+      "maxWidth": 220.0,
+      "size": 9.0
+    }
+  ],
+  "atdEmployeeNo": [
+    {
+      "page": 0,
+      "x": 381.2,
+      "top": 198.0,
+      "maxWidth": 90.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 381.2,
+      "top": 198.0,
+      "maxWidth": 90.0,
+      "size": 9.0
+    }
+  ],
+  "atdOffice": [
+    {
+      "page": 0,
+      "x": 66.0,
+      "top": 216.8,
+      "maxWidth": 200.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 66.0,
+      "top": 216.8,
+      "maxWidth": 200.0,
+      "size": 9.0
+    }
+  ],
+  "atdCapital": [
+    {
+      "page": 0,
+      "x": 167.2,
+      "top": 280.5,
+      "maxWidth": 70.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 167.2,
+      "top": 280.5,
+      "maxWidth": 70.0,
+      "size": 9.0
+    }
+  ],
+  "atdShares": [
+    {
+      "page": 0,
+      "x": 384.6,
+      "top": 280.5,
+      "maxWidth": 40.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 384.6,
+      "top": 280.5,
+      "maxWidth": 40.0,
+      "size": 9.0
+    }
+  ],
+  "atdSubscription": [
+    {
+      "page": 0,
+      "x": 79.5,
+      "top": 299.2,
+      "maxWidth": 70.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 79.5,
+      "top": 299.2,
+      "maxWidth": 70.0,
+      "size": 9.0
+    }
+  ],
+  "atdMonths": [
+    {
+      "page": 0,
+      "x": 230.7,
+      "top": 299.2,
+      "maxWidth": 30.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 230.7,
+      "top": 299.2,
+      "maxWidth": 30.0,
+      "size": 9.0
+    }
+  ],
+  "atdTotal": [
+    {
+      "page": 0,
+      "x": 221.9,
+      "top": 363.8,
+      "maxWidth": 80.0,
+      "size": 9.0
+    },
+    {
+      "page": 1,
+      "x": 221.9,
+      "top": 324.8,
+      "maxWidth": 80.0,
+      "size": 9.0
+    }
+  ],
+  "atdSigName": [
+    {
+      "page": 0,
+      "x": 45.0,
+      "top": 522.0,
+      "maxWidth": 220.0,
+      "size": 8.5
+    },
+    {
+      "page": 1,
+      "x": 45.0,
+      "top": 483.0,
+      "maxWidth": 220.0,
+      "size": 8.5
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import type { Env } from '../index';
+import type { TelegramEnv } from '../telegram';
 
-export type PmesEnv = Env & {
+export type PmesEnv = Env & TelegramEnv & {
   PMES_DB: D1Database;
   PMES_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   PMES_RL_IP: { limit(opts: { key: string }): Promise<{ success: boolean }> };

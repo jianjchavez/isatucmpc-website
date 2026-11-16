@@ -103,17 +103,35 @@ describe('structured membership submissions', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  function submitRecord(raw: unknown, flag?: string, extra = {}) {
+  function submitRecord(raw: unknown, flag?: string, extra = {}, selfPacedFlag?: string) {
     return worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
       method: 'POST', headers: { origin: env.SITE_ORIGIN.split(',')[0], 'content-type': 'application/json' },
       body: JSON.stringify({ name: 'Fixture Applicant', email: 'fixture@example.com', message: 'Fixture application',
         shares: '500', years: '5', 'cf-turnstile-response': 'token', 'form-source': 'membership', applicant: raw, ...extra }),
-    }), { ...env, PMES_DB: testEnv.PMES_DB, WEBSITE_APP_PULL: flag }, {} as any);
+    }), { ...env, PMES_DB: testEnv.PMES_DB, WEBSITE_APP_PULL: flag, PMES_SELF_PACED: selfPacedFlag }, {} as any);
   }
   function externalCalls() {
     return vi.spyOn(globalThis, 'fetch').mockImplementation(async input =>
       Response.json(String(input instanceof Request ? input.url : input).includes('turnstile') ? { success: true } : { id: 'fixture-email' }));
   }
+  it.each([
+    ['online', 'on', 'Take the PMES online'],
+    ['online', undefined, 'we will tell you the next seminar date'],
+    ['in-person', 'on', 'we will tell you the next seminar date'],
+  ])('confirmation email: PMES %s with self-paced %s', async (pmesMode, selfPacedFlag, expected) => {
+    const sent: Array<{ to: string[]; html: string; attachments?: unknown[] }> = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes('turnstile')) return Response.json({ success: true });
+      sent.push(JSON.parse(String(init?.body)));
+      return Response.json({ id: 'fixture-email' });
+    });
+    const res = await submitRecord(JSON.stringify({ ...applicantFixture(), pmesMode }), 'off', {}, selfPacedFlag);
+    expect(res.status).toBe(200);
+    expect(sent.find(m => m.to[0] === 'fixture@example.com')!.html).toContain(expected);
+    // ISAT U regular fixture: the coop copy names the Authority to Deduct.
+    expect(JSON.stringify(sent.find(m => m.to[0] !== 'fixture@example.com'))).toContain('Authority to Deduct');
+  });
   it.each(['on', 'off', undefined, 'ON'])('stores only with exact on switch: %s', async flag => {
     externalCalls();
     const res = await submitRecord(JSON.stringify({ ...applicantFixture(), version: 99, applicationNo: 'forged', submittedAt: 'forged' }), flag);

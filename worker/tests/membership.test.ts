@@ -58,10 +58,11 @@ async function clearApplications() {
 }
 
 describe('membership subscription rules', () => {
-  it('needs at least 500 whole shares and at least one year', () => {
+  it('needs at least 50 whole shares and at least one year', () => {
+    expect(validSubscription('50', '5')).toBe(true);
     expect(validSubscription('500', '5')).toBe(true);
     expect(validSubscription('1200', '1')).toBe(true);
-    expect(validSubscription('499', '5')).toBe(false);
+    expect(validSubscription('49', '5')).toBe(false);
     expect(validSubscription('500.5', '5')).toBe(false);
     expect(validSubscription('500', '0')).toBe(false);
     expect(validSubscription(undefined, '5')).toBe(false);
@@ -110,9 +111,9 @@ describe('office packet', () => {
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(3);
   });
 
-  it('rejects a subscription under 500 shares before checking Turnstile', async () => {
+  it('rejects a subscription under 50 shares before checking Turnstile', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    const res = await submit({ shares: '400', years: '5', applicant: JSON.stringify(applicant) });
+    const res = await submit({ shares: '40', years: '5', applicant: JSON.stringify(applicant) });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid-subscription' });
     expect(fetchSpy).not.toHaveBeenCalled();

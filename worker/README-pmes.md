@@ -33,6 +33,9 @@ Migrations are in `worker/migrations/` (`0001_pmes.sql`). Re-running is safe: ap
 
 ```sh
 openssl rand -hex 32 | ./node_modules/.bin/wrangler secret put PMES_SESSION_SECRET
+# Optional staff alert when an applicant passes (bot @isatucmpc_alerts_bot, send-only; paste the token at the prompt, never in chat)
+./node_modules/.bin/wrangler secret put TELEGRAM_BOT_TOKEN
+./node_modules/.bin/wrangler secret put TELEGRAM_CHAT_ID
 ```
 
 `PMES_SESSION_SECRET` signs the presenter cookie (`pmes_admin`, 12-hour expiry). Rotating it signs every

@@ -13,6 +13,10 @@ describe('application record validation', () => {
     expect(result).toEqual({ ...applicantFixture(), firstName: 'Fixture',
       spouse: { name: 'Spouse', dateOfBirth: '', contact: '' } });
   });
+  it('reads forms cached before 2026-11-16 (no employee no., office or PMES mode) as blank', () => {
+    const { employeeNumber: _e, office: _o, pmesMode: _p, ...old } = applicantFixture();
+    expect(parseApplicationRecord(JSON.stringify(old))).toMatchObject({ employeeNumber: '', office: '', pmesMode: '' });
+  });
   it('keeps free-text campus, ID type and employment values for MemberFolio mapping', () => {
     expect(parse({ campus: 'Unknown campus', statusOfEmployment: 'Permanent', validIdType: 'Other' }))
       .toMatchObject({ campus: 'Unknown campus', statusOfEmployment: 'Permanent', validIdType: 'Other' });
@@ -28,7 +32,7 @@ describe('application record validation', () => {
     { emergencyContact: null }, { recommender: [] }, { spouse: {} },
     { beneficiaries: [{}, {}, {}] }, { beneficiaries: [{ fullName: 'Child', dateOfBirth: 'bad', relationship: '' }] },
     { beneficiaries: 'bad' }, { privacyConsent: 'true' }, { isatuEmployee: 1 },
-    { shares: '500' }, { shares: 499 }, { shares: 500.5 }, { years: 0 }, { years: 1.5 },
+    { shares: '500' }, { shares: 49 }, { shares: 500.5 }, { pmesMode: 'zoom' }, { employeeNumber: 42 }, { years: 0 }, { years: 1.5 },
     { email: 'invalid' }, { contactNumber: '12345' },
   ])('rejects invalid contract value %#', patch => expect(parse(patch)).toBeNull());
   it.each([undefined, null, {}, [], 1, 'null', '[]', '{bad'])('rejects malformed raw input %#', raw => {

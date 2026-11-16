@@ -4,9 +4,12 @@
 import { PDFDocument, StandardFonts, type PDFFont, type PDFPage } from 'pdf-lib';
 import template from './office-packet.pdf';
 import fields from './office-fields.json';
+import authorityTemplate from './authority-to-deduct.pdf';
+import authorityFields from './authority-fields.json';
+import { PAR_VALUE, type Deduction } from './deduction';
 
 // Same rule as src/lib/subscription.ts; the form checks it first, this is the server copy.
-export const MIN_SHARES = 500;
+export const MIN_SHARES = 50;
 // Version of the website Privacy Notice the online consent checkbox refers to.
 export const PRIVACY_NOTICE_VERSION = '2026-11';
 
@@ -68,8 +71,13 @@ function draw(pages: PDFPage[], font: PDFFont, text: string, f: Field) {
   page.drawText(str, { x: f.x, y: page.getHeight() - f.top, size, font });
 }
 
+/** For an ISAT U regular applicant: the Authority to Deduct page appended to the packet. */
+export type Authority = { employeeNo: string; office: string; shares: number; deduction: Deduction };
+
+const peso = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 /** `consentDate` is the Manila date the application was submitted, e.g. "October 23, 2026". */
-export async function buildOfficePacket(a: Applicant, consentDate: string, applicationNo: string): Promise<Uint8Array> {
+export async function buildOfficePacket(a: Applicant, consentDate: string, applicationNo: string, authority?: Authority): Promise<Uint8Array> {
   const pdf = await PDFDocument.load(template);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const pages = pdf.getPages();
@@ -94,6 +102,31 @@ export async function buildOfficePacket(a: Applicant, consentDate: string, appli
   };
   for (const [key, f] of Object.entries(fields)) {
     for (const location of Array.isArray(f) ? f : [f]) draw(pages, font, values[key as keyof typeof fields], location);
+  }
+  if (authority) {
+    // Page 0 carries the Welfare Fund line (ages 18-55), page 1 leaves it off.
+    const source = await PDFDocument.load(authorityTemplate);
+    const d = authority.deduction;
+    const keep = d.welfare > 0 ? 0 : 1;
+    const atd: Record<keyof typeof authorityFields, string> = {
+      atdApplicationNo: `Application No. ${applicationNo}`,
+      atdName: name,
+      atdEmployeeNo: authority.employeeNo,
+      atdOffice: authority.office,
+      atdCapital: peso(d.capital),
+      atdShares: String(authority.shares),
+      atdSubscription: peso(authority.shares * PAR_VALUE),
+      atdMonths: String(d.months),
+      atdTotal: peso(d.total),
+      atdSigName: name,
+    };
+    const [page] = await pdf.copyPages(source, [keep]);
+    pdf.addPage(page);
+    for (const [key, f] of Object.entries(authorityFields)) {
+      for (const location of Array.isArray(f) ? f : [f]) {
+        if (location.page === keep) draw([page], font, atd[key as keyof typeof authorityFields], { ...location, page: 0 });
+      }
+    }
   }
   return pdf.save();
 }

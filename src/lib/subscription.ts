@@ -1,7 +1,25 @@
 // Share subscription rules for the Membership Subscription Agreement.
 // The worker checks the same minimum (worker/src/membership/office-packet.ts).
 export const PAR_VALUE = 50; // PHP per share, as printed on the application form
-export const MIN_SHARES = 500;
+// Owner ruling 2026-11-16, matching PMES deck slide 30: subscribe at least 50 shares,
+// pay at least 25 with the application, the rest over time.
+export const MIN_SHARES = 50;
+export const PAID_WITH_APPLICATION = 25;
+export const MEMBERSHIP_FEE = 500;
+export const WELFARE_MONTHLY = 200; // Expanded Welfare Fund Policy, ages 18-55
+
+/** Age in whole years on `today` (YYYY-MM-DD strings). */
+export function ageOn(dateOfBirth: string, today: string): number {
+  return Number(today.slice(0, 4)) - Number(dateOfBirth.slice(0, 4)) - (today.slice(5) < dateOfBirth.slice(5) ? 1 : 0);
+}
+
+/** ISAT U salary deduction (Authority to Deduct). Same rule as worker/src/membership/deduction.ts. */
+export function monthlyDeduction(shares: number, years: number, age: number) {
+  const months = years * 12;
+  const capital = Math.round(((shares - PAID_WITH_APPLICATION) * PAR_VALUE / months) * 100) / 100;
+  const welfare = age >= 18 && age <= 55 ? WELFARE_MONTHLY : 0;
+  return { months, capital, welfare, total: Math.round((capital + welfare) * 100) / 100 };
+}
 
 const ONES = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
   'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];

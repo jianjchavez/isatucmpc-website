@@ -8,6 +8,7 @@ const fields: Record<string, string> = {
   presentHomeAddress: ' Current address ', homeAddress: ' Permanent address ',
   tinNumber: '123-456-789', gsisSssNumber: '34-1234567-8', validIdType: 'PhilID',
   validIdNumber: '1234', memberType: 'Regular', campus: 'Leon',
+  employeeNumber: ' EMP-0042 ', office: ' College of Education ', pmesMode: 'online',
   employmentCategory: 'Employed', statusOfEmployment: 'regular', profession: ' Teacher ',
   spouseName: ' Sam ', spouseDob: '1989-01-01', spouseContact: '09998887777',
   parentName: ' Pat ', parentDob: '1960-01-01', parentContact: '09111111111',
@@ -29,7 +30,8 @@ describe('membership applicant record', () => {
       presentAddress: 'Current address', permanentAddress: 'Permanent address',
       tinNumber: '123-456-789', gsisSssNumber: '34-1234567-8',
       validIdType: 'PhilID', validIdNumber: '1234', membershipType: 'Regular',
-      isatuEmployee: true, campus: 'Leon', employmentCategory: 'Employed',
+      isatuEmployee: true, campus: 'Leon', employeeNumber: 'EMP-0042', office: 'College of Education', pmesMode: 'online',
+      employmentCategory: 'Employed',
       statusOfEmployment: 'regular', profession: 'Teacher', associateQualification: '',
       associateSpecify: '', recommender: { name: '', relationship: '', campus: '' },
       spouse: { name: 'Sam', dateOfBirth: '1989-01-01', contact: '09998887777' },
@@ -47,6 +49,8 @@ describe('membership applicant record', () => {
     });
     expect(record.campus).toBe('');
     expect(record.isatuEmployee).toBe(false);
+    expect(record.employeeNumber).toBe('');
+    expect(record.office).toBe('');
     expect(record.associateQualification).toBe('relationship');
     expect(record.recommender.name).toBe('Mia');
   });
@@ -56,6 +60,13 @@ describe('membership applicant record', () => {
     expect(message).toContain('Valid ID type: Philippine Identification (PhilID)');
     expect(message).toContain('GSIS/SSS: 34-1234567-8');
     expect(message).toContain('Valid ID number: 1234');
+    expect(message).toContain('PMES: Online (videos and quiz)');
+    expect(message).toContain('Employee no.: EMP-0042');
+  });
+
+  it('shows the monthly salary deduction for an ISAT U regular applicant', () => {
+    const message = buildApplicantMessage(read, checked, { isatuEmployee: true, consent: true, shares: 50, years: 2 });
+    expect(message).toMatch(/Salary deduction: PHP 52\.08 capital share \+ PHP 200\.00 Welfare Fund = PHP 252\.08 a month for 24 months/);
   });
 
   it('clears previously filled Associate fields after switching to Regular', () => {

@@ -16,6 +16,10 @@ export type WebsiteApplicationRecord = {
   validIdType: string; validIdNumber: string;
   membershipType: '' | 'Regular' | 'Associate';
   isatuEmployee: boolean; campus: string;
+  /** ISAT U employee no. and office/college, for the Authority to Deduct; '' otherwise. */
+  employeeNumber: string; office: string;
+  /** How the applicant will take the PMES; '' from forms that did not ask. */
+  pmesMode: '' | 'online' | 'in-person';
   employmentCategory: string; statusOfEmployment: string; profession: string;
   associateQualification: '' | 'relationship' | 'integrity' | 'organization';
   associateSpecify: string;
@@ -95,6 +99,10 @@ export function parseApplicationRecord(raw: unknown): WebsiteApplicationRecordIn
       validIdType: text(v.validIdType), validIdNumber: text(v.validIdNumber),
       membershipType: enumeration(v.membershipType, ['', 'Regular', 'Associate'] as const),
       isatuEmployee: bool(v.isatuEmployee), campus: text(v.campus),
+      // Optional: cached forms from before 2026-11-16 do not send these.
+      employeeNumber: v.employeeNumber === undefined ? '' : text(v.employeeNumber),
+      office: v.office === undefined ? '' : text(v.office),
+      pmesMode: v.pmesMode === undefined ? '' : enumeration(v.pmesMode, ['', 'online', 'in-person'] as const),
       employmentCategory: text(v.employmentCategory), statusOfEmployment: text(v.statusOfEmployment), profession: text(v.profession),
       associateQualification: enumeration(v.associateQualification, ['', 'relationship', 'integrity', 'organization'] as const),
       associateSpecify: text(v.associateSpecify),
@@ -105,7 +113,7 @@ export function parseApplicationRecord(raw: unknown): WebsiteApplicationRecordIn
         return { fullName: text(b.fullName), dateOfBirth: date(b.dateOfBirth), relationship: text(b.relationship) };
       }),
       emergencyContact: { name: text(emergency.name), phone: text(emergency.phone), relationship: text(emergency.relationship) },
-      notes: text(v.notes, 1000), shares: whole(v.shares, 500), years: whole(v.years, 1), privacyConsent: bool(v.privacyConsent),
+      notes: text(v.notes, 1000), shares: whole(v.shares, 50), years: whole(v.years, 1), privacyConsent: bool(v.privacyConsent),
     };
   } catch {
     return null;
