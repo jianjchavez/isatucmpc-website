@@ -14,3 +14,12 @@ export async function notifyTelegram(env: TelegramEnv, text: string): Promise<vo
     // Never log or rethrow: the request URL carries the bot token.
   }
 }
+
+/**
+ * First name for a staff alert. The name is typed by the public, so only a plain word of
+ * letters gets through; anything Telegram could turn into a link falls back to "Applicant".
+ */
+export function alertFirstName(fullName: string): string {
+  const word = fullName.trim().split(/\s+/)[0] ?? '';
+  return /^\p{L}[\p{L}'-]{0,29}$/u.test(word) ? word : 'Applicant';
+}
