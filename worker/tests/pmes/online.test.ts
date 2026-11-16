@@ -15,6 +15,7 @@ const testEnv = (selfPaced: 'on' | 'off' | undefined) => ({
   ...env,
   PMES_DRAW_STATUS: 'draft',
   PMES_RL: { limit: async () => ({ success: true }) },
+  PUBLIC_RL: { limit: async () => ({ success: true }) },
   PMES_SESSION_SECRET: 'test-secret',
   PMES_SELF_PACED: selfPaced,
 });
@@ -93,6 +94,17 @@ describe('switch off: unchanged', () => {
     expect(await findOpenSession(db(), row.code, '2026-11-15T04:00:00Z')).toBe('code-expired');
     expect(await findOpenSession(db(), row.code, '2026-11-15T04:00:00Z', false)).toBe('code-expired');
     expect(await findOpenSession(db(), row.code, '2026-10-15T04:00:00Z')).toBe('invalid-code');
+  });
+
+  it('GET /online-session is budgeted per client IP (security P2 theme A)', async () => {
+    const limit = vi.fn(async (_o: { key: string }) => ({ success: false }));
+    const res = await worker.fetch(
+      new Request(API + '/online-session', { headers: { origin: ORIGIN, 'cf-connecting-ip': '203.0.113.44' } }),
+      { ...testEnv('on'), PUBLIC_RL: { limit } },
+      {} as any,
+    );
+    expect(res.status).toBe(429);
+    expect(limit).toHaveBeenCalledWith({ key: 'online-session:203.0.113.44' });
   });
 
   it('GET /online-session is the same 404 as an unknown route, for "off" and for an unset var', async () => {

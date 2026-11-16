@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { env } from 'cloudflare:test';
-import { issueCertificate, getCertificate, getVerification } from '../../src/pmes/certificates';
+import { issueCertificate, getCertificate, getVerification, CAPABILITY_TTL_MS } from '../../src/pmes/certificates';
 
 const db = () => env.PMES_DB;
 const SITE = 'https://isatucmpc.coop';
@@ -34,6 +34,10 @@ async function seedAttempt(sessionId: number, idNumber: string, passed = 1, scor
 describe('certificates', () => {
   let sessionId: number;
   beforeEach(async () => {
+    // Fixtures issue on 2026-10-24; pin the clock so the 30-day link expiry
+    // (security P2) never turns these into a time bomb.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-25T00:00:00Z'));
     // Storage is isolated per file, not per test: start each test from empty tables.
     await db().batch(
       ['pmes_certificates', 'pmes_counters', 'pmes_attempts', 'pmes_sessions', 'pmes_presenters'].map(t =>
@@ -41,6 +45,22 @@ describe('certificates', () => {
       ),
     );
     sessionId = await seedSession();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('capability older than 30 days rejected (security P2 theme B)', async () => {
+    const attemptId = await seedAttempt(sessionId, 'A-30');
+    const issuedAt = '2026-10-24T01:15:00Z';
+    const { no, key } = await issueCertificate(db(), attemptId, issuedAt);
+    vi.setSystemTime(new Date(Date.parse(issuedAt) + CAPABILITY_TTL_MS - 60_000));
+    expect(await getCertificate(db(), no, key, SITE)).not.toBeNull();
+    vi.setSystemTime(new Date(Date.parse(issuedAt) + CAPABILITY_TTL_MS + 60_000));
+    expect(await getCertificate(db(), no, key, SITE)).toBeNull();
+    // The public verification (no key) is not a capability and keeps working.
+    expect(await getVerification(db(), no)).not.toBeNull();
   });
 
   it('first certificate of 2026 is PMES-2026-0001 with a 32-hex key', async () => {

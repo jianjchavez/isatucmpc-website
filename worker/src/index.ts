@@ -21,6 +21,7 @@ export type Env = {
   PMES_SELF_PACED?: string;
   WEBSITE_APP_PULL_SECRET?: string;
   MF_PULL_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
+  PUBLIC_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -44,6 +45,10 @@ app.post('/api/submit', async c => {
   const origin = c.req.header('origin');
   const allowed = c.env.SITE_ORIGIN.split(',').map(o => o.trim()).filter(Boolean);
   if (!origin || !allowed.includes(origin)) return c.json({ error: 'forbidden' }, 403);
+  // Security P2 theme A: 30 per minute per client IP (Turnstile stays the main control).
+  if (!(await c.env.PUBLIC_RL.limit({ key: `submit:${c.req.header('cf-connecting-ip') ?? 'unknown'}` })).success) {
+    return c.json({ error: 'rate-limited' }, 429);
+  }
 
   const body = await c.req.json<Record<string, string>>().catch(() => null);
   if (!body || typeof body !== 'object' || Array.isArray(body)) return c.json({ error: 'invalid-body' }, 400);

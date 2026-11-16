@@ -57,5 +57,12 @@ name = "MF_PULL_RL"
 namespace_id = "1003"
 simple = { limit = 30, period = 60 }
 
+# Security P2 theme A: the three endpoints that had no limit (contact/membership
+# /api/submit, PMES online-session, PMES answer/resume), 30 per minute.
+[[ratelimits]]
+name = "PUBLIC_RL"
+namespace_id = "1004"
+simple = { limit = 30, period = 60 }
+
 [triggers]
 crons = ["0 18 * * *"] # 02:00 Asia/Manila

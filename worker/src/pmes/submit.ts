@@ -5,7 +5,7 @@ import type { PmesEnv } from './env';
 import { loadBank, allQuestions } from './bank';
 import { presentDraw, type Draw } from './draw';
 import { scoreAttempt } from './score';
-import { issueCertificate, getCertificate, getVerification } from './certificates';
+import { capabilityExpired, issueCertificate, getCertificate, getVerification } from './certificates';
 import { sendResultEmails, type AttemptRow } from './email';
 import { alertFirstName, notifyTelegram } from '../telegram';
 import { attemptLimit } from './validate';
@@ -100,6 +100,8 @@ export async function currentState(c: PmesContext, id: string, answer?: Answer):
   for (;;) {
     const attempt = await loadAttempt(c.env.PMES_DB, id);
     if (!attempt) throw new HTTPException(404, { res: c.json({ error: 'unknown-attempt' }, 404) });
+    // Security P2 theme B: the attempt id is a capability; it lapses after 30 days.
+    if (capabilityExpired(attempt.started_at)) throw new HTTPException(404, { res: c.json({ error: 'unknown-attempt' }, 404) });
     if (attempt.status !== 'started') {
       const result = attempt.status === 'submitting' ? await waitForFinal(c, id) : await finalResult(c, attempt);
       return { ...result, ...(answer ? { stale: true as const } : {}) };
@@ -143,6 +145,9 @@ export async function currentState(c: PmesContext, id: string, answer?: Answer):
 for (const path of ['/answer', '/resume'] as const) {
   submit.post(path, async c => {
     const raw = await c.req.json<Record<string, unknown>>().catch(() => null);
+    // Security P2 theme A: per attempt, not per IP (a seminar room shares one address).
+    if (raw && typeof raw.attemptId === 'string' &&
+      !(await c.env.PUBLIC_RL.limit({ key: `play:${raw.attemptId}` })).success) return c.json({ error: 'rate-limited' }, 429);
     if (!raw || typeof raw.attemptId !== 'string' || !raw.attemptId ||
       (path === '/answer' && (!Number.isInteger(raw.n) || (raw.n as number) < 1))) return c.json({ error: 'missing-fields' }, 400);
     return c.json(await currentState(c, raw.attemptId, path === '/answer' ? { n: raw.n, choice: raw.choice } : undefined));

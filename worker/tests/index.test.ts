@@ -7,6 +7,7 @@ import { PDFDocument } from 'pdf-lib';
 
 const env = {
   SITE_ORIGIN: 'https://isatucmpc.coop,https://isatucmpc.pages.dev',
+  PUBLIC_RL: { limit: async () => ({ success: true }) },
   TO_EMAIL: 'isatucmpc1964@gmail.com',
   RESEND_API_KEY: 'test-key',
   TURNSTILE_SECRET: 'test-secret',
@@ -224,5 +225,16 @@ describe('structured membership submissions', () => {
         expect(await testEnv.PMES_DB.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first()).toEqual({ n: 0 });
       }
     } finally { await testEnv.PMES_DB.exec('DROP TRIGGER reject_payload'); }
+  });
+
+  it('form submit is budgeted per client IP (security P2 theme A)', async () => {
+    const limit = vi.fn(async (_o: { key: string }) => ({ success: false }));
+    const res = await worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
+      method: 'POST',
+      headers: { Origin: 'https://isatucmpc.coop', 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.31' },
+      body: '{}',
+    }), { ...env, PUBLIC_RL: { limit } }, {} as any);
+    expect(res.status).toBe(429);
+    expect(limit).toHaveBeenCalledWith({ key: 'submit:203.0.113.31' });
   });
 });

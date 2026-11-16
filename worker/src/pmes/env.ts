@@ -5,6 +5,7 @@ export type PmesEnv = Env & TelegramEnv & {
   PMES_DB: D1Database;
   PMES_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   PMES_RL_IP: { limit(opts: { key: string }): Promise<{ success: boolean }> };
+  PUBLIC_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   PMES_DRAW_STATUS: string;
   PMES_PASS_MARK: string;
   PMES_QUIZ_SIZE: string;
