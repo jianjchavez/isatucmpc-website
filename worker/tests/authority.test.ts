@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import { ageOn, monthlyDeduction } from '../src/membership/deduction';
 import { buildOfficePacket } from '../src/membership/office-packet';
-import { notifyTelegram } from '../src/telegram';
+import { alertFirstName, notifyTelegram } from '../src/telegram';
 import { sendResultEmails, type AttemptRow } from '../src/pmes/email';
 import type { PmesEnv } from '../src/pmes/env';
 
@@ -84,5 +84,14 @@ describe('pass email office-visit step', () => {
   it('is left out for members and for a fail', async () => {
     expect(await sentTo({ ...attempt, id_type: 'member' }, true)).not.toContain('Next step');
     expect(await sentTo(attempt, false)).not.toContain('Next step');
+  });
+});
+
+describe('alert first name (public input)', () => {
+  it('keeps plain names, drops anything link-like', () => {
+    expect(alertFirstName('  María-José Dela Cruz')).toBe('María-José');
+    for (const v of ['bit.ly/x Reyes', 'pay@scam.com', 'https://evil.example', 'Call0917', 'a'.repeat(31), '']) {
+      expect(alertFirstName(v)).toBe('Applicant');
+    }
   });
 });
