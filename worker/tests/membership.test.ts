@@ -6,6 +6,7 @@ import { buildOfficePacket, parseApplicant, validSubscription } from '../src/mem
 
 const env = {
   SITE_ORIGIN: 'https://isatucmpc.coop',
+  PUBLIC_RL: { limit: async () => ({ success: true }) },
   TO_EMAIL: 'isatucmpc1964@gmail.com',
   RESEND_API_KEY: 'test-key',
   TURNSTILE_SECRET: 'test-secret',

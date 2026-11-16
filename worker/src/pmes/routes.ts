@@ -152,6 +152,9 @@ pmes.post('/start', async c => {
 // video module. Public by design: identity, the server timer and the attempt limit are the controls.
 pmes.get('/online-session', async c => {
   if (!selfPaced(c.env)) return c.notFound();
+  if (!(await c.env.PUBLIC_RL.limit({ key: `online-session:${c.req.header('cf-connecting-ip') ?? 'unknown'}` })).success) {
+    return c.json({ error: 'rate-limited' }, 429);
+  }
   const s = await findOnlineSession(c.env.PMES_DB, new Date().toISOString());
   return s ? c.json({ code: s.code, month: s.session_date }) : c.json({ error: 'no-online-session' }, 404);
 });

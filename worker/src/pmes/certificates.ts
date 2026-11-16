@@ -87,6 +87,9 @@ export async function getCertificate(
 ): Promise<CertificateRecord | null> {
   const r = await db.prepare(`${CERT_SELECT} AND a.passed = 1`).bind(no).first<CertRow>();
   if (!r || !constantTimeEqual(r.key, key)) return null;
+  // Security P2 theme B: the emailed certificate link is a capability; it lapses
+  // after 30 days. The public /verify lookup (no key) is unaffected.
+  if (capabilityExpired(r.issued_at)) return null;
   return {
     no: r.no,
     fullName: r.full_name,
@@ -130,4 +133,12 @@ function constantTimeEqual(a: string, b: string): boolean {
   let diff = a.length ^ b.length;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i % (b.length || 1));
   return diff === 0;
+}
+
+/** Security P2 theme B: attempt ids and certificate keys work for 30 days from issue. */
+export const CAPABILITY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function capabilityExpired(issuedAtIso: string, nowMs = Date.now()): boolean {
+  const issued = Date.parse(issuedAtIso);
+  return !Number.isFinite(issued) || nowMs - issued > CAPABILITY_TTL_MS;
 }

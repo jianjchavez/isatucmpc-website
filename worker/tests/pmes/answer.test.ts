@@ -14,6 +14,7 @@ const testEnv = (over: Partial<typeof env> = {}) => ({
   ...env,
   PMES_DRAW_STATUS: 'draft',
   PMES_RL: { limit: async () => ({ success: true }) },
+  PUBLIC_RL: { limit: async () => ({ success: true }) },
   ...over,
 });
 
@@ -140,6 +141,25 @@ describe('POST /api/pmes/answer', () => {
     expect(json.missed.every((item: any) => item.yourAnswer === null)).toBe(true);
     expect(await attemptRow(attemptId)).toMatchObject({ score: 0, passed: 0, status: 'submitted' });
     expect(await (await post('/resume', { attemptId })).json()).toEqual(json);
+  });
+
+  it('an attempt id older than 30 days is rejected (security P2 theme B)', async () => {
+    const { attemptId } = await start();
+    const old = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+    await db().prepare('UPDATE pmes_attempts SET started_at = ? WHERE id = ?').bind(old, attemptId).run();
+    expect((await post('/resume', { attemptId })).status).toBe(404);
+  });
+
+  it('answer/resume are budgeted per attempt, not per IP (security P2 theme A)', async () => {
+    const { attemptId } = await start();
+    const limit = vi.fn(async (_o: { key: string }) => ({ success: false }));
+    const res = await worker.fetch(
+      new Request(`${BASE}/resume`, { method: 'POST', headers: { 'content-type': 'application/json', origin: ORIGIN, 'cf-connecting-ip': '203.0.113.9' }, body: JSON.stringify({ attemptId }) }),
+      testEnv({ PUBLIC_RL: { limit } }),
+      {} as any,
+    );
+    expect(res.status).toBe(429);
+    expect(limit).toHaveBeenCalledWith({ key: `play:${attemptId}` }); // a seminar room shares one IP
   });
 
   it('resume of a finished attempt returns the final result without resending emails', async () => {
