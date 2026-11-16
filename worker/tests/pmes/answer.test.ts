@@ -105,6 +105,31 @@ describe('POST /api/pmes/answer', () => {
     expect(fetchStub.mock.calls.filter(([u]) => String(u).includes('api.resend.com'))).toHaveLength(2);
   });
 
+  it('a passing applicant (not a member) alerts the staff Telegram group with first name and APP no. only', async () => {
+    await db().prepare('DELETE FROM membership_applications WHERE no = ?').bind('APP-2026-0099').run();
+    await db().prepare('INSERT INTO membership_applications (no, year, seq, full_name, mobile, email, created_at) VALUES (?, 2026, 99, ?, ?, ?, ?)')
+      .bind('APP-2026-0099', 'Maria Clara Santos', '09171234567', 'maria@example.com', new Date().toISOString()).run();
+    const tg = { TELEGRAM_BOT_TOKEN: 'tok', TELEGRAM_CHAT_ID: '-100' };
+    const call = (path: string, json: unknown) => worker.fetch(new Request(`${BASE}${path}`, {
+      method: 'POST', headers: { 'content-type': 'application/json', origin: ORIGIN }, body: JSON.stringify(json),
+    }), testEnv(tg as any), {} as any);
+    const started = await call('/start', { code: 'PMES-AAAA', idType: 'application', idNumber: 'APP-2026-0099', fullName: 'Maria Clara Santos',
+      mobile: '09171234567', email: 'maria@example.com', consent: true, turnstile: 'tok' });
+    expect(started.status).toBe(200);
+    const { attemptId } = await started.json<{ attemptId: string }>();
+    fetchStub.mockClear();
+    const answers = await correctAnswers(attemptId);
+    let res: Response | undefined;
+    for (const a of answers) res = await call('/answer', { attemptId, ...a });
+    expect(await res!.json()).toMatchObject({ passed: true });
+    const alerts = fetchStub.mock.calls.filter(([u]) => String(u).startsWith('https://api.telegram.org/'));
+    expect(alerts).toHaveLength(1);
+    const text = JSON.parse((alerts[0] as unknown as [string, RequestInit])[1].body as string).text;
+    expect(text).toContain('APP-2026-0099 (Maria)');
+    expect(text).not.toContain('Santos');
+    expect(text).not.toContain('0917');
+  });
+
   it('all null: 0/20, retakesLeft 2, every section to review, no certificate', async () => {
     const { attemptId } = await start();
     const json = await (await finish(attemptId, nullAnswers())).json<any>();

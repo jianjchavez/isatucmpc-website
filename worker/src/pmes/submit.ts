@@ -7,6 +7,7 @@ import { presentDraw, type Draw } from './draw';
 import { scoreAttempt } from './score';
 import { issueCertificate, getCertificate, getVerification } from './certificates';
 import { sendResultEmails, type AttemptRow } from './email';
+import { notifyTelegram } from '../telegram';
 import { attemptLimit } from './validate';
 import { advance, QUESTION_SECONDS, type Step, type Final } from './flow';
 
@@ -85,6 +86,11 @@ async function finalize(c: PmesContext, attempt: TimedAttempt, answers: (number 
   const final = await finalResult(c, { ...attempt, answers_json: JSON.stringify(answers), score: result.score, passed: result.passed ? 1 : 0 });
   const emailStatus = await sendResultEmails(c.env, attempt, final, certificate);
   if (certificate) await db.prepare('UPDATE pmes_certificates SET email_status = ? WHERE no = ?').bind(emailStatus, certificate.no).run();
+  if (final.passed && attempt.id_type === 'application') {
+    // First name and application number only (Data Privacy Act); the office has the rest.
+    const first = attempt.full_name.trim().split(/\s+/)[0] ?? '';
+    await notifyTelegram(c.env, `PMES passed: ${attempt.id_number} (${first}), ${final.score} of ${final.total}. Expect an office visit to pay and sign.`);
+  }
   return final;
 }
 

@@ -1,5 +1,6 @@
 ---
 import PageLayout from '~/layouts/PageLayout.astro';
+import { PMES_SELF_PACED } from '~/data/pmes-online';
 const field = 'mt-1 block w-full rounded-lg border border-rule px-3 py-2.5 text-base focus:border-navy focus:outline-none';
 const btn = 'inline-flex items-center justify-center rounded-lg font-display font-bold text-sm px-4 py-2.5 cursor-pointer disabled:opacity-50';
 const primary = `${btn} bg-orange text-white hover:bg-orange/90`;
@@ -43,10 +44,21 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       <!-- Create session -->
       <form id="scr-create" class="hidden max-w-md space-y-4 bg-brand-bg border-t-[3px] border-orange rounded-b-lg p-6">
         <h1 class="text-2xl">New session</h1>
-        <label class="block text-sm font-semibold">Session date
+        {PMES_SELF_PACED && (<>
+          <label class="block text-sm font-semibold">Kind
+            <select name="kind" class={field}>
+              <option value="day">In person (one day)</option>
+              <option value="month">Online (whole month, one per month)</option>
+            </select>
+          </label>
+          <label data-month hidden class="block text-sm font-semibold">Month
+            <input name="month" type="month" class={field} />
+          </label>
+        </>)}
+        <label data-day class="block text-sm font-semibold">Session date
           <input name="sessionDate" type="date" required class={field} />
         </label>
-        <label class="block text-sm font-semibold">Venue
+        <label data-day class="block text-sm font-semibold">Venue
           <input name="venue" type="text" required class={field} />
         </label>
         <label class="block text-sm font-semibold">Presenter name
@@ -226,14 +238,27 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       (f.elements.namedItem('sessionDate') as HTMLInputElement).value = manilaDate();
       (f.elements.namedItem('presenterName') as HTMLInputElement).value = auth?.displayName ?? '';
       (f.elements.namedItem('chairName') as HTMLInputElement).value = latestChairName(sessions);
+      const month = f.elements.namedItem('month') as HTMLInputElement | null;
+      if (month) { month.value = manilaDate().slice(0, 7); kindChanged(); }
       show('scr-create');
     });
+    // Online (whole month) sessions exist only when PMES_SELF_PACED is on; the form then has a Kind select.
+    function kindChanged() {
+      const f = $<HTMLFormElement>('scr-create');
+      const isMonth = (f.elements.namedItem('kind') as HTMLSelectElement | null)?.value === 'month';
+      f.querySelectorAll<HTMLElement>('[data-day]').forEach(el => { el.hidden = isMonth; el.querySelector('input')!.required = !isMonth; });
+      f.querySelectorAll<HTMLElement>('[data-month]').forEach(el => { el.hidden = !isMonth; el.querySelector('input')!.required = isMonth; });
+    }
+    $('scr-create').querySelector('select[name="kind"]')?.addEventListener('change', kindChanged);
     $('create-cancel').addEventListener('click', () => show('scr-list'));
     $('scr-create').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target as HTMLFormElement);
       run(async () => {
-        const s = await api<AdminSession>('/sessions', {
+        const s = await api<AdminSession>('/sessions', fd.get('kind') === 'month' ? {
+          kind: 'month', month: fd.get('month'),
+          presenterName: String(fd.get('presenterName')).trim(), chairName: String(fd.get('chairName')).trim(),
+        } : {
           sessionDate: fd.get('sessionDate'), venue: String(fd.get('venue')).trim(),
           presenterName: String(fd.get('presenterName')).trim(), chairName: String(fd.get('chairName')).trim(),
         });

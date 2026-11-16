@@ -10,6 +10,9 @@ Outputs:
     src/lib/subscription-fields.json                        where the browser draws the subscription values
     worker/src/membership/office-packet.pdf                 3 office pages, attached to the coop email
     worker/src/membership/office-fields.json                where the Worker draws the office values
+    worker/src/membership/authority-to-deduct.pdf           Authority to Deduct (with / without Welfare Fund)
+    worker/src/membership/authority-fields.json             where the Worker draws the authority values
+    public/forms/Authority_to_Deduct.pdf                    blank authority (walk-ins)
 
 Each fill-in blank in the HTML is `<span class="f" data-f="key" data-w="width-pt">`. The page is
 rendered twice: once with a visible token in every blank (to read its position) and once without
@@ -102,8 +105,11 @@ def fields(name: str) -> dict:
                         for n in re.findall(rf'{TOKEN}(\d+)', span['text']):
                             key = keys[int(n)]
                             x, baseline = span['origin']
-                            found[key] = {'page': pno, 'x': round(x, 1), 'top': round(baseline, 1),
-                                          'maxWidth': widths[key], 'size': sizes[key]}
+                            spot = {'page': pno, 'x': round(x, 1), 'top': round(baseline, 1),
+                                    'maxWidth': widths[key], 'size': sizes[key]}
+                            # A blank repeated on another page (same key) is drawn at every spot.
+                            prev = found.get(key)
+                            found[key] = spot if prev is None else (prev if isinstance(prev, list) else [prev]) + [spot]
     missing = set(widths) - set(found)
     if missing:
         raise SystemExit(f'{name}: blanks not found in render: {sorted(missing)}')
@@ -142,6 +148,12 @@ def main() -> None:
     (ROOT / 'public' / 'forms' / 'Office_Packet.pdf').write_bytes((worker_dir / 'office-packet.pdf').read_bytes())
     (ROOT / 'src' / 'lib' / 'subscription-fields.json').write_text(json.dumps(fields('subscription.html'), indent=2) + '\n')
     (worker_dir / 'office-fields.json').write_text(json.dumps(fields('office-packet.html'), indent=2) + '\n')
+    # Authority to Deduct: page 1 with the Welfare Fund line (ages 18-55), page 2 without it.
+    render('authority-to-deduct.html', False, worker_dir / 'authority-to-deduct.pdf')
+    blank = fitz.open(worker_dir / 'authority-to-deduct.pdf')
+    blank.select([0])
+    blank.save(ROOT / 'public' / 'forms' / 'Authority_to_Deduct.pdf', garbage=4, deflate=True)
+    (worker_dir / 'authority-fields.json').write_text(json.dumps(fields('authority-to-deduct.html'), indent=2) + '\n')
     print('built templates and field maps')
 
 

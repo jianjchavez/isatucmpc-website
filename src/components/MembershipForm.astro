@@ -1,6 +1,7 @@
 ---
 import Button from '~/components/Button.astro';
-import { MIN_SHARES, PAR_VALUE } from '~/lib/subscription';
+import { MIN_SHARES, PAR_VALUE, PAID_WITH_APPLICATION, MEMBERSHIP_FEE, WELFARE_MONTHLY, formatAmount } from '~/lib/subscription';
+import { PMES_SELF_PACED } from '~/data/pmes-online';
 import { VALID_ID_TYPES, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
 const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao'];
@@ -175,6 +176,18 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           <option value="">Select campus…</option>
           {CAMPUSES.map(c => <option value={c}>{c}</option>)}
         </select>
+        <div class="grid md:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label for="mf-empno" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">ISAT U employee no.</label>
+            <input id="mf-empno" data-field="employeeNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label for="mf-office" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Office or college</label>
+            <input id="mf-office" data-field="office" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <p class="text-xs text-slate mt-2">You will sign an Authority to Deduct from Salary at the office: the rest of your capital share and, ages 18 to 55, the Welfare Fund (PHP {formatAmount(WELFARE_MONTHLY)} a month) are deducted from your ISAT U salary.</p>
+        <p id="mf-deduction" class="text-sm text-navy font-semibold mt-1" aria-live="polite"></p>
       </div>
     </div>
 
@@ -210,7 +223,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
   <fieldset class="space-y-3">
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">6. Share subscription <span class="text-orange" aria-hidden="true">*</span></legend>
-    <p class="text-xs text-slate">Shares are PHP {PAR_VALUE}.00 each. The minimum subscription is {MIN_SHARES} shares.</p>
+    <p class="text-xs text-slate">Shares are PHP {PAR_VALUE}.00 each. Subscribe at least {MIN_SHARES} shares (PHP {formatAmount(MIN_SHARES * PAR_VALUE)}). At your office visit you pay the PHP {formatAmount(MEMBERSHIP_FEE)} membership fee and at least {PAID_WITH_APPLICATION} shares (PHP {formatAmount(PAID_WITH_APPLICATION * PAR_VALUE)}); the rest is paid over the years you choose.</p>
     <div class="grid md:grid-cols-3 gap-3 items-end">
       <div>
         <label for="mf-shares" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Number of shares <span class="text-orange" aria-hidden="true">*</span></label>
@@ -223,6 +236,16 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       <p id="mf-amount" class="text-sm text-navy font-semibold pb-2" aria-live="polite"></p>
     </div>
   </fieldset>
+
+  {PMES_SELF_PACED && (
+    <fieldset class="space-y-3">
+      <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">How will you take the PMES? <span class="text-orange" aria-hidden="true">*</span></legend>
+      <div class="flex flex-wrap gap-4">
+        <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="pmesMode" name="mf-pmesmode" value="online" required /> Online: watch the videos and take the quiz on my phone</label>
+        <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="pmesMode" name="mf-pmesmode" value="in-person" /> In-person seminar</label>
+      </div>
+    </fieldset>
+  )}
 
   <fieldset class="space-y-4">
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">7. Family information</legend>
@@ -306,7 +329,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 <script>
   import { fillApplicationPdf, triggerPdfDownload, type PdfFieldData } from '~/lib/pdf-fill';
   import { MIN_SHARES, PAR_VALUE, formatAmount } from '~/lib/subscription';
-  import { buildApplicantRecord, buildApplicantMessage, isAdultApplicant, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
+  import { buildApplicantRecord, buildApplicantMessage, deductionLine, isAdultApplicant, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
   const COOLDOWN_KEY = 'mf-last-submit-ts';
   const COOLDOWN_MS = 60_000; // 1 minute
@@ -389,6 +412,19 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     }
     sharesInput?.addEventListener('input', showAmount);
     showAmount();
+
+    // ---- ISAT U salary deduction preview (same numbers as the Authority to Deduct) ----
+    const deductionEl = document.getElementById('mf-deduction');
+    const dobInput = form.querySelector('[data-field="dob"]') as HTMLInputElement | null;
+    function showDeduction() {
+      const line = deductionLine({
+        isatuEmployee: !!isatuChk?.checked, shares: wholeNumber(sharesInput), years: wholeNumber(yearsInput), dateOfBirth: dobInput?.value ?? '',
+      });
+      if (deductionEl) deductionEl.textContent = line ? `Monthly salary deduction: ${line}` : '';
+    }
+    [sharesInput, yearsInput, dobInput, isatuChk].forEach(el => el?.addEventListener('input', showDeduction));
+    isatuChk?.addEventListener('change', showDeduction);
+    showDeduction();
 
     // Runs first (capture phase on the form): invalid values stop the submit and PDF.
     form.addEventListener('submit', e => {
@@ -538,7 +574,10 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         const bytes = await fillApplicationPdf(variant, data);
         const safe = [data.lastName, data.firstName].filter(Boolean).join('_').replace(/[^a-zA-Z0-9_-]/g, '') || 'applicant';
         triggerPdfDownload(bytes, `ISATUCMPC_${variant}_Application_${safe}.pdf`);
-        showResult(`Application number ${applicationNo}: your application PDF is downloading. Bring the printed, signed form and this number to the PMES.`, true);
+        const online = (form!.querySelector('[data-field="pmesMode"]:checked') as HTMLInputElement | null)?.value === 'online';
+        showResult(online
+          ? `Application number ${applicationNo}: your application PDF is downloading. Next, take the PMES online at isatucmpc.coop/pmes with this number and your mobile number.`
+          : `Application number ${applicationNo}: your application PDF is downloading. Bring the printed, signed form and this number to the PMES.`, true);
         form!.reset();
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } catch (err) {

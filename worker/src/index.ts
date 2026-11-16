@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { resend, escapeHtml, type ResendMessage } from './resend';
-import { buildOfficePacket, parseApplicant, toBase64, validSubscription } from './membership/office-packet';
+import { buildOfficePacket, parseApplicant, toBase64, validSubscription, type Authority } from './membership/office-packet';
+import { ageOn, monthlyDeduction } from './membership/deduction';
+import { selfPaced } from './pmes/env';
 import { issueApplicationNo, normalizeMobile } from './membership/applications';
 import { parseApplicationRecord } from './membership/record';
 import { pullRoutes } from './membership/pull-routes';
@@ -16,6 +18,7 @@ export type Env = {
   TURNSTILE_SECRET: string;
   PMES_DB: D1Database;
   WEBSITE_APP_PULL?: string;
+  PMES_SELF_PACED?: string;
   WEBSITE_APP_PULL_SECRET?: string;
   MF_PULL_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
 };
@@ -94,7 +97,19 @@ app.post('/api/submit', async c => {
   // Send via Resend to coop inbox
   const subject =
     source === 'membership' ? `[Membership inquiry] ${name} (${applicationNo})` : `[Contact form] ${name}`;
-  const office = source === 'membership' ? await officePacket(record ? JSON.stringify(record) : body.applicant, applicationNo!) : null;
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  const authority: Authority | undefined = record && record.membershipType === 'Regular' && record.isatuEmployee
+    ? {
+        employeeNo: record.employeeNumber, office: record.office, shares: record.shares,
+        deduction: monthlyDeduction(record.shares, record.years, ageOn(record.dateOfBirth, today)),
+      }
+    : undefined;
+  const office = source === 'membership' ? await officePacket(record ? JSON.stringify(record) : body.applicant, applicationNo!, authority) : null;
+  const online = record?.pmesMode === 'online' && selfPaced(c.env);
+  const pmesNote = !applicationNo ? ''
+    : online
+      ? `<p>Your application number is <strong>${applicationNo}</strong>. Take the PMES online: watch the three videos at <a href="https://isatucmpc.coop/pmes/">isatucmpc.coop/pmes</a>, then take the quiz with this number and your mobile number.</p>`
+      : `<p>Your application number is <strong>${applicationNo}</strong>. Please bring it to the PMES; we will tell you the next seminar date.</p>`;
   const html = `
     <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
     <p><strong>Source:</strong> ${escapeHtml(source)}</p>
@@ -120,14 +135,14 @@ app.post('/api/submit', async c => {
       source === 'membership'
         ? 'We received your membership inquiry'
         : 'We received your message',
-    html: `<p>Salamat gid, ${escapeHtml(name)}.</p>${applicationNo ? `<p>Your application number is <strong>${applicationNo}</strong>. Please bring it to the PMES.</p>` : ''}<p>We've received your message and will respond within 2 business days. For urgent matters, call (033) 330-2586 or 0950 108 8310 (call or text), or message us on Facebook Messenger: <a href="https://m.me/isatu.cmpc">m.me/isatu.cmpc</a>.</p><p><a href="https://m.me/isatu.cmpc"><img src="https://isatucmpc.coop/qr/messenger.png" width="120" height="120" alt="QR code: message ISATUCMPC on Messenger"></a><br>Scan to message us on Messenger.</p><p>— ISATUCMPC</p>`,
+    html: `<p>Salamat gid, ${escapeHtml(name)}.</p>${pmesNote}<p>We've received your message and will respond within 2 business days. For urgent matters, call (033) 330-2586 or 0950 108 8310 (call or text), or message us on Facebook Messenger: <a href="https://m.me/isatu.cmpc">m.me/isatu.cmpc</a>.</p><p><a href="https://m.me/isatu.cmpc"><img src="https://isatucmpc.coop/qr/messenger.png" width="120" height="120" alt="QR code: message ISATUCMPC on Messenger"></a><br>Scan to message us on Messenger.</p><p>— ISATUCMPC</p>`,
   });
 
   return c.json(applicationNo ? { ok: true, applicationNo } : { ok: true });
 });
 
 // Office pages for a membership application. A failure here never blocks the notification email.
-async function officePacket(raw: unknown, applicationNo: string): Promise<{ note: string; attachments?: ResendMessage['attachments'] }> {
+async function officePacket(raw: unknown, applicationNo: string, authority?: Authority): Promise<{ note: string; attachments?: ResendMessage['attachments'] }> {
   const applicant = parseApplicant(raw);
   const failed = {
     note: "<p><strong>Office packet not attached</strong> (the applicant's details could not be read). Print the blank office forms from https://isatucmpc.coop/forms/Office_Packet.pdf.</p>",
@@ -135,10 +150,10 @@ async function officePacket(raw: unknown, applicationNo: string): Promise<{ note
   if (!applicant) return failed;
   try {
     const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'long', day: 'numeric', year: 'numeric' });
-    const bytes = await buildOfficePacket(applicant, today, applicationNo);
+    const bytes = await buildOfficePacket(applicant, today, applicationNo, authority);
     const safe = [applicant.lastName, applicant.firstName].join('_').replace(/[^a-zA-Z0-9_-]/g, '') || 'applicant';
     return {
-      note: "<p><strong>Office packet attached:</strong> print it and have the applicant sign the Data Privacy Consent, the Depositor's Information Sheet and the Signature Card at the office.</p>",
+      note: "<p><strong>Office packet attached:</strong> print it and have the applicant sign the Data Privacy Consent, the Depositor's Information Sheet and the Signature Card at the office" + (authority ? ", plus the Authority to Deduct from Salary (ISAT U employee)" : '') + ".</p>",
       attachments: [{ filename: `ISATUCMPC_Office_Packet_${safe}.pdf`, content: toBase64(bytes) }],
     };
   } catch {

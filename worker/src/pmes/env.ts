@@ -1,6 +1,7 @@
 import type { Env } from '../index';
+import type { TelegramEnv } from '../telegram';
 
-export type PmesEnv = Env & {
+export type PmesEnv = Env & TelegramEnv & {
   PMES_DB: D1Database;
   PMES_RL: { limit(opts: { key: string }): Promise<{ success: boolean }> };
   PMES_RL_IP: { limit(opts: { key: string }): Promise<{ success: boolean }> };
@@ -10,4 +11,8 @@ export type PmesEnv = Env & {
   PMES_MAX_ATTEMPTS: string;
   SITE_URL: string;
   PMES_SESSION_SECRET: string;
+  /** "on" enables the standing monthly online session (board paper Item 3); anything else is off. */
+  PMES_SELF_PACED?: string;
 };
+
+export const selfPaced = (env: { PMES_SELF_PACED?: string }) => env.PMES_SELF_PACED === 'on';

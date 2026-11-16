@@ -1,10 +1,10 @@
 // PMES quiz API, mounted at /api/pmes (spec §5).
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { PmesEnv } from './env';
+import { selfPaced, type PmesEnv } from './env';
 import { loadBank } from './bank';
 import { drawQuiz, presentDraw } from './draw';
-import { findOpenSession } from './sessions';
+import { findOpenSession, findOnlineSession, isMonthSession } from './sessions';
 import { isEmail, attemptLimit } from './validate';
 import { verifyTurnstile } from '../turnstile';
 import { submit, currentState } from './submit';
@@ -69,10 +69,14 @@ pmes.post('/start', async c => {
 
   const now = new Date();
   const nowIso = now.toISOString();
-  const session = await findOpenSession(c.env.PMES_DB, b.code, nowIso);
+  const session = await findOpenSession(c.env.PMES_DB, b.code, nowIso, selfPaced(c.env));
   if (session === 'invalid-code') return c.json({ error: session }, 400);
   if (session === 'session-closed') return c.json({ error: session }, 409);
   if (session === 'code-expired') return c.json({ error: session }, 410);
+  // The online session's code is public, and a member number is self-declared: on a month session only an
+  // application number verified against the mobile on file may start, so nobody can burn or take another
+  // person's attempts. Refused before any read or write of attempts.
+  if (isMonthSession(session.session_date) && b.idType !== 'application') return c.json({ error: 'online-session-applicants-only' }, 403);
 
   const db = c.env.PMES_DB;
   if (b.idType === 'application') {
@@ -142,6 +146,14 @@ pmes.post('/start', async c => {
 
   const step: Step = { attemptId, fullName: b.fullName, total: draw.items.length, question: presentDraw(bank, draw)[0], secondsLeft: QUESTION_SECONDS };
   return c.json({ ...step, attemptNo });
+});
+
+// The standing online session's code for this Manila month, fetched by /pmes/ after the last
+// video module. Public by design: identity, the server timer and the attempt limit are the controls.
+pmes.get('/online-session', async c => {
+  if (!selfPaced(c.env)) return c.notFound();
+  const s = await findOnlineSession(c.env.PMES_DB, new Date().toISOString());
+  return s ? c.json({ code: s.code, month: s.session_date }) : c.json({ error: 'no-online-session' }, 404);
 });
 
 pmes.route('/', submit);

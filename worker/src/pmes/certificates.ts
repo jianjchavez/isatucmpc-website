@@ -1,6 +1,8 @@
 // Certificate numbering, fetch and public verification
 // (spec docs/superpowers/specs/2026-10-21-pmes-quiz-design.md §6, §9).
 
+import { PRINTED_SESSION_DATE } from './sessions';
+
 export type CertificateRecord = {
   no: string;
   fullName: string;
@@ -64,7 +66,7 @@ export async function issueCertificate(
 }
 
 const CERT_SELECT = `SELECT c.no, c.key, c.issued_at, a.full_name, a.id_type, a.id_number, a.score, a.passed, a.draw_json,
-  s.session_date, s.venue, s.code, s.presenter_name, s.chair_name
+  ${PRINTED_SESSION_DATE} AS session_date, s.venue, s.code, s.presenter_name, s.chair_name
   FROM pmes_certificates c
   JOIN pmes_attempts a ON a.id = c.attempt_id
   JOIN pmes_sessions s ON s.id = a.session_id

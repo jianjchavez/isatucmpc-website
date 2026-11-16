@@ -7,6 +7,7 @@ export const applicationRecord = {
   presentAddress: 'Fixture present address', permanentAddress: 'Fixture permanent address',
   tinNumber: '', gsisSssNumber: '34-1234567-8', validIdType: 'PhilID', validIdNumber: 'fixture-id',
   membershipType: 'Regular', isatuEmployee: true, campus: 'Leon',
+  employeeNumber: 'EMP-0042', office: 'College of Education', pmesMode: 'online',
   employmentCategory: 'Employed', statusOfEmployment: 'regular', profession: 'Teacher',
   associateQualification: '', associateSpecify: '',
   recommender: { name: '', relationship: '', campus: '' },
