@@ -9,6 +9,7 @@ globs = ["**/*.pdf"]
 fallthrough = true
 
 [vars]
+WEBSITE_APP_PULL = "off"
 # Comma-separated list of allowed Origin headers. Includes pages.dev for
 # pre-cutover (Task 27) and the custom domain for post-cutover.
 SITE_ORIGIN = "https://isatucmpc.coop,https://isatucmpc.pages.dev"
@@ -17,13 +18,17 @@ TO_EMAIL = "isatucmpc1964@gmail.com"
 # Secrets to set with `wrangler secret put`:
 #   RESEND_API_KEY
 #   TURNSTILE_SECRET
-#   PMES_SESSION_SECRET   (random 32+ bytes; signs the presenter cookie)
+#   PMES_SESSION_SECRET   (random 32+ bytes; signs the presenter session token)
+#   WEBSITE_APP_PULL_SECRET (random 32+ bytes; shared only with MemberFolio)
 
 # ---- PMES certification quiz (docs/superpowers/specs/2026-10-21-pmes-quiz-design.md) ----
 PMES_DRAW_STATUS = "approved"   # "draft" on preview until the committee approves the bank
 PMES_PASS_MARK = "16"
 PMES_QUIZ_SIZE = "20"
 PMES_MAX_ATTEMPTS = "3"
+# "on" opens the standing monthly online session (board paper Item 3). Keep "off" until the Board and the
+# Education and Training Committee approve; flip together with PMES_SELF_PACED in src/data/pmes-online.ts.
+PMES_SELF_PACED = "off"
 SITE_URL = "https://isatucmpc.coop"
 
 [[d1_databases]]
@@ -45,3 +50,19 @@ simple = { limit = 10, period = 60 }
 name = "PMES_RL_IP"
 namespace_id = "1002"
 simple = { limit = 60, period = 60 }
+
+# MemberFolio is one server; requests share the constant "mf-pull" key.
+[[ratelimits]]
+name = "MF_PULL_RL"
+namespace_id = "1003"
+simple = { limit = 30, period = 60 }
+
+# Security P2 theme A: the three endpoints that had no limit (contact/membership
+# /api/submit, PMES online-session, PMES answer/resume), 30 per minute.
+[[ratelimits]]
+name = "PUBLIC_RL"
+namespace_id = "1004"
+simple = { limit = 30, period = 60 }
+
+[triggers]
+crons = ["0 18 * * *"] # 02:00 Asia/Manila

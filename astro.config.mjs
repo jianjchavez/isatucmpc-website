@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   site: 'https://isatucmpc.coop',
+  compressHTML: true,
   integrations: [mdx(), sitemap({ filter: page => !page.includes('/404') && !page.includes('/pmes/') })],
   build: { inlineStylesheets: 'auto' },
   vite: {

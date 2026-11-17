@@ -33,6 +33,9 @@ Migrations are in `worker/migrations/` (`0001_pmes.sql`). Re-running is safe: ap
 
 ```sh
 openssl rand -hex 32 | ./node_modules/.bin/wrangler secret put PMES_SESSION_SECRET
+# Optional staff alert when an applicant passes (bot @isatucmpc_alerts_bot, send-only; paste the token at the prompt, never in chat)
+./node_modules/.bin/wrangler secret put TELEGRAM_BOT_TOKEN
+./node_modules/.bin/wrangler secret put TELEGRAM_CHAT_ID
 ```
 
 `PMES_SESSION_SECRET` signs the presenter cookie (`pmes_admin`, 12-hour expiry). Rotating it signs every
@@ -124,3 +127,21 @@ Deploy order (Mac, in `worker/`), **not during a PMES session** (an attempt in p
 ```
 
 Then merge the PR (Pages). Between the two, the old membership page still works (`ok: true` is kept).
+
+## 2026-11-09 update: self-paced online PMES (board paper Item 3), switch OFF
+
+- Switch: `PMES_SELF_PACED` in `wrangler.toml` (`"off"`) and `PMES_SELF_PACED` in `src/data/pmes-online.ts`
+  (`false`). Turn both on together, only after the Board and the Education and Training Committee approve.
+- On: a presenter creates an **Online (whole month)** session at `/pmes/admin/` (one per Manila month; it is a
+  normal session row whose `session_date` is `YYYY-MM`). `/pmes/` shows the three video modules, then fetches
+  this month's code from `GET /api/pmes/online-session` and fills it into the quiz form.
+- Video URLs: `PMES_VIDEO_MODULES` in `src/data/pmes-online.ts` uses the hosted MP4s, English captions and posters at `https://media.isatucmpc.coop/pmes/`; re-publishing is documented in the video build folder.
+
+Deploy order (Mac, in `worker/`), not during a PMES session:
+
+```bash
+./node_modules/.bin/wrangler d1 migrations apply isatucmpc-pmes --remote   # adds 0003 (one online session per month)
+./node_modules/.bin/wrangler deploy --var PMES_DRAW_STATUS:draft           # keep draft until the bank is approved
+```
+
+The Worker works with or without `0003` applied (it adds only a unique index); apply it before switching on.

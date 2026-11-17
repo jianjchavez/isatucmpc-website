@@ -1,11 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { numberToWords, formatAmount, MIN_SHARES, PAR_VALUE } from '~/lib/subscription';
+import { numberToWords, formatAmount, MIN_SHARES, PAR_VALUE, PAID_WITH_APPLICATION, ageOn, monthlyDeduction } from '~/lib/subscription';
 
 describe('share subscription', () => {
-  it('minimum is 500 shares at PHP 50.00', () => {
-    expect(MIN_SHARES).toBe(500);
+  it('minimum is 50 shares at PHP 50.00, 25 of them paid with the application (owner ruling 2026-11-16)', () => {
+    expect(MIN_SHARES).toBe(50);
     expect(PAR_VALUE).toBe(50);
-    expect(formatAmount(MIN_SHARES * PAR_VALUE)).toBe('25,000.00');
+    expect(PAID_WITH_APPLICATION).toBe(25);
+    expect(formatAmount(MIN_SHARES * PAR_VALUE)).toBe('2,500.00');
+  });
+  it('salary deduction matches the Worker: unpaid shares over the months, PHP 200 welfare for ages 18-55', () => {
+    expect(monthlyDeduction(50, 2, 40)).toEqual({ months: 24, capital: 52.08, welfare: 200, total: 252.08 });
+    expect(monthlyDeduction(50, 2, 56)).toEqual({ months: 24, capital: 52.08, welfare: 0, total: 52.08 });
+    expect(ageOn('1970-11-17', '2026-11-16')).toBe(55);
   });
   it('writes numbers in words', () => {
     expect(numberToWords(5)).toBe('Five');

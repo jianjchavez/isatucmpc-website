@@ -2,6 +2,7 @@
 import { Hono } from 'hono';
 import { findPresenterByName, hashPassword, verifyPassword, signSession, requirePresenter, type PresenterApp } from './auth';
 import { createSession, closeSession, SESSION_COLUMNS, type SessionRow } from './sessions';
+import { selfPaced } from './env';
 import { attemptLimit } from './validate';
 import { sendResultEmails, type AttemptRow } from './email';
 import { issueCertificate } from './certificates';
@@ -47,8 +48,25 @@ admin.get('/sessions', async c => {
   return c.json({ sessions: results.map(toAdminSession) });
 });
 
+const ONLINE_VENUE = 'isatucmpc.coop (online)';
+
 admin.post('/sessions', async c => {
   const raw = await json(c);
+  // Standing online session for one Manila month (PMES_SELF_PACED on): session_date = YYYY-MM.
+  if (selfPaced(c.env) && raw.kind === 'month') {
+    const month = str(raw.month);
+    const presenterName = str(raw.presenterName), chairName = str(raw.chairName);
+    if (!presenterName || !chairName || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return c.json({ error: 'missing-fields' }, 400);
+    const taken = () => c.env.PMES_DB.prepare('SELECT 1 FROM pmes_sessions WHERE session_date = ?').bind(month).first();
+    if (await taken()) return c.json({ error: 'online-session-exists' }, 409);
+    try {
+      const row = await createSession(c.env.PMES_DB, { sessionDate: month, venue: ONLINE_VENUE, presenterName, chairName, presenterId: c.var.presenter.id });
+      return c.json(toAdminSession(row));
+    } catch (err) {
+      if (await taken()) return c.json({ error: 'online-session-exists' }, 409); // lost a race to the unique index
+      throw err;
+    }
+  }
   const input = { sessionDate: str(raw.sessionDate), venue: str(raw.venue), presenterName: str(raw.presenterName), chairName: str(raw.chairName) };
   if (!input.venue || !input.presenterName || !input.chairName || !/^\d{4}-\d{2}-\d{2}$/.test(input.sessionDate))
     return c.json({ error: 'missing-fields' }, 400);
