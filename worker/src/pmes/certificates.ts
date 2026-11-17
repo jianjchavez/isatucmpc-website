@@ -15,7 +15,8 @@ export type CertificateRecord = {
   /** Whole-month online session: the certificate prints the online presenter's caption. */
   online: boolean;
   chairName: string;
-  score: number;
+  /** Null for a face-to-face attendance certificate (no quiz). */
+  score: number | null;
   total: number;
   issuedAt: string;
   verifyUrl: string;
@@ -26,7 +27,7 @@ export type Verification = {
   fullName: string;
   idNumber: string;
   sessionDate: string;
-  score: number;
+  score: number | null;
   total: number;
   passed: true;
   presenterName: string;
@@ -76,7 +77,7 @@ const CERT_SELECT = `SELECT c.no, c.key, c.issued_at, a.full_name, a.id_type, a.
 
 type CertRow = {
   no: string; key: string; issued_at: string; full_name: string; id_type: string; id_number: string;
-  score: number; passed: number; draw_json: string;
+  score: number | null; passed: number; draw_json: string;
   session_date: string; online: number; venue: string; code: string; presenter_name: string; chair_name: string;
 };
 
@@ -92,6 +93,20 @@ export async function getCertificate(
   // Security P2 theme B: the emailed certificate link is a capability; it lapses
   // after 30 days. The public /verify lookup (no key) is unaffected.
   if (capabilityExpired(r.issued_at)) return null;
+  return toRecord(r, siteUrl);
+}
+
+/** Every certificate of one session, oldest number first, for the presenter's print-all page. */
+export async function sessionCertificates(db: D1Database, sessionId: number, siteUrl: string): Promise<CertificateRecord[]> {
+  const { results } = await db
+    .prepare(CERT_SELECT.replace('WHERE c.no = ?', 'WHERE a.session_id = ? AND a.passed = 1 ORDER BY c.year, c.seq'))
+    .bind(sessionId)
+    .all<CertRow>();
+  return results.map(r => toRecord(r, siteUrl));
+}
+
+function toRecord(r: CertRow, siteUrl: string): CertificateRecord {
+  const no = r.no;
   return {
     no: r.no,
     fullName: r.full_name,

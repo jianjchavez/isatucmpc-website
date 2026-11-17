@@ -86,3 +86,28 @@ export async function sendResultEmails(
   const ok = await Promise.all([toAttendee, toCoop]);
   return ok.every(Boolean) ? 'sent' : 'failed';
 }
+
+/** Face-to-face attendance (no quiz): certificate link and the office visit, same contact block. */
+export async function sendAttendanceEmails(
+  env: PmesEnv,
+  attempt: AttemptRow,
+  venue: string,
+  certificate: { no: string; key: string },
+): Promise<'sent' | 'failed'> {
+  const e = escapeHtml;
+  const subject = `PMES attendance confirmed, Certificate ${certificate.no}`;
+  const common =
+    `<p>Session: ${e(attempt.session_date)} at ${e(venue)}, code ${e(attempt.code)}</p>` +
+    '<p>The presenter confirmed that you attended the Pre-Membership Education Seminar.</p>' +
+    `<p>Your certificate: <a href="${e(`${env.SITE_URL}/pmes/certificate/?no=${certificate.no}&key=${certificate.key}`)}">${e(certificate.no)}</a></p>`;
+  const nextStep = attempt.id_type === 'application' ? OFFICE_VISIT : '';
+  const ok = await Promise.all([
+    resend(env, { from: FROM, to: [attempt.email], subject, html: `<p>Dear ${e(attempt.full_name)},</p>${common}${nextStep}${CONTACT}<p>— ISATUCMPC</p>` }),
+    resend(env, {
+      from: FROM, to: [env.TO_EMAIL], reply_to: attempt.email, subject: `${subject} (${attempt.full_name})`,
+      html: `<p><strong>${e(attempt.full_name)}</strong> (${e(ID_LABEL[attempt.id_type] ?? attempt.id_type)} ${e(attempt.id_number)})</p>` +
+        `<p>Mobile: ${e(attempt.mobile)} · Email: ${e(attempt.email)}</p><p>Presenter: ${e(attempt.presenter_name)}</p>` + common,
+    }),
+  ]);
+  return ok.every(Boolean) ? 'sent' : 'failed';
+}

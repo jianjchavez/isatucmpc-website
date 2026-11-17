@@ -4,8 +4,11 @@ import { findPresenterByName, hashPassword, verifyPassword, signSession, require
 import { createSession, closeSession, SESSION_COLUMNS, type SessionRow } from './sessions';
 import { selfPaced } from './env';
 import { attemptLimit } from './validate';
-import { sendResultEmails, type AttemptRow } from './email';
-import { issueCertificate } from './certificates';
+import { sendResultEmails, sendAttendanceEmails, type AttemptRow } from './email';
+import { issueCertificate, sessionCertificates } from './certificates';
+import { checkIn, confirmAttendance } from './attendance';
+import { issueApplicationNo } from '../membership/applications';
+import { parseApplicationRecord } from '../membership/record';
 import { buildRoster, rosterCsv } from './roster';
 
 export const admin = new Hono<PresenterApp>();
@@ -18,11 +21,11 @@ const dummy = hashPassword('dummy');
 
 export type AdminSession = {
   id: number; code: string; sessionDate: string; venue: string; presenterName: string; chairName: string;
-  status: string; createdAt: string; closedAt: string | null;
+  status: string; createdAt: string; closedAt: string | null; mode: 'quiz' | 'attendance';
 };
 const toAdminSession = (s: SessionRow): AdminSession => ({
   id: s.id, code: s.code, sessionDate: s.session_date, venue: s.venue, presenterName: s.presenter_name, chairName: s.chair_name,
-  status: s.status, createdAt: s.created_at, closedAt: s.closed_at,
+  status: s.status, createdAt: s.created_at, closedAt: s.closed_at, mode: s.mode,
 });
 
 admin.post('/login', async c => {
@@ -71,9 +74,11 @@ admin.post('/sessions', async c => {
   const input = { sessionDate: str(raw.sessionDate), venue: str(raw.venue), presenterName: str(raw.presenterName), chairName: str(raw.chairName) };
   if (!input.venue || !input.presenterName || !input.chairName || !/^\d{4}-\d{2}-\d{2}$/.test(input.sessionDate))
     return c.json({ error: 'missing-fields' }, 400);
+  // Face-to-face sessions have no quiz (Board and Committee 2026-11-17): attendance only.
   const row = await createSession(c.env.PMES_DB, {
     ...input,
     presenterId: c.var.presenter.id,
+    mode: 'attendance',
   });
   return c.json(toAdminSession(row));
 });
@@ -112,11 +117,18 @@ admin.post('/sessions/:id/resend-email', async c => {
   const attempt = await db
     .prepare(
       `SELECT a.*, s.session_date, s.code, s.presenter_name FROM pmes_attempts a JOIN pmes_sessions s ON s.id = a.session_id
-       WHERE a.id = ? AND a.session_id = ? AND a.score IS NOT NULL`,
+       WHERE a.id = ? AND a.session_id = ? AND (a.score IS NOT NULL OR a.passed = 1)`,
     )
     .bind(str((await json(c)).attemptId), s.id)
     .first<AttemptRow>();
   if (!attempt) return c.json({ error: 'unknown-attempt' }, 404);
+  if (attempt.score === null) {
+    // A confirmed face-to-face attendance: resend its certificate email.
+    const certificate = await issueCertificate(db, attempt.id, new Date().toISOString());
+    const emailStatus = await sendAttendanceEmails(c.env, attempt, s.venue, certificate);
+    await db.prepare('UPDATE pmes_certificates SET email_status = ? WHERE no = ?').bind(emailStatus, certificate.no).run();
+    return c.json({ emailStatus });
+  }
   const [used, limit, existing] = await Promise.all([
     db.prepare('SELECT COUNT(*) AS n FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ?').bind(s.id, attempt.id_type, attempt.id_number).first<{ n: number }>(),
     attemptLimit(db, s.id, attempt.id_type, attempt.id_number, Number(c.env.PMES_MAX_ATTEMPTS) || 3),
@@ -145,4 +157,43 @@ admin.get('/sessions/:id/roster.csv', async c => {
     'content-type': 'text/csv; charset=utf-8',
     'content-disposition': `attachment; filename="PMES-${s.session_date}-${s.code}.csv"`,
   });
+});
+
+// Face-to-face attendance (migration 0005). The presenter confirms check-ins; confirming issues certificates.
+admin.post('/sessions/:id/confirm', async c => {
+  const s = await loadSession(c.env.PMES_DB, c.req.param('id'));
+  if (!s) return c.json({ error: 'not-found' }, 404);
+  if (s.mode !== 'attendance') return c.json({ error: 'not-attendance-session' }, 409);
+  const raw = await json(c);
+  const ids = Array.isArray(raw.attemptIds) ? raw.attemptIds.filter((v): v is string => typeof v === 'string').slice(0, 200) : [];
+  if (!ids.length) return c.json({ error: 'missing-fields' }, 400);
+  return c.json({ issued: await confirmAttendance(c.env, s, ids, new Date().toISOString()) });
+});
+
+// A walk-in's full paper application, typed in by staff: issues the next APP number (and keeps the
+// record for MemberFolio's "Load from website" when that pull is on), then checks them in.
+admin.post('/sessions/:id/walk-in', async c => {
+  const s = await loadSession(c.env.PMES_DB, c.req.param('id'));
+  if (!s) return c.json({ error: 'not-found' }, 404);
+  if (s.mode !== 'attendance' || s.status !== 'open') return c.json({ error: 'not-attendance-session' }, 409);
+  const raw = await json(c);
+  const record = parseApplicationRecord(raw.applicant);
+  if (!record) return c.json({ error: 'invalid-applicant' }, 400);
+  const fullName = [record.firstName, record.middleName, record.lastName, record.extension].filter(Boolean).join(' ');
+  const nowIso = new Date().toISOString();
+  let applicationNo: string;
+  try {
+    applicationNo = await issueApplicationNo(c.env.PMES_DB, { fullName, mobile: record.contactNumber, email: record.email }, nowIso,
+      c.env.WEBSITE_APP_PULL === 'on' ? record : undefined);
+  } catch {
+    return c.json({ error: 'storage-failed' }, 503); // D1 errors may carry bound data
+  }
+  await checkIn(c.env.PMES_DB, s, { idType: 'application', idNumber: applicationNo, fullName, mobile: record.contactNumber, email: record.email }, nowIso);
+  return c.json({ applicationNo, fullName });
+});
+
+admin.get('/sessions/:id/certificates', async c => {
+  const s = await loadSession(c.env.PMES_DB, c.req.param('id'));
+  if (!s) return c.json({ error: 'not-found' }, 404);
+  return c.json({ certificates: await sessionCertificates(c.env.PMES_DB, s.id, c.env.SITE_URL) });
 });

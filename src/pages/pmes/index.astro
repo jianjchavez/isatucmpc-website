@@ -20,6 +20,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
           <Eyebrow>PMES</Eyebrow>
           <h1 class="mt-2 text-3xl">Certification Quiz</h1>
           <p class="mt-2 text-sm text-slate">20 questions, 30 seconds each, pass mark 16. Enter your details and the session code from the presenter.</p>
+          <p class="mt-2 text-sm text-slate">At a face-to-face seminar there is no quiz: entering the code the presenter shows at the end records your attendance.</p>
         </div>
         <div>
           <label for="pf-idtype" class={label}>Identity</label>
@@ -200,7 +201,8 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       const body: StartRequest = idType.value === 'application'
         ? { ...common, idType: 'application' }
         : { ...common, idType: 'member', fullName: String(fd.get('fullName')).trim(), email: String(fd.get('email')).trim() };
-      const response = await post<QuizResponse>('/api/pmes/start', body);
+      const response = await post<QuizResponse | CheckIn>('/api/pmes/start', body);
+      if ('checkedIn' in response) { showCheckIn(response); return; }
       // A live attempt that ran out of time comes back from /start as its result.
       if (isStep(response)) sessionStorage.setItem(STORE, response.attemptId);
       showResponse(response);
@@ -269,6 +271,18 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       setError($('pq-error'), errorMessage((err as Error).message));
       next.disabled = selected === null && choice !== null;
     } finally { inFlight = false; }
+  }
+  // Face-to-face session (no quiz): the presenter confirms attendance, then the certificate is emailed.
+  type CheckIn = { checkedIn: true; fullName: string; confirmed: boolean };
+  function showCheckIn(r: CheckIn) {
+    result.classList.add('border-success');
+    result.classList.remove('border-error');
+    $('pr-headline').textContent = 'Attendance recorded';
+    $('pr-detail').textContent = r.confirmed
+      ? `Thank you, ${r.fullName}. Your attendance is already confirmed; your certificate was emailed to you.`
+      : `Thank you, ${r.fullName}. The presenter will confirm your attendance, and your Certificate of Completion will then be emailed to you.`;
+    for (const id of ['pr-review-wrap', 'pr-missed-wrap', 'pr-cert', 'pr-retry']) $(id).classList.add('hidden');
+    show(result);
   }
   function showResponse(response: QuizResponse) {
     if (isStep(response)) showStep(response);

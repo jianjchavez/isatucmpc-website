@@ -11,6 +11,7 @@ import { submit, currentState } from './submit';
 import { admin } from './admin';
 import { findApplication, normalizeMobile } from '../membership/applications';
 import { QUESTION_SECONDS, type Step } from './flow';
+import { checkIn } from './attendance';
 
 export const pmes = new Hono<{ Bindings: PmesEnv }>();
 
@@ -87,6 +88,8 @@ pmes.post('/start', async c => {
     b.email = application.email;
     b.mobile = mobile;
   }
+  // Face-to-face: the code proves attendance; there is no quiz. The presenter confirms before any certificate.
+  if (session.mode === 'attendance') return c.json(await checkIn(db, session, b, nowIso));
   type Live = { id: string; attempt_no: number; mobile: string; email: string };
   const liveAttempt = () => db.prepare(`SELECT id, attempt_no, mobile, email FROM pmes_attempts
     WHERE session_id = ? AND id_type = ? AND id_number = ? AND status IN ('started', 'submitting')

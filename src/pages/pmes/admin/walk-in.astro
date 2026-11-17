@@ -1,0 +1,20 @@
+---
+/**
+ * Face-to-face walk-in (Board and Committee 2026-11-17): the presenter types in a walk-in's full paper
+ * application. The Worker issues the next APP number, keeps the record for MemberFolio, and checks
+ * the applicant in to the session; the presenter then confirms attendance as for everyone else.
+ * Opened from /pmes/admin/ in the same tab (the sign-in lives in this tab's sessionStorage).
+ */
+import PageLayout from '~/layouts/PageLayout.astro';
+import MembershipForm from '~/components/MembershipForm.astro';
+---
+<PageLayout title="PMES Walk-in" description="Add a walk-in applicant's paper application to a face-to-face PMES session." noIndex>
+  <section class="container-page py-10 md:py-14">
+    <div class="max-w-3xl mx-auto space-y-6">
+      <a id="back" href="/pmes/admin/" class="text-sm text-navy underline">&larr; Back to the session</a>
+      <h1 class="text-3xl">Add a walk-in</h1>
+      <p class="text-slate text-sm">Type in the applicant's signed paper application. Saving gives them the next application number and checks them in to this session. Write the number on the paper form, then confirm their attendance on the session page.</p>
+      <MembershipForm staff />
+    </div>
+  </section>
+</PageLayout>
