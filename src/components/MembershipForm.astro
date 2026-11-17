@@ -50,7 +50,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
             <input id="mf-office" data-field="office" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
           </div>
         </div>
-        <p class="text-xs text-slate mt-2">You will sign an Authority to Deduct from Salary at the office: the rest of your capital share and, ages 18 to 55, the Welfare Fund (PHP {formatAmount(WELFARE_MONTHLY)} a month) are deducted from your ISAT U salary.</p>
+        <p class="text-xs text-slate mt-2">You will sign an Authority to Deduct from Salary at the office: any shares you subscribe above {PAID_WITH_APPLICATION} and, ages 18 to 55, the Welfare Fund (PHP {formatAmount(WELFARE_MONTHLY)} a month) are deducted from your ISAT U salary.</p>
         <p id="mf-deduction" class="text-sm text-navy font-semibold mt-1" aria-live="polite"></p>
       </div>
     </div>
@@ -606,7 +606,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         const online = (form!.querySelector('[data-field="pmesMode"]:checked') as HTMLInputElement | null)?.value === 'online';
         showResult(online
           ? `Application number ${applicationNo}: your application PDF is downloading. Next, take the PMES online at isatucmpc.coop/pmes with this number and your mobile number.`
-          : `Application number ${applicationNo}: your application PDF is downloading. Bring the printed, signed form and this number to the PMES.`, true);
+          : `Application number ${applicationNo}: your application PDF is downloading. Bring the printed, signed form and this number to the PMES. Our face-to-face PMES is held every Wednesday, except holidays. Just contact us to confirm the date that works for you.`, true);
         if (online && resultEl) {
           const link = document.createElement('a');
           link.href = '/pmes/';

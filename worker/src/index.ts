@@ -114,7 +114,7 @@ app.post('/api/submit', async c => {
   const pmesNote = !applicationNo ? ''
     : online
       ? `<p>Your application number is <strong>${applicationNo}</strong>. Take the PMES online: watch the three videos at <a href="https://isatucmpc.coop/pmes/">isatucmpc.coop/pmes</a>, then take the quiz with this number and your mobile number.</p>`
-      : `<p>Your application number is <strong>${applicationNo}</strong>. Please bring it to the PMES; we will tell you the next seminar date.</p>`;
+      : `<p>Your application number is <strong>${applicationNo}</strong>. Please bring it to the PMES. Our face-to-face PMES is held every Wednesday, except holidays. Just contact us to confirm the date that works for you.</p>`;
   const html = `
     <p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p>
     <p><strong>Source:</strong> ${escapeHtml(source)}</p>

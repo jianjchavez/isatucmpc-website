@@ -117,8 +117,8 @@ describe('structured membership submissions', () => {
   }
   it.each([
     ['online', 'on', 'Take the PMES online'],
-    ['online', undefined, 'we will tell you the next seminar date'],
-    ['in-person', 'on', 'we will tell you the next seminar date'],
+    ['online', undefined, 'face-to-face PMES is held every Wednesday, except holidays'],
+    ['in-person', 'on', 'face-to-face PMES is held every Wednesday, except holidays'],
   ])('confirmation email: PMES %s with self-paced %s', async (pmesMode, selfPacedFlag, expected) => {
     const sent: Array<{ to: string[]; html: string; attachments?: unknown[] }> = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
