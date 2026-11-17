@@ -13,7 +13,7 @@ const db = () => env.PMES_DB;
 
 const testEnv = (selfPaced: 'on' | 'off' | undefined) => ({
   ...env,
-  PMES_DRAW_STATUS: 'draft',
+  PMES_DRAW_STATUS: 'approved',
   PMES_RL: { limit: async () => ({ success: true }) },
   PUBLIC_RL: { limit: async () => ({ success: true }) },
   PMES_SESSION_SECRET: 'test-secret',

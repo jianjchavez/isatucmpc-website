@@ -154,9 +154,9 @@ describe('online session errors', () => {
   });
 });
 
-describe('switch off: /pmes/ unchanged', () => {
-  it('ships off, with three hosted modules', () => {
-    expect(PMES_SELF_PACED).toBe(false);
+describe('switch on: Board + Committee approved (2026-11)', () => {
+  it('ships on, with three hosted modules', () => {
+    expect(PMES_SELF_PACED).toBe(true);
     expect(PMES_VIDEO_MODULES.map(m => m.title)).toEqual(['Module 1 of 3', 'Module 2 of 3', 'Module 3 of 3']);
     for (const [index, module] of PMES_VIDEO_MODULES.entries()) {
       const base = `https://media.isatucmpc.coop/pmes/pmes-module-${index + 1}`;
@@ -172,10 +172,10 @@ describe('switch off: /pmes/ unchanged', () => {
     expect(readFileSync('src/pages/pmes/index.astro', 'utf8')).toContain('{PMES_SELF_PACED && <PmesOnline />}');
     expect(readFileSync('src/pages/pmes/admin/index.astro', 'utf8')).toContain('{PMES_SELF_PACED && (<>');
   });
-  it.skipIf(!existsSync('dist/pmes/index.html'))('the built pages carry no video modules, code fetch or month option', () => {
+  it.skipIf(!existsSync('dist/pmes/index.html'))('the built pages carry the video modules, code fetch and month option', () => {
     const page = readFileSync('dist/pmes/index.html', 'utf8');
-    expect(page).not.toContain('pmes-online');
-    expect(page).not.toContain('Watch the seminar');
-    expect(readFileSync('dist/pmes/admin/index.html', 'utf8')).not.toContain('name="kind"');
+    expect(page).toContain('pmes-online');
+    expect(page).toContain('Watch the seminar');
+    expect(readFileSync('dist/pmes/admin/index.html', 'utf8')).toContain('name="kind"');
   });
 });

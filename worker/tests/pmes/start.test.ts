@@ -8,10 +8,10 @@ const ORIGIN = 'https://isatucmpc.coop';
 const URL = 'https://forms.isatucmpc.coop/api/pmes/start';
 const db = () => env.PMES_DB;
 
-/** Test env: draft bank, rate limiter stubbed open. Submit/admin lanes can reuse this shape. */
+/** Test env: approved bank, rate limiter stubbed open. Submit/admin lanes can reuse this shape. */
 export const testEnv = (over: Partial<typeof env> = {}) => ({
   ...env,
-  PMES_DRAW_STATUS: 'draft',
+  PMES_DRAW_STATUS: 'approved',
   PMES_RL: { limit: async () => ({ success: true }) },
   ...over,
 });

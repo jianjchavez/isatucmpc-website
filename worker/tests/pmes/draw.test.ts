@@ -3,14 +3,14 @@ import { loadBank, allQuestions } from '../../src/pmes/bank';
 import data from '../../../src/data/pmes-questions.json';
 import { drawQuiz, presentDraw } from '../../src/pmes/draw';
 
-const bank = loadBank('draft');
+const bank = loadBank('approved');
 const isPermutation = (order: number[]) => [...order].sort().join() === '0,1,2,3';
 
 describe('loadBank', () => {
   it('filters by status', () => {
     expect(bank.sections).toHaveLength(10);
     expect(bank.questions.length).toBeGreaterThanOrEqual(40);
-    expect(loadBank('approved').questions).toHaveLength(0);
+    expect(loadBank('draft').questions).toHaveLength(0);
   });
 });
 
@@ -20,7 +20,7 @@ describe('allQuestions', () => {
     const was = q.status;
     q.status = 'retired';
     try {
-      expect(loadBank('draft').questions.find(x => x.id === q.id)).toBeUndefined();
+      expect(loadBank('approved').questions.find(x => x.id === q.id)).toBeUndefined();
       expect(allQuestions().find(x => x.id === q.id)).toBeDefined();
       expect(allQuestions()).toHaveLength(data.questions.length);
     } finally {
@@ -50,7 +50,7 @@ describe('drawQuiz', () => {
   });
 
   it('throws when a section has too few questions of the status', () => {
-    expect(() => drawQuiz(loadBank('approved'))).toThrow('bank-too-small:idea');
+    expect(() => drawQuiz(loadBank('draft'))).toThrow('bank-too-small:idea');
   });
 });
 

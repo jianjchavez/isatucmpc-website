@@ -9,7 +9,7 @@ globs = ["**/*.pdf"]
 fallthrough = true
 
 [vars]
-WEBSITE_APP_PULL = "off"
+WEBSITE_APP_PULL = "on"   # live since 2026-11-12 (Website #52)
 # Comma-separated list of allowed Origin headers. Includes pages.dev for
 # pre-cutover (Task 27) and the custom domain for post-cutover.
 SITE_ORIGIN = "https://isatucmpc.coop,https://isatucmpc.pages.dev"
@@ -28,7 +28,7 @@ PMES_QUIZ_SIZE = "20"
 PMES_MAX_ATTEMPTS = "3"
 # "on" opens the standing monthly online session (board paper Item 3). Keep "off" until the Board and the
 # Education and Training Committee approve; flip together with PMES_SELF_PACED in src/data/pmes-online.ts.
-PMES_SELF_PACED = "off"
+PMES_SELF_PACED = "on"
 SITE_URL = "https://isatucmpc.coop"
 
 [[d1_databases]]

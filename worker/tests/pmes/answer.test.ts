@@ -12,7 +12,7 @@ const NO_RETAKES = 'Please see the Education and Training Committee. The present
 
 const testEnv = (over: Partial<typeof env> = {}) => ({
   ...env,
-  PMES_DRAW_STATUS: 'draft',
+  PMES_DRAW_STATUS: 'approved',
   PMES_RL: { limit: async () => ({ success: true }) },
   PUBLIC_RL: { limit: async () => ({ success: true }) },
   ...over,
@@ -48,7 +48,7 @@ async function start(idNumber = 'A-1'): Promise<{ attemptId: string; attemptNo: 
 /** Correct answers for the stored draw, read back from the DB and the bank. */
 async function correctAnswers(attemptId: string) {
   const row = await db().prepare('SELECT draw_json FROM pmes_attempts WHERE id = ?').bind(attemptId).first<{ draw_json: string }>();
-  const byId = new Map(loadBank('draft').questions.map(q => [q.id, q]));
+  const byId = new Map(loadBank('approved').questions.map(q => [q.id, q]));
   return (JSON.parse(row!.draw_json) as { id: string; optionOrder: number[] }[]).map((item, i) => ({
     n: i + 1,
     choice: item.optionOrder.indexOf(byId.get(item.id)!.answer),
@@ -135,7 +135,7 @@ describe('POST /api/pmes/answer', () => {
     const { attemptId } = await start();
     const json = await (await finish(attemptId, nullAnswers())).json<any>();
     expect(json).toMatchObject({
-      score: 0, total: 20, passed: false, reviewSections: loadBank('draft').sections.map(s => s.id), certificateNo: null, certificateKey: null, retakesLeft: 2,
+      score: 0, total: 20, passed: false, reviewSections: loadBank('approved').sections.map(s => s.id), certificateNo: null, certificateKey: null, retakesLeft: 2,
     });
     expect(json.missed).toHaveLength(20);
     expect(json.missed.every((item: any) => item.yourAnswer === null)).toBe(true);
@@ -310,7 +310,7 @@ describe('POST /api/pmes/answer', () => {
     const { attemptId } = await start();
     const answers = await correctAnswers(attemptId);
     const draw = JSON.parse((await attemptRow(attemptId)).draw_json);
-    const q = loadBank('draft').questions.find(q => q.id === draw[0].id)!;
+    const q = loadBank('approved').questions.find(q => q.id === draw[0].id)!;
     answers[0].choice = (answers[0].choice + 1) % 4;
     const json = await (await finish(attemptId, answers)).json<any>();
     expect(json.missed).toEqual([{ n: 1, text: q.text, yourAnswer: q.options[draw[0].optionOrder[answers[0].choice]], correctAnswer: q.options[q.answer], slide: q.slide }]);
