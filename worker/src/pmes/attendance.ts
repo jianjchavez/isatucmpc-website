@@ -11,7 +11,10 @@ const hexId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => 
 
 export type Attendee = { idType: string; idNumber: string; fullName: string; mobile: string; email: string };
 
-/** Records a check-in once per identity per session; a repeat returns the same row. */
+/**
+ * Records a check-in once per identity per session. A repeat is answered only for the same mobile and
+ * email as the first check-in (a member number is self-declared), else 'attempt-in-progress', like the quiz.
+ */
 export async function checkIn(db: D1Database, session: SessionRow, a: Attendee, nowIso: string) {
   await db
     .prepare(
@@ -22,10 +25,11 @@ export async function checkIn(db: D1Database, session: SessionRow, a: Attendee, 
     .bind(hexId(), session.id, a.idType, a.idNumber, a.fullName, a.mobile, a.email, nowIso, nowIso, session.id, a.idType, a.idNumber)
     .run();
   const row = await db
-    .prepare('SELECT status FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ? ORDER BY attempt_no LIMIT 1')
+    .prepare('SELECT status, full_name, mobile, email FROM pmes_attempts WHERE session_id = ? AND id_type = ? AND id_number = ? ORDER BY attempt_no LIMIT 1')
     .bind(session.id, a.idType, a.idNumber)
-    .first<{ status: string }>();
-  return { checkedIn: true as const, fullName: a.fullName, confirmed: row?.status === 'submitted' };
+    .first<{ status: string; full_name: string; mobile: string; email: string }>();
+  if (!row || row.mobile !== a.mobile || row.email !== a.email) return { error: 'attempt-in-progress' as const };
+  return { checkedIn: true as const, fullName: row.full_name, confirmed: row.status === 'submitted' };
 }
 
 /**

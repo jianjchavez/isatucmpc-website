@@ -66,6 +66,17 @@ describe('face-to-face attendance', () => {
     expect(rows.results).toEqual([{ status: 'attended', draw_json: '[]', score: null }]);
   });
 
+  it('a member number already checked in by someone else is refused, without their status', async () => {
+    const s = await daySession('attendance');
+    const member = (mobile: string, email: string, fullName: string) =>
+      call('/start', { code: s.code, idType: 'member', idNumber: 'M-0042', fullName, mobile, email, consent: true, turnstile: 'tok' });
+    expect(await (await member('09171111111', 'real@example.com', 'Real Member')).json()).toMatchObject({ checkedIn: true, fullName: 'Real Member' });
+    const squat = await member('09172222222', 'other@example.com', 'Someone Else');
+    expect(squat.status).toBe(409);
+    expect(await squat.json()).toEqual({ error: 'attempt-in-progress' });
+    expect(await (await member('09171111111', 'real@example.com', 'Typed Differently')).json()).toMatchObject({ checkedIn: true, fullName: 'Real Member' });
+  });
+
   it('a wrong mobile is refused, as for the quiz', async () => {
     const s = await daySession('attendance');
     const no = await application();

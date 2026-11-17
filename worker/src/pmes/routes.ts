@@ -89,7 +89,10 @@ pmes.post('/start', async c => {
     b.mobile = mobile;
   }
   // Face-to-face: the code proves attendance; there is no quiz. The presenter confirms before any certificate.
-  if (session.mode === 'attendance') return c.json(await checkIn(db, session, b, nowIso));
+  if (session.mode === 'attendance') {
+    const r = await checkIn(db, session, b, nowIso);
+    return 'error' in r ? c.json(r, 409) : c.json(r);
+  }
   type Live = { id: string; attempt_no: number; mobile: string; email: string };
   const liveAttempt = () => db.prepare(`SELECT id, attempt_no, mobile, email FROM pmes_attempts
     WHERE session_id = ? AND id_type = ? AND id_number = ? AND status IN ('started', 'submitting')
