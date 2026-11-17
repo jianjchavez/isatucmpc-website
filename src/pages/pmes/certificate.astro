@@ -6,7 +6,7 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import PmesLetterhead from '~/components/PmesLetterhead.astro';
 import PmesDocFooter from '~/components/PmesDocFooter.astro';
-import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
+import { PMES_PRESENTER_CAPTION, PMES_ONLINE_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
 ---
 <BaseLayout title="Certificate of Completion" description="Pre-Membership Education Seminar certificate of completion." noIndex>
   <div class="toolbar">
@@ -32,7 +32,7 @@ import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
         <div><dt>Issued</dt><dd data-field="issuedAt">&nbsp;</dd></div>
       </dl>
       <div class="signatures">
-        <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="presenterName">&nbsp;</p><p class="sig-caption">{PMES_PRESENTER_CAPTION}</p></div>
+        <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="presenterName">&nbsp;</p><p class="sig-caption" id="presenter-caption" data-online={PMES_ONLINE_PRESENTER_CAPTION}>{PMES_PRESENTER_CAPTION}</p></div>
         <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="chairName">&nbsp;</p><p class="sig-caption">{PMES_CHAIR_CAPTION}</p></div>
       </div>
     </div></div>
@@ -100,6 +100,8 @@ import { PMES_PRESENTER_CAPTION, PMES_CHAIR_CAPTION } from '~/lib/letterhead';
       chairName: c.chairName,
     };
     document.querySelectorAll<HTMLElement>('[data-field]').forEach(el => { el.textContent = fields[el.dataset.field!]; });
+    const caption = document.getElementById('presenter-caption');
+    if (caption && c.online) caption.textContent = caption.dataset.online ?? caption.textContent;
     const verify = document.querySelector('.doc-verify-url');
     if (verify && c.verifyUrl) verify.textContent = c.verifyUrl;
   }
