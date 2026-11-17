@@ -109,12 +109,14 @@ export function buildApplicantRecord(read: Read, checked: Checked, flags: Flags)
   };
 }
 
-/** "PHP 52.08 capital share + PHP 200.00 Welfare Fund = PHP 252.08 a month" for an ISAT U regular applicant. */
+/** "PHP 104.17 capital share + PHP 200.00 Welfare Fund = PHP 304.17 a month for 24 months" for an ISAT U regular applicant. */
 export function deductionLine(r: Pick<ApplicantRecord, 'isatuEmployee' | 'shares' | 'years' | 'dateOfBirth'>, today = new Date().toLocaleDateString('en-CA')): string {
   if (!r.isatuEmployee || !(r.shares >= MIN_SHARES) || !(r.years >= 1) || !/^\d{4}-\d{2}-\d{2}$/.test(r.dateOfBirth)) return '';
   const d = monthlyDeduction(r.shares, r.years, ageOn(r.dateOfBirth, today));
-  return `PHP ${formatAmount(d.capital)} capital share` + (d.welfare ? ` + PHP ${formatAmount(d.welfare)} Welfare Fund` : '') +
-    ` = PHP ${formatAmount(d.total)} a month for ${d.months} months`;
+  // With only the 50 shares paid at the office there is no capital share left to deduct.
+  const parts = [d.capital ? `PHP ${formatAmount(d.capital)} capital share` : '', d.welfare ? `PHP ${formatAmount(d.welfare)} Welfare Fund` : ''].filter(Boolean);
+  if (!parts.length) return '';
+  return `${parts.join(' + ')}${parts.length > 1 ? ` = PHP ${formatAmount(d.total)}` : ''} a month for ${d.months} months`;
 }
 
 export function buildApplicantMessage(read: Read, checked: Checked, flags: Flags): string {

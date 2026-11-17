@@ -1,10 +1,10 @@
 // Share subscription rules for the Membership Subscription Agreement.
 // The worker checks the same minimum (worker/src/membership/office-packet.ts).
 export const PAR_VALUE = 50; // PHP per share, as printed on the application form
-// Owner ruling 2026-11-16, matching PMES deck slide 30: subscribe at least 50 shares,
-// pay at least 25 with the application, the rest over time.
+// Owner ruling 2026-11-17 (replaces 11-16's 25): subscribe at least 50 shares and pay at least
+// 50 at the office with the membership fee; shares above 50 are paid over time.
 export const MIN_SHARES = 50;
-export const PAID_WITH_APPLICATION = 25;
+export const PAID_WITH_APPLICATION = 50;
 export const MEMBERSHIP_FEE = 500;
 export const WELFARE_MONTHLY = 200; // Expanded Welfare Fund Policy, ages 18-55
 
