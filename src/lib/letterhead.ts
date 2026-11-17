@@ -19,5 +19,7 @@ export const SIGNATURE_VALIDITY_LINE =
 
 /** Signature captions for PMES documents (spec §9; By-Laws Art. VI). */
 export const PMES_PRESENTER_CAPTION = 'Presenter, Education and Training Committee';
+/** Online (whole-month) certificates: owner ruling 2026-11-17, presenter Mrs. Gloria A. Resano. */
+export const PMES_ONLINE_PRESENTER_CAPTION = 'Member, Education and Training Committee';
 export const PMES_CHAIR_CAPTION =
   'Chair, Education and Training Committee / Vice-Chairperson, Board of Directors';

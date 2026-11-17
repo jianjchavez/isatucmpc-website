@@ -10,8 +10,7 @@ describe('loadBank', () => {
   it('filters by status', () => {
     expect(bank.sections).toHaveLength(10);
     expect(bank.questions.length).toBeGreaterThanOrEqual(40);
-    // membership-04 (paid shares) waits in draft until slide 30 and the video say 50 paid (2026-11-17).
-    expect(loadBank('draft').questions.map(q => q.id)).toEqual(['membership-04']);
+    expect(loadBank('draft').questions).toHaveLength(0);
   });
 });
 

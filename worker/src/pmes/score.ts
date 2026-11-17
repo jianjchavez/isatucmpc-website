@@ -13,13 +13,14 @@ export function scoreAttempt(bank: Bank, draw: Draw, answers: (number | null)[],
     const q = byId.get(item.id);
     if (!q) throw new Error(`unknown-question:${item.id}`);
     const chosen = answers[i];
-    if (chosen !== null && chosen !== undefined && item.optionOrder[chosen] === q.answer) score++;
+    const picked = chosen == null ? undefined : item.optionOrder[chosen];
+    if (picked !== undefined && (picked === q.answer || (q.alsoCorrect ?? []).includes(picked))) score++;
     else {
       missedSections.add(q.section);
       missed.push({
         n: i + 1, text: q.text,
         yourAnswer: chosen == null ? null : q.options[item.optionOrder[chosen]] ?? null,
-        correctAnswer: q.options[q.answer], slide: q.slide,
+        correctAnswer: [q.answer, ...(q.alsoCorrect ?? [])].map(i => q.options[i]).join(' or '), slide: q.slide,
       });
     }
   });

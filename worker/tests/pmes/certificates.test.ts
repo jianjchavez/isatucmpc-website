@@ -101,6 +101,7 @@ describe('certificates', () => {
       venue: 'ISATU Main Campus',
       code: 'PMES-AB23',
       presenterName: 'Presenter Name',
+      online: false,
       chairName: 'Chair Name',
       score: 18,
       total: 20,

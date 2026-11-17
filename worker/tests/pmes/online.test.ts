@@ -4,7 +4,7 @@ import { env } from 'cloudflare:test';
 import worker from '../../src/index';
 import { hashPassword } from '../../src/pmes/auth';
 import { createSession, findOpenSession } from '../../src/pmes/sessions';
-import { issueCertificate, getVerification } from '../../src/pmes/certificates';
+import { issueCertificate, getVerification, getCertificate } from '../../src/pmes/certificates';
 import { issueApplicationNo } from '../../src/membership/applications';
 
 const ORIGIN = 'https://isatucmpc.coop';
@@ -142,7 +142,7 @@ describe('switch on', () => {
     const body = { kind: 'month', month: '2026-12', presenterName: 'Presenter Name', chairName: 'Chair Name' };
     const res = await call('/admin/sessions', 'on', body, t);
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ sessionDate: '2026-12', venue: 'isatucmpc.coop (online)', presenterName: 'Joseph Ian J. Chavez', chairName: 'Chair Name', status: 'open' });
+    expect(await res.json()).toMatchObject({ sessionDate: '2026-12', venue: 'isatucmpc.coop (online)', presenterName: 'Mrs. Gloria A. Resano', chairName: 'Chair Name', status: 'open' });
     const again = await call('/admin/sessions', 'on', body, t);
     expect(again.status).toBe(409);
     expect(await again.json()).toEqual({ error: 'online-session-exists' });
@@ -215,5 +215,8 @@ describe('switch on', () => {
     const d = await issueCertificate(db(), 'd1', '2026-11-05T03:00:01.000Z');
     expect((await getVerification(db(), m.no))?.sessionDate).toBe('2026-11-18');
     expect((await getVerification(db(), d.no))?.sessionDate).toBe('2026-11-05');
+    // Online certificates print the online presenter's caption (owner ruling 2026-11-17).
+    expect((await getCertificate(db(), m.no, m.key, 'https://isatucmpc.coop'))?.online).toBe(true);
+    expect((await getCertificate(db(), d.no, d.key, 'https://isatucmpc.coop'))?.online).toBe(false);
   });
 });

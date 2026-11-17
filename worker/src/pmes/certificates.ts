@@ -12,6 +12,8 @@ export type CertificateRecord = {
   venue: string;
   code: string;
   presenterName: string;
+  /** Whole-month online session: the certificate prints the online presenter's caption. */
+  online: boolean;
   chairName: string;
   score: number;
   total: number;
@@ -66,7 +68,7 @@ export async function issueCertificate(
 }
 
 const CERT_SELECT = `SELECT c.no, c.key, c.issued_at, a.full_name, a.id_type, a.id_number, a.score, a.passed, a.draw_json,
-  ${PRINTED_SESSION_DATE} AS session_date, s.venue, s.code, s.presenter_name, s.chair_name
+  ${PRINTED_SESSION_DATE} AS session_date, length(s.session_date) = 7 AS online, s.venue, s.code, s.presenter_name, s.chair_name
   FROM pmes_certificates c
   JOIN pmes_attempts a ON a.id = c.attempt_id
   JOIN pmes_sessions s ON s.id = a.session_id
@@ -75,7 +77,7 @@ const CERT_SELECT = `SELECT c.no, c.key, c.issued_at, a.full_name, a.id_type, a.
 type CertRow = {
   no: string; key: string; issued_at: string; full_name: string; id_type: string; id_number: string;
   score: number; passed: number; draw_json: string;
-  session_date: string; venue: string; code: string; presenter_name: string; chair_name: string;
+  session_date: string; online: number; venue: string; code: string; presenter_name: string; chair_name: string;
 };
 
 /** Full record for the print page, or null when `key` does not match. */
@@ -99,6 +101,7 @@ export async function getCertificate(
     venue: r.venue,
     code: r.code,
     presenterName: r.presenter_name,
+    online: r.online === 1,
     chairName: r.chair_name,
     score: r.score,
     total: JSON.parse(r.draw_json).length,
