@@ -2,7 +2,7 @@
 // A standing online session (board paper Item 3, behind PMES_SELF_PACED) stores
 // session_date as YYYY-MM, with no day: it is valid for that whole Manila month.
 
-export const SESSION_COLUMNS = 'id, code, session_date, venue, presenter_name, chair_name, presenter_id, status, created_at, closed_at';
+export const SESSION_COLUMNS = 'id, code, session_date, venue, presenter_name, chair_name, presenter_id, status, created_at, closed_at, mode';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -20,6 +20,8 @@ export type SessionRow = {
   status: 'open' | 'closed';
   created_at: string;
   closed_at: string | null;
+  /** 'attendance': face-to-face, no quiz (migration 0005). */
+  mode: 'quiz' | 'attendance';
 };
 
 export type SessionInput = {
@@ -28,6 +30,7 @@ export type SessionInput = {
   presenterName: string;
   chairName: string;
   presenterId: number;
+  mode?: 'quiz' | 'attendance';
 };
 
 const cryptoRandom: Random = n => {
@@ -67,10 +70,10 @@ export async function createSession(
     try {
       const row = await db
         .prepare(
-          `INSERT INTO pmes_sessions (code, session_date, venue, presenter_name, chair_name, presenter_id, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING ${SESSION_COLUMNS}`,
+          `INSERT INTO pmes_sessions (code, session_date, venue, presenter_name, chair_name, presenter_id, created_at, mode)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING ${SESSION_COLUMNS}`,
         )
-        .bind(code, input.sessionDate, input.venue, input.presenterName, input.chairName, input.presenterId, createdAt)
+        .bind(code, input.sessionDate, input.venue, input.presenterName, input.chairName, input.presenterId, createdAt, input.mode ?? 'quiz')
         .first<SessionRow>();
       if (row) return row;
     } catch (err) {

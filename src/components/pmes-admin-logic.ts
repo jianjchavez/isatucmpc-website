@@ -11,12 +11,15 @@ export interface AdminSession {
   status: string;
   createdAt: string;
   closedAt: string | null;
+  /** 'attendance': face-to-face, no quiz; the presenter confirms check-ins. */
+  mode?: 'quiz' | 'attendance';
 }
 
 export interface RosterAttempt {
   attemptId: string;
   attemptNo: number;
-  score: number;
+  /** Null for a face-to-face check-in (no quiz). */
+  score: number | null;
   status: string;
   submittedAt: string | null;
 }
@@ -63,13 +66,22 @@ export function manilaDate(d = new Date()): string {
 }
 
 const submitted = (r: RosterRow) => r.attempts.filter(a => a.submittedAt);
+/** Confirmed face-to-face attendance: a pass with no quiz score. */
+const attended = (r: RosterRow) => r.passed && r.attempts.length > 0 && r.attempts.every(a => a.score === null);
 
 export function resultLabel(row: RosterRow): string {
-  if (row.passed) return 'Passed';
+  if (row.passed) return attended(row) ? 'Attended' : 'Passed';
+  if (row.attempts.some(a => a.status === 'attended')) return 'Checked in';
   return submitted(row).length ? 'Failed' : 'In progress';
 }
 
+/** The unconfirmed face-to-face check-in of a row, if any. */
+export function pendingCheckIn(row: RosterRow): string | null {
+  return row.attempts.find(a => a.status === 'attended')?.attemptId ?? null;
+}
+
 export function attemptsLabel(row: RosterRow): string {
+  if (row.attempts.every(a => a.status === 'attended' || (a.submittedAt && a.score === null))) return '—';
   return [...row.attempts]
     .sort((a, b) => a.attemptNo - b.attemptNo)
     .map(a => (a.submittedAt ? String(a.score) : '…'))
@@ -82,7 +94,9 @@ export function idLabel(row: Pick<RosterRow, 'idType' | 'idNumber'>): string {
 
 /** The attempt whose result email should be re-sent: the best submitted one. */
 export function resendAttemptId(row: RosterRow): string | null {
-  const best = submitted(row).sort((a, b) => b.score - a.score || b.attemptNo - a.attemptNo)[0];
+  // A confirmed face-to-face attendance has no score: resend its certificate email.
+  if (attended(row)) return row.attempts[0].attemptId;
+  const best = submitted(row).sort((a, b) => (b.score ?? 0) - (a.score ?? 0) || b.attemptNo - a.attemptNo)[0];
   return best ? best.attemptId : null;
 }
 

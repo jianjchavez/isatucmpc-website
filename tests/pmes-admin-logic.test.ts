@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   csvFilename, sortRowsByName, formatManila, manilaDate, resultLabel,
-  attemptsLabel, resendAttemptId, idLabel, latestChairName, type RosterRow,
+  attemptsLabel, resendAttemptId, idLabel, latestChairName, pendingCheckIn, type RosterRow,
 } from '~/components/pmes-admin-logic';
 
 const attempt = (attemptNo: number, score: number, submitted = true, status = 'submitted') => ({
@@ -43,6 +43,16 @@ describe('row labels', () => {
     expect(resultLabel(row('A', { passed: true, attempts: [attempt(1, 18)] }))).toBe('Passed');
     expect(resultLabel(row('B', { attempts: [attempt(1, 12)] }))).toBe('Failed');
     expect(resultLabel(row('C', { attempts: [attempt(1, 0, false, 'open')] }))).toBe('In progress');
+  });
+  it('face-to-face rows: Checked in, then Attended, and pendingCheckIn finds the unconfirmed one', () => {
+    const checkIn = { attemptId: 'x1', attemptNo: 1, score: null, status: 'attended', submittedAt: null };
+    expect(resultLabel(row('D', { attempts: [checkIn] }))).toBe('Checked in');
+    expect(pendingCheckIn(row('D', { attempts: [checkIn] }))).toBe('x1');
+    const done = { ...checkIn, status: 'submitted', submittedAt: '2026-11-18T03:00:00Z' };
+    expect(resultLabel(row('D', { passed: true, attempts: [done] }))).toBe('Attended');
+    expect(pendingCheckIn(row('D', { passed: true, attempts: [done] }))).toBeNull();
+    expect(resendAttemptId(row('D', { passed: true, attempts: [done] }))).toBe('x1');
+    expect(attemptsLabel(row('D', { attempts: [checkIn] }))).toBe('—');
   });
   it('attemptsLabel lists scores by attempt number, with … for an open attempt', () => {
     const r = row('A', { attempts: [attempt(2, 15), attempt(1, 12), attempt(3, 0, false, 'open')] });

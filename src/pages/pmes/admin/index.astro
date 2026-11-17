@@ -85,6 +85,8 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
           <button type="button" id="refresh" class={outline}>Refresh</button>
           <button type="button" id="csv-link" class={outline}>Download CSV</button>
           <a id="sheet-link" class={outline} href="#">Results sheet</a>
+          <a id="walkin-link" class:list={[outline, 'hidden']} href="#">Add walk-in</a>
+          <a id="print-link" class:list={[outline, 'hidden']} href="#">Print certificates</a>
           <button type="button" id="close-session" class={danger}>Close session</button>
         </div>
         <div id="close-confirm" class="hidden rounded-lg border border-error p-4 space-y-3">
@@ -105,6 +107,13 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
             <button type="button" id="ov-cancel" class={outline}>Cancel</button>
           </div>
         </form>
+        <div id="confirm-bar" class="hidden rounded-lg border border-navy p-4 space-y-2">
+          <p class="text-sm">Face-to-face session: no quiz. Tick everyone who attended the whole seminar, then confirm. Confirming issues each Certificate of Completion (next number) and emails it.</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="tick-all" class={outline}>Tick all checked-in</button>
+            <button type="button" id="confirm-ticked" class={primary}>Confirm ticked attendees</button>
+          </div>
+        </div>
         <p id="totals" class="text-sm text-slate"></p>
         <div class="overflow-x-auto -mx-6 md:mx-0">
           <table class="min-w-full text-sm text-left whitespace-nowrap">
@@ -125,7 +134,7 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
   <script>
     import {
       attemptsLabel, csvFilename, escapeHtml as esc, formatManila, idLabel, latestChairName, manilaDate,
-      resendAttemptId, resultLabel, type AdminSession, type RosterRow, type RosterTotals,
+      pendingCheckIn, resendAttemptId, resultLabel, type AdminSession, type RosterRow, type RosterTotals,
     } from '~/components/pmes-admin-logic';
 
     const API = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/pmes/admin';
@@ -271,8 +280,15 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
     function renderHeader() {
       const s = current!;
       $('s-code').textContent = s.code;
-      $('s-meta').textContent = `${s.sessionDate} · ${s.venue} · ${s.presenterName} · 30 s per question · ${s.status}`;
+      const attendance = s.mode === 'attendance';
+      $('s-meta').textContent = `${s.sessionDate} · ${s.venue} · ${s.presenterName} · ${attendance ? 'face-to-face, attendance (no quiz)' : '30 s per question'} · ${s.status}`;
       $<HTMLAnchorElement>('sheet-link').href = `/pmes/admin/results-sheet/?id=${encodeURIComponent(s.id)}`;
+      // Same tab: the sign-in lives in this tab's sessionStorage.
+      $<HTMLAnchorElement>('walkin-link').href = `/pmes/admin/walk-in/?id=${encodeURIComponent(s.id)}`;
+      $<HTMLAnchorElement>('print-link').href = `/pmes/certificate/?session=${encodeURIComponent(s.id)}`;
+      $('walkin-link').classList.toggle('hidden', !attendance || s.status !== 'open');
+      $('print-link').classList.toggle('hidden', !attendance);
+      $('confirm-bar').classList.toggle('hidden', !attendance);
       $('close-session').classList.toggle('hidden', s.status !== 'open');
     }
     function openSession(s: AdminSession) {
@@ -293,21 +309,35 @@ const danger = `${btn} border-2 border-error text-error bg-white hover:bg-error 
       $('roster').innerHTML = r.rows.length
         ? r.rows.map(row => {
           const resend = resendAttemptId(row);
+          const pending = pendingCheckIn(row);
+          const attendance = current!.mode === 'attendance';
           return `
           <tr>
-            <td class="px-3 py-2 font-semibold">${esc(row.fullName)}${row.overrides.length ? ' <sup title="Another attempt allowed">¹</sup>' : ''}</td>
+            <td class="px-3 py-2 font-semibold">${pending ? `<input type="checkbox" data-confirm="${esc(pending)}" class="mr-2 align-middle" aria-label="Attended">` : ''}${esc(row.fullName)}${row.overrides.length ? ' <sup title="Another attempt allowed">¹</sup>' : ''}</td>
             <td class="px-3 py-2">${esc(idLabel(row))}</td>
             <td class="px-3 py-2">${esc(attemptsLabel(row))}</td>
             <td class="px-3 py-2">${esc(row.bestScore ?? '')}</td>
             <td class="px-3 py-2 ${row.passed ? 'text-success font-bold' : ''}">${esc(resultLabel(row))}</td>
             <td class="px-3 py-2">${esc(row.certificateNo ?? '')}</td>
             <td class="px-3 py-2">${esc(row.emailStatus ?? '')}${resend ? ` <button type="button" data-resend="${esc(resend)}" class="ml-1 text-xs font-bold text-navy underline cursor-pointer">Resend</button>` : ''}</td>
-            <td class="px-3 py-2"><button type="button" data-override="${esc(row.idType)}:${esc(row.idNumber)}" data-name="${esc(row.fullName)}" class="text-xs font-bold text-navy underline cursor-pointer">Allow another attempt</button></td>
+            <td class="px-3 py-2">${attendance ? '' : `<button type="button" data-override="${esc(row.idType)}:${esc(row.idNumber)}" data-name="${esc(row.fullName)}" class="text-xs font-bold text-navy underline cursor-pointer">Allow another attempt</button>`}</td>
           </tr>`;
         }).join('')
         : '<tr><td colspan="8" class="px-3 py-6 text-slate">No attendees yet.</td></tr>';
     }
     $('refresh').addEventListener('click', () => run(loadRoster));
+    const ticks = () => [...$('roster').querySelectorAll<HTMLInputElement>('input[data-confirm]')];
+    $('tick-all').addEventListener('click', () => ticks().forEach(t => { t.checked = true; }));
+    $('confirm-ticked').addEventListener('click', () => {
+      const ids = ticks().filter(t => t.checked).map(t => t.dataset.confirm!);
+      if (!ids.length) { notify('Tick at least one checked-in attendee.', false); return; }
+      run(async () => {
+        const r = await api<{ issued: { certificateNo: string; emailStatus: string }[] }>(`/sessions/${current!.id}/confirm`, { attemptIds: ids });
+        await loadRoster();
+        const failed = r.issued.filter(i => i.emailStatus === 'failed').length;
+        notify(`${r.issued.length} certificate${r.issued.length === 1 ? '' : 's'} issued${failed ? `; ${failed} email${failed === 1 ? '' : 's'} failed (use Resend)` : ''}.`, !failed);
+      });
+    });
     // The download needs the bearer header, which a plain <a href> cannot carry.
     $('csv-link').addEventListener('click', () => run(async () => {
       const blob = await (await request(`/sessions/${current!.id}/roster.csv`)).blob();

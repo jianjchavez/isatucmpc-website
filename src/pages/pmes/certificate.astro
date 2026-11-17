@@ -22,9 +22,9 @@ import { PMES_PRESENTER_CAPTION, PMES_ONLINE_PRESENTER_CAPTION, PMES_CHAIR_CAPTI
       <p class="cert-body">
         This certifies that <strong data-field="fullName">&nbsp;</strong>
         (<span data-field="idLabel">Application No.</span> <span data-field="idNumber">&nbsp;</span>)
-        has completed the Pre-Membership Education Seminar held on
-        <span data-field="sessionDate">&nbsp;</span> at <span data-field="venue">&nbsp;</span>
-        and passed the certification quiz with a score of <span data-field="score">&nbsp;</span>.
+        has <span class="attended-only" hidden>attended and </span>completed the Pre-Membership Education Seminar held on
+        <span data-field="sessionDate">&nbsp;</span> at <span data-field="venue">&nbsp;</span><span class="quiz-only">
+        and passed the certification quiz with a score of <span data-field="score">&nbsp;</span></span>.
       </p>
       <dl class="cert-meta">
         <div><dt>Certificate No.</dt><dd data-field="no">&nbsp;</dd></div>
@@ -32,7 +32,7 @@ import { PMES_PRESENTER_CAPTION, PMES_ONLINE_PRESENTER_CAPTION, PMES_CHAIR_CAPTI
         <div><dt>Issued</dt><dd data-field="issuedAt">&nbsp;</dd></div>
       </dl>
       <div class="signatures">
-        <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="presenterName">&nbsp;</p><p class="sig-caption" id="presenter-caption" data-online={PMES_ONLINE_PRESENTER_CAPTION}>{PMES_PRESENTER_CAPTION}</p></div>
+        <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="presenterName">&nbsp;</p><p class="sig-caption presenter-caption" data-online={PMES_ONLINE_PRESENTER_CAPTION}>{PMES_PRESENTER_CAPTION}</p></div>
         <div class="sig"><div class="sig-line"></div><p class="sig-name" data-field="chairName">&nbsp;</p><p class="sig-caption">{PMES_CHAIR_CAPTION}</p></div>
       </div>
     </div></div>
@@ -69,7 +69,9 @@ import { PMES_PRESENTER_CAPTION, PMES_ONLINE_PRESENTER_CAPTION, PMES_CHAIR_CAPTI
     /* 100vh/100% = the printable area, so browser-added margins or headers still give one page. */
     .sheet { width: 100%; height: 100vh; min-height: 0; margin: 0; box-shadow: none; overflow: hidden; break-after: avoid; }
     .doc-footer { position: static !important; }
+    .sheet + .sheet { break-before: page; } /* print-all: one certificate per page */
   }
+  .sheet[hidden], [hidden] { display: none !important; }
 </style>
 
 <script>
@@ -81,33 +83,62 @@ import { PMES_PRESENTER_CAPTION, PMES_ONLINE_PRESENTER_CAPTION, PMES_CHAIR_CAPTI
 
   document.getElementById('print')?.addEventListener('click', () => window.print());
 
-  async function load() {
-    const q = new URLSearchParams(location.search);
-    const res = await fetch(`${WORKER}/api/pmes/certificate?no=${encodeURIComponent(q.get('no') ?? '')}&key=${encodeURIComponent(q.get('key') ?? '')}`);
-    if (!res.ok) throw new Error('not-found');
-    const c = await res.json();
+  type Cert = {
+    fullName: string; idType: string; idNumber: string; sessionDate: string; venue: string; code: string; no: string;
+    presenterName: string; chairName: string; online: boolean; score: number | null; total: number; issuedAt: string; verifyUrl?: string;
+  };
+
+  /** Fills one sheet. A face-to-face certificate has no score: it says "attended and completed". */
+  function fill(sheet: HTMLElement, c: Cert) {
     const fields: Record<string, string> = {
       fullName: c.fullName,
       idLabel: c.idType === 'member' ? 'Member No.' : 'Application No.',
       idNumber: c.idNumber,
       sessionDate: longDate(c.sessionDate),
       venue: c.venue,
-      score: `${c.score} of ${c.total} (${Math.round((c.score / c.total) * 100)}%)`,
+      score: c.score === null ? '' : `${c.score} of ${c.total} (${Math.round((c.score / c.total) * 100)}%)`,
       no: c.no,
       code: c.code,
       issuedAt: longDateTime(c.issuedAt),
       presenterName: c.presenterName,
       chairName: c.chairName,
     };
-    document.querySelectorAll<HTMLElement>('[data-field]').forEach(el => { el.textContent = fields[el.dataset.field!]; });
-    const caption = document.getElementById('presenter-caption');
+    sheet.querySelectorAll<HTMLElement>('[data-field]').forEach(el => { el.textContent = fields[el.dataset.field!]; });
+    sheet.querySelector<HTMLElement>('.attended-only')!.hidden = c.score !== null;
+    sheet.querySelector<HTMLElement>('.quiz-only')!.hidden = c.score === null;
+    const caption = sheet.querySelector<HTMLElement>('.presenter-caption');
     if (caption && c.online) caption.textContent = caption.dataset.online ?? caption.textContent;
-    const verify = document.querySelector('.doc-verify-url');
+    const verify = sheet.querySelector('.doc-verify-url');
     if (verify && c.verifyUrl) verify.textContent = c.verifyUrl;
+  }
+
+  async function load() {
+    const q = new URLSearchParams(location.search);
+    const main = document.getElementById('main')!;
+    const session = q.get('session');
+    if (session) {
+      // Presenter print-all (same tab as /pmes/admin/, which keeps the sign-in in sessionStorage).
+      const token = (JSON.parse(sessionStorage.getItem('pmes_admin') ?? '{}') as { token?: string }).token;
+      const res = await fetch(`${WORKER}/api/pmes/admin/sessions/${encodeURIComponent(session)}/certificates`, { headers: { authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('not-found');
+      const { certificates } = (await res.json()) as { certificates: Cert[] };
+      if (!certificates.length) throw new Error('not-found');
+      for (const c of certificates) {
+        const sheet = main.cloneNode(true) as HTMLElement;
+        sheet.removeAttribute('id');
+        fill(sheet, c);
+        main.before(sheet);
+      }
+      main.remove();
+      return;
+    }
+    const res = await fetch(`${WORKER}/api/pmes/certificate?no=${encodeURIComponent(q.get('no') ?? '')}&key=${encodeURIComponent(q.get('key') ?? '')}`);
+    if (!res.ok) throw new Error('not-found');
+    fill(main, await res.json());
   }
 
   load().catch(() => {
     document.getElementById('error')!.hidden = false;
-    document.getElementById('main')!.hidden = true;
+    document.getElementById('main')?.setAttribute('hidden', '');
   });
 </script>
