@@ -18,9 +18,9 @@ describe('pmes schema', () => {
 });
 
 describe('applications and timed-attempt schema', () => {
-  it('ships payload storage and retention in the single unreleased 0004 migration', () => {
-    expect(env.TEST_MIGRATIONS.filter(migration => /^000[45]_/.test(migration.name)).map(migration => migration.name))
-      .toEqual(['0004_application_payloads.sql']);
+  it('ships payload storage in 0004 and face-to-face attendance in 0005', () => {
+    expect(env.TEST_MIGRATIONS.filter(migration => /^000[456]_/.test(migration.name)).map(migration => migration.name))
+      .toEqual(['0004_application_payloads.sql', '0005_attendance_sessions.sql']);
   });
 
   const cols = async (table: string) =>

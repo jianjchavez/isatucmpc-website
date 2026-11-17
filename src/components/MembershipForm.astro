@@ -4,10 +4,13 @@ import { MIN_SHARES, PAR_VALUE, PAID_WITH_APPLICATION, MEMBERSHIP_FEE, WELFARE_M
 import { PMES_SELF_PACED } from '~/data/pmes-online';
 import { VALID_ID_TYPES, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
+/** staff: a walk-in's paper form typed in by the presenter (/pmes/admin/walk-in/); no Turnstile, no PDF. */
+interface Props { staff?: boolean }
+const { staff = false } = Astro.props;
 const CAMPUSES = ['Main La Paz', 'Dumangas', 'Barotac Nuevo', 'Leon', 'Miag-ao'];
 const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', 'Others'];
 ---
-<form id="membership-form" class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-6" novalidate>
+<form id="membership-form" class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-6" novalidate data-staff={staff ? '1' : undefined}>
   <input type="hidden" name="form-source" value="membership" />
   <input type="hidden" name="name" value="" />
   <input type="hidden" name="message" value="" />
@@ -245,7 +248,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     </div>
   </fieldset>
 
-  {PMES_SELF_PACED && (
+  {staff && <input type="radio" data-field="pmesMode" name="mf-pmesmode" value="in-person" checked hidden />}
+  {PMES_SELF_PACED && !staff && (
     <fieldset class="space-y-3">
       <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">How will you take the PMES? <span class="text-orange" aria-hidden="true">*</span></legend>
       <div class="flex flex-wrap gap-4">
@@ -323,13 +327,13 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     </div>
   </fieldset>
 
-  <div class="cf-turnstile" data-sitekey="0x4AAAAAADX7ERaWq-wd4wB5"></div>
+  {!staff && <div class="cf-turnstile" data-sitekey="0x4AAAAAADX7ERaWq-wd4wB5"></div>}
   <label class="flex items-start gap-2 text-sm">
     <input id="mf-consent" name="privacyConsent" type="checkbox" required class="mt-0.5" />
-    <span>I have read the <a href="/privacy" class="underline underline-offset-2 text-navy font-semibold" target="_blank">Privacy Notice</a> and consent to ISATUCMPC collecting and processing the personal information in this form — including sensitive personal information such as my civil status — to process my membership application. <span class="text-orange" aria-hidden="true">*</span></span>
+    {staff ? <span>The applicant signed the Data Privacy consent on the paper form. <span class="text-orange" aria-hidden="true">*</span></span> : <span>I have read the <a href="/privacy" class="underline underline-offset-2 text-navy font-semibold" target="_blank">Privacy Notice</a> and consent to ISATUCMPC collecting and processing the personal information in this form — including sensitive personal information such as my civil status — to process my membership application. <span class="text-orange" aria-hidden="true">*</span></span>}
   </label>
-  <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll generate your pre-filled application and subscription agreement (PDF) for download. Print both pages, sign them, and bring them to the cooperative office for verification and PMES scheduling. You'll sign the Data Privacy Consent and your savings account forms at the office.</div>
-  <Button type="submit" variant="primary" size="md" showArrow>Submit &amp; download my application</Button>
+  {!staff && <div class="text-xs text-slate">By submitting, you agree to be contacted about next steps. We'll generate your pre-filled application and subscription agreement (PDF) for download. Print both pages, sign them, and bring them to the cooperative office for verification and PMES scheduling. You'll sign the Data Privacy Consent and your savings account forms at the office.</div>}
+  <Button type="submit" variant="primary" size="md" showArrow>{staff ? 'Add walk-in and check in' : 'Submit & download my application'}</Button>
   <div id="mf-result" class="hidden p-3 rounded text-sm" role="status" aria-live="polite"></div>
   <div id="mf-cooldown" class="hidden p-3 rounded text-sm bg-brand-bg border border-rule" role="status" aria-live="polite"></div>
 </form>
@@ -342,6 +346,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   const COOLDOWN_KEY = 'mf-last-submit-ts';
   const COOLDOWN_MS = 60_000; // 1 minute
   const WORKER_URL = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/submit';
+  const PMES_ADMIN_URL = 'https://isatucmpc-forms.jianjchavez.workers.dev/api/pmes/admin';
 
   const form = document.getElementById('membership-form') as HTMLFormElement | null;
   if (form) {
@@ -505,6 +510,37 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       if (submitting) return;
       const variant = (form!.querySelector('input[name="mf-membertype"]:checked') as HTMLInputElement | null)?.value;
       if (variant !== 'Regular' && variant !== 'Associate') { showResult('Please choose Regular or Associate membership.', false); return; }
+
+      // Staff walk-in: the presenter's sign-in (this tab's sessionStorage) adds the paper application to the session.
+      const staffSession = form!.dataset.staff ? new URLSearchParams(location.search).get('id') : null;
+      if (form!.dataset.staff) {
+        const token = (JSON.parse(sessionStorage.getItem('pmes_admin') ?? '{}') as { token?: string }).token;
+        if (!staffSession || !token) { showResult('Sign in at /pmes/admin/ first, then open Add walk-in from the session.', false); return; }
+        submitting = true;
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+          const res = await fetch(`${PMES_ADMIN_URL}/sessions/${encodeURIComponent(staffSession)}/walk-in`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+            body: JSON.stringify({ applicant: (form!.elements.namedItem('applicant') as HTMLInputElement).value }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(json.error || 'failed');
+          showResult(`${json.fullName}: application number ${json.applicationNo}, checked in. Write this number on the paper form.`, true);
+          form!.reset();
+          window.scrollTo({ top: 0 });
+        } catch (err) {
+          const code = (err as Error).message;
+          showResult(code === 'invalid-applicant' ? 'Please check the entries: some details could not be read (birth date 18+, mobile 09XX XXX XXXX, email).'
+            : code === 'not-attendance-session' ? 'This session is closed or is not a face-to-face session.'
+            : code === 'unauthorized' ? 'Your sign-in expired. Sign in again at /pmes/admin/.'
+            : 'Could not add the walk-in. Please try again.', false);
+        } finally {
+          submitting = false;
+          if (submitBtn) submitBtn.disabled = false;
+        }
+        return;
+      }
 
       // Block multiple submits during cooldown
       const last = Number(localStorage.getItem(COOLDOWN_KEY) || '0');

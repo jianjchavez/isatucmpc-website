@@ -70,12 +70,14 @@ export async function buildRoster(db: D1Database, sessionId: number): Promise<{ 
 
   const rows = [...byId.values()].sort((a, b) => a.fullName.toLowerCase().localeCompare(b.fullName.toLowerCase()));
   const passed = rows.filter(r => r.passed).length;
-  const failed = rows.filter(r => !r.passed && r.attempts.some(a => a.status !== 'started')).length;
+  const failed = rows.filter(r => !r.passed && r.attempts.some(a => a.status === 'submitted' || a.status === 'submitting')).length;
   return { rows, totals: { attended: rows.length, passed, failed } };
 }
 
 export const resultLabel = (r: RosterRow): string =>
-  r.passed ? 'Passed' : r.attempts.some(a => a.status !== 'started') ? 'Failed' : 'In progress';
+  r.passed ? (r.bestScore === null ? 'Attended' : 'Passed')
+    : r.attempts.some(a => a.status === 'attended') ? 'Checked in'
+    : r.attempts.some(a => a.status !== 'started') ? 'Failed' : 'In progress';
 
 const csvField = (v: string | number | null) => {
   let s = v === null ? '' : String(v);
