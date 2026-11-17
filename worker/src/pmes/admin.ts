@@ -188,6 +188,7 @@ admin.post('/sessions/:id/walk-in', async c => {
   } catch {
     return c.json({ error: 'storage-failed' }, 503); // D1 errors may carry bound data
   }
+  // A fresh APP number cannot collide, so this check-in always succeeds.
   await checkIn(c.env.PMES_DB, s, { idType: 'application', idNumber: applicationNo, fullName, mobile: record.contactNumber, email: record.email }, nowIso);
   return c.json({ applicationNo, fullName });
 });
