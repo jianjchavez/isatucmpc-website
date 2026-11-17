@@ -244,13 +244,14 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       el.textContent = formatClock(remaining);
       el.classList.toggle('text-error', remaining <= 10);
       el.classList.toggle('text-navy', remaining > 10);
-      if (remaining === 0 && !inFlight) void sendAnswer(null);
+      // Time is up: a tapped-but-unsent choice still counts (owner ruling 2026-11-17).
+      if (remaining === 0 && !inFlight) void sendAnswer(selected);
     };
     tick();
     timer = setInterval(tick, 250);
   }
   next.addEventListener('click', () => {
-    if (selected !== null || Date.now() >= deadlineMs) void sendAnswer(Date.now() >= deadlineMs ? null : selected);
+    if (selected !== null || Date.now() >= deadlineMs) void sendAnswer(selected);
   });
 
   async function sendAnswer(choice: number | null) {

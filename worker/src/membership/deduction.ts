@@ -1,7 +1,7 @@
 // Monthly salary deduction for an ISAT U regular applicant (Authority to Deduct page).
 // Same rule as src/lib/subscription.ts; the form shows it first, this copy fills the PDF.
 export const PAR_VALUE = 50;
-export const PAID_WITH_APPLICATION = 25; // shares paid at the office visit (deck slide 30)
+export const PAID_WITH_APPLICATION = 50; // shares paid at the office visit (owner ruling 2026-11-17)
 export const WELFARE_MONTHLY = 200; // Expanded Welfare Fund Policy, ages 18-55
 
 export type Deduction = { months: number; capital: number; welfare: number; total: number };

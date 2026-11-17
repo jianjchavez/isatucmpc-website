@@ -29,6 +29,8 @@ PMES_MAX_ATTEMPTS = "3"
 # "on" opens the standing monthly online session (board paper Item 3). Keep "off" until the Board and the
 # Education and Training Committee approve; flip together with PMES_SELF_PACED in src/data/pmes-online.ts.
 PMES_SELF_PACED = "on"
+# Presenter printed on every online-session certificate (owner ruling 2026-11-17).
+PMES_ONLINE_PRESENTER = "Joseph Ian J. Chavez"
 SITE_URL = "https://isatucmpc.coop"
 
 [[d1_databases]]

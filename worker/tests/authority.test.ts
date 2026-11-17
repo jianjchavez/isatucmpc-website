@@ -15,12 +15,12 @@ const applicant = {
 
 describe('salary deduction', () => {
   it('spreads the unpaid subscription (after 25 paid shares) over the months, plus PHP 200 welfare for ages 18-55', () => {
-    // 50 shares x PHP 50 = 2,500; 25 paid = 1,250 left; 24 months.
-    expect(monthlyDeduction(50, 2, 40)).toEqual({ months: 24, capital: 52.08, welfare: 200, total: 252.08 });
-    expect(monthlyDeduction(100, 1, 55)).toEqual({ months: 12, capital: 312.5, welfare: 200, total: 512.5 });
+    // At least 50 shares are paid at the office (owner ruling 2026-11-17): 100 shares leave 2,500 over 12 months.
+    expect(monthlyDeduction(50, 2, 40)).toEqual({ months: 24, capital: 0, welfare: 200, total: 200 });
+    expect(monthlyDeduction(100, 1, 55)).toEqual({ months: 12, capital: 208.33, welfare: 200, total: 408.33 });
   });
   it('leaves the Welfare Fund off over 55', () => {
-    expect(monthlyDeduction(50, 2, 56)).toEqual({ months: 24, capital: 52.08, welfare: 0, total: 52.08 });
+    expect(monthlyDeduction(100, 2, 56)).toEqual({ months: 24, capital: 104.17, welfare: 0, total: 104.17 });
   });
   it('counts age from the birthday', () => {
     expect(ageOn('1970-11-17', '2026-11-16')).toBe(55);
@@ -78,7 +78,7 @@ describe('pass email office-visit step', () => {
   it('tells a passing applicant what to bring and pay', async () => {
     const html = await sentTo(attempt, true);
     expect(html).toContain('Next step: one visit to the cooperative office');
-    expect(html).toContain('PHP 1,750.00');
+    expect(html).toContain('PHP 3,000.00');
     expect(html).toContain('Authority to Deduct from Salary');
   });
   it('is left out for members and for a fail', async () => {

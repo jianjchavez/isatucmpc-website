@@ -65,8 +65,11 @@ describe('membership applicant record', () => {
   });
 
   it('shows the monthly salary deduction for an ISAT U regular applicant', () => {
-    const message = buildApplicantMessage(read, checked, { isatuEmployee: true, consent: true, shares: 50, years: 2 });
-    expect(message).toMatch(/Salary deduction: PHP 52\.08 capital share \+ PHP 200\.00 Welfare Fund = PHP 252\.08 a month for 24 months/);
+    const message = buildApplicantMessage(read, checked, { isatuEmployee: true, consent: true, shares: 100, years: 2 });
+    expect(message).toMatch(/Salary deduction: PHP 104\.17 capital share \+ PHP 200\.00 Welfare Fund = PHP 304\.17 a month for 24 months/);
+    // The 50 shares paid at the office leave only the Welfare Fund to deduct.
+    const minimum = buildApplicantMessage(read, checked, { isatuEmployee: true, consent: true, shares: 50, years: 2 });
+    expect(minimum).toMatch(/Salary deduction: PHP 200\.00 Welfare Fund a month for 24 months/);
   });
 
   it('clears previously filled Associate fields after switching to Regular', () => {

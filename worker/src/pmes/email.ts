@@ -30,13 +30,13 @@ export type Result = { score: number; total: number; passed: boolean; retakesLef
 
 const FROM = 'ISATUCMPC <noreply@isatucmpc.coop>';
 const CONTACT = '<p>Office: (033) 330-2586 · isatucmpc1964@gmail.com</p><p>Mobile: 0950 108 8310 (call or text) · Messenger: <a href="https://m.me/isatu.cmpc">m.me/isatu.cmpc</a></p>';
-// Fee and minimum paid-up shares: PMES deck slide 30 (owner ruling 2026-11-16: 50 shares, 25 paid).
+// Fee and minimum paid-up shares: owner ruling 2026-11-17 (at least 50 shares paid at the office).
 const OFFICE_VISIT =
   '<p><strong>Next step: one visit to the cooperative office</strong> (Burgos St., La Paz, Iloilo City). Bring:</p>' +
   '<ul><li>your application number and a valid ID;</li>' +
-  '<li>PHP 1,750.00: the PHP 500.00 membership fee and PHP 1,250.00 for 25 paid-up shares.</li></ul>' +
+  '<li>PHP 3,000.00: the PHP 500.00 membership fee and PHP 2,500.00 for at least 50 paid-up shares.</li></ul>' +
   '<p>At the office you sign your application papers. ISAT U employees joining as regular members also sign the ' +
-  'Authority to Deduct from Salary for the rest of the capital share (and the Welfare Fund, if enrolled). ' +
+  'Authority to Deduct from Salary for any shares subscribed above 50 (and the Welfare Fund, if enrolled). ' +
   'The Board of Directors then acts on your application within 30 days.</p>';
 const ID_LABEL: Record<string, string> = { application: 'Application No.', member: 'Member No.' };
 
