@@ -8,6 +8,8 @@ export type Question = {
   text: string;
   options: [string, string, string, string];
   answer: 0 | 1 | 2 | 3;
+  /** Other options also scored correct (e.g. while a policy amendment is pending). */
+  alsoCorrect?: number[];
   source: string;
   status: string;
 };
