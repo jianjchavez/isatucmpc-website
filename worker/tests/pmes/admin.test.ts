@@ -10,7 +10,7 @@ const db = () => env.PMES_DB;
 
 const testEnv = (over: Partial<typeof env> = {}) => ({
   ...env,
-  PMES_DRAW_STATUS: 'draft',
+  PMES_DRAW_STATUS: 'approved',
   PMES_RL: { limit: async () => ({ success: true }) },
   PMES_SESSION_SECRET: 'test-secret',
   RESEND_API_KEY: 'test-key',

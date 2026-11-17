@@ -4,7 +4,7 @@ import type { VideoModule } from '~/components/pmes-online';
 // Off: /pmes/ is the quiz only, exactly as before. On: /pmes/ shows the three video modules in
 // order and, after the last one, this month's online session code from the Worker.
 // Turn on together with PMES_SELF_PACED = "on" in worker/wrangler.toml.
-export const PMES_SELF_PACED: boolean = false;
+export const PMES_SELF_PACED: boolean = true;
 
 /**
  * The three narrated modules, in order. `url` is either a YouTube link (unlisted is fine; watch,

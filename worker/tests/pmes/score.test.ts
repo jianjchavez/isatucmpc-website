@@ -3,7 +3,7 @@ import { loadBank } from '../../src/pmes/bank';
 import { drawQuiz } from '../../src/pmes/draw';
 import { scoreAttempt } from '../../src/pmes/score';
 
-const bank = loadBank('draft');
+const bank = loadBank('approved');
 const draw = drawQuiz(bank);
 const byId = new Map(bank.questions.map(q => [q.id, q]));
 // Correct answer in presented order: the position of `answer` within optionOrder.
