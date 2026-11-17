@@ -55,7 +55,8 @@ admin.post('/sessions', async c => {
   // Standing online session for one Manila month (PMES_SELF_PACED on): session_date = YYYY-MM.
   if (selfPaced(c.env) && raw.kind === 'month') {
     const month = str(raw.month);
-    const presenterName = str(raw.presenterName), chairName = str(raw.chairName);
+    // Online certificates carry one fixed presenter (owner ruling 2026-11-17), not whoever opens the month.
+    const presenterName = c.env.PMES_ONLINE_PRESENTER?.trim() || str(raw.presenterName), chairName = str(raw.chairName);
     if (!presenterName || !chairName || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return c.json({ error: 'missing-fields' }, 400);
     const taken = () => c.env.PMES_DB.prepare('SELECT 1 FROM pmes_sessions WHERE session_date = ?').bind(month).first();
     if (await taken()) return c.json({ error: 'online-session-exists' }, 409);

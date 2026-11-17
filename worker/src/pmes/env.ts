@@ -14,6 +14,8 @@ export type PmesEnv = Env & TelegramEnv & {
   PMES_SESSION_SECRET: string;
   /** "on" enables the standing monthly online session (board paper Item 3); anything else is off. */
   PMES_SELF_PACED?: string;
+  /** Presenter printed on every online (whole-month) session certificate; overrides the admin's input. */
+  PMES_ONLINE_PRESENTER?: string;
 };
 
 export const selfPaced = (env: { PMES_SELF_PACED?: string }) => env.PMES_SELF_PACED === 'on';

@@ -137,11 +137,12 @@ describe('switch off: unchanged', () => {
 
 describe('switch on', () => {
   it('a presenter opens one online session per month; a second is refused', async () => {
+    // PMES_ONLINE_PRESENTER (wrangler.toml) overrides the typed presenter on online certificates.
     const t = await token('on');
     const body = { kind: 'month', month: '2026-12', presenterName: 'Presenter Name', chairName: 'Chair Name' };
     const res = await call('/admin/sessions', 'on', body, t);
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ sessionDate: '2026-12', venue: 'isatucmpc.coop (online)', presenterName: 'Presenter Name', chairName: 'Chair Name', status: 'open' });
+    expect(await res.json()).toMatchObject({ sessionDate: '2026-12', venue: 'isatucmpc.coop (online)', presenterName: 'Joseph Ian J. Chavez', chairName: 'Chair Name', status: 'open' });
     const again = await call('/admin/sessions', 'on', body, t);
     expect(again.status).toBe(409);
     expect(await again.json()).toEqual({ error: 'online-session-exists' });

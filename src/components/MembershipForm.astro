@@ -15,8 +15,78 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
   <p class="text-xs text-slate -mt-2">Only fields marked <span class="text-orange" aria-hidden="true">*</span> are required. Fill what you can now — when you submit, we'll generate your pre-filled application and subscription agreement (one 2-page PDF) for you to download, print, sign, and bring to the office for in-person verification.</p>
 
+  <fieldset class="space-y-3">
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">1. Membership type <span class="text-orange" aria-hidden="true">*</span></legend>
+    <p class="text-xs text-slate">Which one fits you? Choose first: the rest of the form follows your answer.</p>
+    <div class="grid md:grid-cols-2 gap-3">
+      <label class="flex items-start gap-3 text-sm border-2 border-rule rounded-md p-3 cursor-pointer has-[:checked]:border-navy">
+        <input type="radio" data-field="memberType" name="mf-membertype" value="Regular" required class="mt-1" />
+        <span><strong class="text-navy">Regular member</strong><br />You are a <strong>regular employee of ISAT U</strong> (any campus) or of the cooperative. Full voting rights.</span>
+      </label>
+      <label class="flex items-start gap-3 text-sm border-2 border-rule rounded-md p-3 cursor-pointer has-[:checked]:border-navy">
+        <input type="radio" data-field="memberType" name="mf-membertype" value="Associate" class="mt-1" />
+        <span><strong class="text-navy">Associate member</strong><br />You are an <strong>ISAT U alumnus</strong>, a <strong>parent, spouse or adult child of a regular member</strong>, a <strong>non-regular ISAT U employee</strong>, or recommended by a regular member.</span>
+      </label>
+    </div>
+
+    <div id="mf-regular-block" class="hidden border-l-2 border-orange/40 pl-4 space-y-3">
+      <label class="flex items-center gap-2 text-sm">
+        <input id="mf-isatu" data-field="isatuEmployee" type="checkbox" />
+        I'm a regular ISAT U employee
+      </label>
+      <div id="mf-campus-row" class="hidden">
+        <label for="mf-campus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Campus assigned</label>
+        <select id="mf-campus" data-field="campus" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white max-w-xs">
+          <option value="">Select campus…</option>
+          {CAMPUSES.map(c => <option value={c}>{c}</option>)}
+        </select>
+        <div class="grid md:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label for="mf-empno" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">ISAT U employee no.</label>
+            <input id="mf-empno" data-field="employeeNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label for="mf-office" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Office or college</label>
+            <input id="mf-office" data-field="office" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+          </div>
+        </div>
+        <p class="text-xs text-slate mt-2">You will sign an Authority to Deduct from Salary at the office: the rest of your capital share and, ages 18 to 55, the Welfare Fund (PHP {formatAmount(WELFARE_MONTHLY)} a month) are deducted from your ISAT U salary.</p>
+        <p id="mf-deduction" class="text-sm text-navy font-semibold mt-1" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div id="mf-associate-block" class="hidden border-l-2 border-orange/40 pl-4 space-y-4">
+      <div>
+        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Qualification</span>
+        <div class="space-y-2">
+          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="relationship" class="mt-1" /> <span>Relationship to a regular member</span></label>
+          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="integrity" class="mt-1" /> <span>Individual of proven integrity in the community</span></label>
+          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="organization" class="mt-1" /> <span>Member of an organization/group registered with SEC or other regulating agencies</span></label>
+        </div>
+      </div>
+      <div id="mf-assocorg-row" class="hidden">
+        <label for="mf-assocorg" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Please specify</label>
+        <input id="mf-assocorg" data-field="associateOrgSpecify" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+      </div>
+      <div class="grid md:grid-cols-3 gap-3">
+        <div>
+          <label for="mf-recname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Recommended by <span class="text-orange" aria-hidden="true">*</span></label>
+          <input id="mf-recname" data-field="recommenderName" type="text" maxlength="200" placeholder="Regular member's full name" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="mf-recrel" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship to that member</label>
+          <input id="mf-recrel" data-field="recommenderRelationship" type="text" maxlength="200" placeholder="Parent, spouse, child, friend…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label for="mf-reccampus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">If they're ISAT U: campus/college</label>
+          <input id="mf-reccampus" data-field="recommenderCampus" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">1. Identity</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">2. Identity</legend>
     <div class="grid md:grid-cols-4 gap-3">
       <div>
         <label for="mf-first" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">First name <span class="text-orange" aria-hidden="true">*</span></label>
@@ -78,11 +148,11 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">2. Address &amp; ID</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">3. Address &amp; ID</legend>
     <div class="grid md:grid-cols-2 gap-3">
       <div>
-        <label for="mf-paddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Present home address</label>
-        <input id="mf-paddr" data-field="presentHomeAddress" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <label for="mf-paddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Present home address <span class="text-orange" aria-hidden="true">*</span></label>
+        <input id="mf-paddr" data-field="presentHomeAddress" type="text" maxlength="200" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-haddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Permanent home address</label>
@@ -113,13 +183,13 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">3. Employment</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">4. Employment</legend>
     <div>
-      <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Employment category</span>
+      <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Employment category <span class="text-orange" aria-hidden="true">*</span></span>
       <div class="flex flex-wrap gap-4">
         {EMPLOYMENT_CATS.map(cat => (
           <label class="flex items-center gap-2 text-sm">
-            <input type="radio" data-field="employmentCategory" name="mf-empcat" value={cat} />
+            <input type="radio" data-field="employmentCategory" name="mf-empcat" value={cat} required />
             {cat}
           </label>
         ))}
@@ -141,15 +211,15 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <fieldset class="space-y-4">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">4. Emergency contact</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">5. Emergency contact</legend>
     <div class="grid md:grid-cols-3 gap-3">
       <div>
-        <label for="mf-eman" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Name</label>
-        <input id="mf-eman" data-field="emergencyName" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <label for="mf-eman" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Name <span class="text-orange" aria-hidden="true">*</span></label>
+        <input id="mf-eman" data-field="emergencyName" type="text" maxlength="200" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
-        <label for="mf-emph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact number</label>
-        <input id="mf-emph" data-field="emergencyContact" type="tel" maxlength="200" inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <label for="mf-emph" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Contact number <span class="text-orange" aria-hidden="true">*</span></label>
+        <input id="mf-emph" data-field="emergencyContact" type="tel" maxlength="200" required inputmode="tel" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-emrel" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship</label>
@@ -158,68 +228,6 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     </div>
   </fieldset>
 
-  <fieldset class="space-y-3">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">5. Membership type <span class="text-orange" aria-hidden="true">*</span></legend>
-    <div class="flex flex-wrap gap-4">
-      <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="memberType" name="mf-membertype" value="Regular" required /> Regular member</label>
-      <label class="flex items-center gap-2 text-sm"><input type="radio" data-field="memberType" name="mf-membertype" value="Associate" /> Associate member</label>
-    </div>
-
-    <div id="mf-regular-block" class="hidden border-l-2 border-orange/40 pl-4 space-y-3">
-      <label class="flex items-center gap-2 text-sm">
-        <input id="mf-isatu" data-field="isatuEmployee" type="checkbox" />
-        I'm a regular ISAT U employee
-      </label>
-      <div id="mf-campus-row" class="hidden">
-        <label for="mf-campus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Campus assigned</label>
-        <select id="mf-campus" data-field="campus" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm bg-white max-w-xs">
-          <option value="">Select campus…</option>
-          {CAMPUSES.map(c => <option value={c}>{c}</option>)}
-        </select>
-        <div class="grid md:grid-cols-2 gap-3 mt-3">
-          <div>
-            <label for="mf-empno" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">ISAT U employee no.</label>
-            <input id="mf-empno" data-field="employeeNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label for="mf-office" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Office or college</label>
-            <input id="mf-office" data-field="office" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-          </div>
-        </div>
-        <p class="text-xs text-slate mt-2">You will sign an Authority to Deduct from Salary at the office: the rest of your capital share and, ages 18 to 55, the Welfare Fund (PHP {formatAmount(WELFARE_MONTHLY)} a month) are deducted from your ISAT U salary.</p>
-        <p id="mf-deduction" class="text-sm text-navy font-semibold mt-1" aria-live="polite"></p>
-      </div>
-    </div>
-
-    <div id="mf-associate-block" class="hidden border-l-2 border-orange/40 pl-4 space-y-4">
-      <div>
-        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-2">Qualification</span>
-        <div class="space-y-2">
-          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="relationship" class="mt-1" /> <span>Relationship to a regular member</span></label>
-          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="integrity" class="mt-1" /> <span>Individual of proven integrity in the community</span></label>
-          <label class="flex items-start gap-2 text-sm"><input type="radio" data-field="associateQualification" name="mf-assocqual" value="organization" class="mt-1" /> <span>Member of an organization/group registered with SEC or other regulating agencies</span></label>
-        </div>
-      </div>
-      <div id="mf-assocorg-row" class="hidden">
-        <label for="mf-assocorg" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Please specify</label>
-        <input id="mf-assocorg" data-field="associateOrgSpecify" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-      </div>
-      <div class="grid md:grid-cols-3 gap-3">
-        <div>
-          <label for="mf-recname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Recommended by <span class="text-orange" aria-hidden="true">*</span></label>
-          <input id="mf-recname" data-field="recommenderName" type="text" maxlength="200" placeholder="Regular member's full name" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-        </div>
-        <div>
-          <label for="mf-recrel" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship to that member</label>
-          <input id="mf-recrel" data-field="recommenderRelationship" type="text" maxlength="200" placeholder="Parent, spouse, child, friend…" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-        </div>
-        <div>
-          <label for="mf-reccampus" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">If they're ISAT U: campus/college</label>
-          <input id="mf-reccampus" data-field="recommenderCampus" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-        </div>
-      </div>
-    </div>
-  </fieldset>
 
   <fieldset class="space-y-3">
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">6. Share subscription <span class="text-orange" aria-hidden="true">*</span></legend>
@@ -251,7 +259,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">7. Family information</legend>
     <div class="grid md:grid-cols-3 gap-3">
       <div>
-        <label for="mf-spname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Spouse's name</label>
+        <label for="mf-spname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Spouse's name<span id="mf-spname-star" class="hidden"> <span class="text-orange" aria-hidden="true">*</span></span></label>
         <input id="mf-spname" data-field="spouseName" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
@@ -265,8 +273,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     </div>
     <div class="grid md:grid-cols-3 gap-3">
       <div>
-        <label for="mf-pname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Mother/father's name</label>
-        <input id="mf-pname" data-field="parentName" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <label for="mf-pname" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Mother/father's name <span class="text-orange" aria-hidden="true">*</span></label>
+        <input id="mf-pname" data-field="parentName" type="text" maxlength="200" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
         <label for="mf-pdob" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
@@ -280,20 +288,20 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
   </fieldset>
 
   <fieldset class="space-y-3">
-    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. Beneficiaries (up to 2)</legend>
+    <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. Beneficiaries (at least 1, up to 2)</legend>
     {[1, 2].map(i => (
       <div class="grid grid-cols-2 md:grid-cols-[2fr_1.2fr_1.5fr_0.7fr] gap-2 items-end">
         <div>
-          <label for={`mf-ben${i}-name`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">{`Beneficiary ${i} — name`}</label>
-          <input id={`mf-ben${i}-name`} data-field={`ben${i}Name`} type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+          <label for={`mf-ben${i}-name`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">{`Beneficiary ${i} — name`}{i === 1 && <span class="text-orange" aria-hidden="true"> *</span>}</label>
+          <input id={`mf-ben${i}-name`} data-field={`ben${i}Name`} type="text" maxlength="200" required={i === 1} class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
         </div>
         <div>
           <label for={`mf-ben${i}-dob`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Date of birth</label>
           <input id={`mf-ben${i}-dob`} data-field={`ben${i}Dob`} type="date" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
         </div>
         <div>
-          <label for={`mf-ben${i}-rel`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship</label>
-          <input id={`mf-ben${i}-rel`} data-field={`ben${i}Rel`} type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
+          <label for={`mf-ben${i}-rel`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Relationship{i === 1 && <span class="text-orange" aria-hidden="true"> *</span>}</label>
+          <input id={`mf-ben${i}-rel`} data-field={`ben${i}Rel`} type="text" maxlength="200" required={i === 1} class="w-full border-2 border-rule focus:border-navy rounded-md px-2 py-2 text-sm" />
         </div>
         <div>
           <label for={`mf-ben${i}-age`} class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Age</label>
@@ -374,6 +382,17 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       }
     }
     form.querySelectorAll('input[name="mf-membertype"]').forEach(el => el.addEventListener('change', syncType));
+    // Spouse's name is required only for a married applicant.
+    const spouse = document.getElementById('mf-spname') as HTMLInputElement | null;
+    form.querySelectorAll('input[name="mf-civil"]').forEach(el => el.addEventListener('change', () => {
+      const married = (form!.querySelector('input[name="mf-civil"]:checked') as HTMLInputElement | null)?.value === 'Married';
+      if (spouse) spouse.required = married;
+      document.getElementById('mf-spname-star')?.classList.toggle('hidden', !married);
+    }));
+    form.addEventListener('reset', () => {
+      if (spouse) spouse.required = false;
+      document.getElementById('mf-spname-star')?.classList.add('hidden');
+    });
     isatuChk?.addEventListener('change', () => campusRow?.classList.toggle('hidden', !isatuChk.checked));
     form.querySelectorAll('input[name="mf-assocqual"]').forEach(el => el.addEventListener('change', () => {
       const q = (form!.querySelector('input[name="mf-assocqual"]:checked') as HTMLInputElement | null)?.value;
@@ -430,7 +449,17 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     form.addEventListener('submit', e => {
       const shares = wholeNumber(sharesInput);
       const years = wholeNumber(yearsInput);
-      const problem = !(shares >= MIN_SHARES)
+      // First visible required field left empty (hidden branches such as the associate block are skipped).
+      const missing = Array.from(form!.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[required]'))
+        .find(el => !el.checkValidity() && (el.offsetParent !== null || el.type === 'radio'));
+      const missingLabel = missing && (missing.type === 'radio' || missing.type === 'checkbox'
+        ? (missing.closest('fieldset')?.querySelector('legend')?.textContent ?? '')
+        : (missing.labels?.[0]?.textContent ?? '')).replace('*', '').replace(/^\d+\.\s*/, '').trim();
+      const problem = missing
+        ? { el: missing as HTMLInputElement, text: missing.id === 'mf-consent'
+          ? 'Please tick the Privacy Notice consent box.'
+          : `Please fill in the required field${missingLabel ? `: ${missingLabel}` : ''}.` }
+        : !(shares >= MIN_SHARES)
         ? { el: sharesInput, text: `Please subscribe to at least ${MIN_SHARES} shares (whole number).` }
         : !(years >= 1)
           ? { el: yearsInput, text: 'Please enter how many years you will pay your subscription (whole number).' }
@@ -578,6 +607,13 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         showResult(online
           ? `Application number ${applicationNo}: your application PDF is downloading. Next, take the PMES online at isatucmpc.coop/pmes with this number and your mobile number.`
           : `Application number ${applicationNo}: your application PDF is downloading. Bring the printed, signed form and this number to the PMES.`, true);
+        if (online && resultEl) {
+          const link = document.createElement('a');
+          link.href = '/pmes/';
+          link.className = 'block mt-2 underline font-bold text-white';
+          link.textContent = 'Go to the online PMES now →';
+          resultEl.append(link);
+        }
         form!.reset();
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } catch (err) {
