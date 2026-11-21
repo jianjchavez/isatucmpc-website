@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { findPresenterByName, hashPassword, verifyPassword, signSession, requirePresenter, type PresenterApp } from './auth';
 import { createSession, closeSession, SESSION_COLUMNS, type SessionRow } from './sessions';
 import { selfPaced } from './env';
-import { attemptLimit } from './validate';
+import { attemptLimit, jsonObject } from './validate';
 import { sendResultEmails, sendAttendanceEmails, type AttemptRow } from './email';
 import { issueCertificate, sessionCertificates } from './certificates';
 import { checkIn, confirmAttendance } from './attendance';
@@ -15,7 +15,6 @@ export const admin = new Hono<PresenterApp>();
 
 const SESSION_HOURS = 12;
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
-const json = (c: { req: { json<T>(): Promise<T> } }) => c.req.json<Record<string, unknown>>().catch(() => ({}) as Record<string, unknown>);
 // Verified against when the presenter name is unknown, so a miss costs the same time as a wrong password.
 const dummy = hashPassword('dummy');
 
@@ -31,7 +30,7 @@ const toAdminSession = (s: SessionRow): AdminSession => ({
 admin.post('/login', async c => {
   const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
   if (!(await c.env.PMES_RL.limit({ key: `login:${ip}` })).success) return c.json({ error: 'rate-limited' }, 429);
-  const raw = await json(c);
+  const raw = await jsonObject(c);
   const username = str(raw.username);
   const password = typeof raw.password === 'string' ? raw.password : '';
   if (!username || !password) return c.json({ error: 'missing-fields' }, 400);
@@ -54,7 +53,7 @@ admin.get('/sessions', async c => {
 const ONLINE_VENUE = 'isatucmpc.coop (online)';
 
 admin.post('/sessions', async c => {
-  const raw = await json(c);
+  const raw = await jsonObject(c);
   // Standing online session for one Manila month (PMES_SELF_PACED on): session_date = YYYY-MM.
   if (selfPaced(c.env) && raw.kind === 'month') {
     const month = str(raw.month);
@@ -96,7 +95,7 @@ admin.post('/sessions/:id/close', async c => {
 admin.post('/sessions/:id/override', async c => {
   const s = await loadSession(c.env.PMES_DB, c.req.param('id'));
   if (!s) return c.json({ error: 'not-found' }, 404);
-  const raw = await json(c);
+  const raw = await jsonObject(c);
   const idType = str(raw.idType);
   const idNumber = str(raw.idNumber).toUpperCase();
   if (!idType || !idNumber) return c.json({ error: 'missing-fields' }, 400);
@@ -119,7 +118,7 @@ admin.post('/sessions/:id/resend-email', async c => {
       `SELECT a.*, s.session_date, s.code, s.presenter_name FROM pmes_attempts a JOIN pmes_sessions s ON s.id = a.session_id
        WHERE a.id = ? AND a.session_id = ? AND (a.score IS NOT NULL OR a.passed = 1)`,
     )
-    .bind(str((await json(c)).attemptId), s.id)
+    .bind(str((await jsonObject(c)).attemptId), s.id)
     .first<AttemptRow>();
   if (!attempt) return c.json({ error: 'unknown-attempt' }, 404);
   if (attempt.score === null) {
@@ -164,7 +163,7 @@ admin.post('/sessions/:id/confirm', async c => {
   const s = await loadSession(c.env.PMES_DB, c.req.param('id'));
   if (!s) return c.json({ error: 'not-found' }, 404);
   if (s.mode !== 'attendance') return c.json({ error: 'not-attendance-session' }, 409);
-  const raw = await json(c);
+  const raw = await jsonObject(c);
   const ids = Array.isArray(raw.attemptIds) ? raw.attemptIds.filter((v): v is string => typeof v === 'string').slice(0, 200) : [];
   if (!ids.length) return c.json({ error: 'missing-fields' }, 400);
   return c.json({ issued: await confirmAttendance(c.env, s, ids, new Date().toISOString()) });
@@ -176,7 +175,7 @@ admin.post('/sessions/:id/walk-in', async c => {
   const s = await loadSession(c.env.PMES_DB, c.req.param('id'));
   if (!s) return c.json({ error: 'not-found' }, 404);
   if (s.mode !== 'attendance' || s.status !== 'open') return c.json({ error: 'not-attendance-session' }, 409);
-  const raw = await json(c);
+  const raw = await jsonObject(c);
   const record = parseApplicationRecord(raw.applicant);
   if (!record) return c.json({ error: 'invalid-applicant' }, 400);
   const fullName = [record.firstName, record.middleName, record.lastName, record.extension].filter(Boolean).join(' ');

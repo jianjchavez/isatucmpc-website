@@ -1,5 +1,10 @@
 // Field validation and the per-identity attempt limit (spec §3.2 step 2, §5).
 
+export async function jsonObject(c: { req: { json<T>(): Promise<T> } }): Promise<Record<string, unknown>> {
+  const raw = await c.req.json<unknown>().catch(() => ({}));
+  return raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+}
+
 export const isPhMobile = (s: string): boolean => /^09\d{9}$/.test(s);
 export const isEmail = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 

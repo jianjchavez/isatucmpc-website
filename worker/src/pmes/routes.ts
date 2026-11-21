@@ -5,7 +5,7 @@ import { selfPaced, type PmesEnv } from './env';
 import { loadBank } from './bank';
 import { drawQuiz, presentDraw } from './draw';
 import { findOpenSession, findOnlineSession, isMonthSession } from './sessions';
-import { isEmail, attemptLimit } from './validate';
+import { isEmail, attemptLimit, jsonObject } from './validate';
 import { verifyTurnstile } from '../turnstile';
 import { submit, currentState } from './submit';
 import { admin } from './admin';
@@ -39,7 +39,7 @@ const hexId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => 
 type StartBody = { code: string; idType: string; idNumber: string; fullName: string; mobile: string; email: string; consent: unknown; turnstile: string };
 
 pmes.post('/start', async c => {
-  const raw: Record<string, unknown> = await c.req.json<Record<string, unknown>>().catch(() => ({}));
+  const raw = await jsonObject(c);
   const b: StartBody = {
     code: str(raw.code).toUpperCase(),
     idType: str(raw.idType),

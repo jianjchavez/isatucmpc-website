@@ -85,14 +85,40 @@ describe('PMES input boundary', () => {
     expect(await snapshot()).toEqual(before);
     expect(outbound).not.toHaveBeenCalled();
   });
-  // REAL BUG: JSON null dereferences raw.code and returns 500 instead of a validation 400 (worker/src/pmes/routes.ts:44).
-  it.skip('refuses a JSON null start body as a client error', async () => {
+  // Regression: JSON null must return a validation 400 instead of dereferencing raw.code.
+  it('refuses a JSON null start body as a client error', async () => {
     const before = await snapshot();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const response = await post('/start', null);
     expect(await snapshot()).toEqual(before);
     expect(outbound).not.toHaveBeenCalled();
     expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'missing-fields' });
+  });
+  it.each([0, 'test', true, [], [{}]].map(body => ({ body })))('refuses a non-object start body %# without side effects', async ({ body }) => {
+    const before = await snapshot();
+    const response = await post('/start', body);
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'missing-fields' });
+    expect(await snapshot()).toEqual(before);
+    expect(outbound).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['/admin/login', 400, 'missing-fields'],
+    ['/admin/sessions', 400, 'missing-fields'],
+    ['override', 400, 'missing-fields'],
+    ['resend-email', 404, 'unknown-attempt'],
+    ['confirm', 400, 'missing-fields'],
+    ['walk-in', 400, 'invalid-applicant'],
+  ] as const)('treats non-object bodies as empty input for %s without side effects', async (path, status, error) => {
+    const before = await snapshot();
+    for (const body of [{}, null, 0, 'test', true, [], [{}]]) {
+      const response = await post(path.startsWith('/') ? path : adminPath(path), body, token);
+      expect(response.status).toBe(status);
+      expect(await response.json()).toEqual({ error });
+      expect(await snapshot()).toEqual(before);
+      expect(outbound).not.toHaveBeenCalled();
+    }
   });
 });
 
