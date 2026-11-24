@@ -153,7 +153,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       </div>
       <div>
         <label for="mf-haddr" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Permanent home address</label>
-        <input id="mf-haddr" data-field="homeAddress" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <input id="mf-haddr" data-field="homeAddress" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm read-only:bg-brand-bg" />
+        <label class="flex items-center gap-2 text-xs text-slate mt-1"><input id="mf-sameaddr" type="checkbox" /> Same as present home address</label>
       </div>
     </div>
     <div class="grid md:grid-cols-2 gap-3">
@@ -287,6 +288,12 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
   <fieldset class="space-y-3">
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">8. Beneficiaries (at least 1, up to 2)</legend>
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      <span class="text-slate">Copy from Family information:</span>
+      <button type="button" id="mf-ben-spouse" class="border-2 border-navy text-navy rounded-md px-3 py-1 font-semibold disabled:opacity-40 disabled:cursor-not-allowed" disabled>+ Spouse</button>
+      <button type="button" id="mf-ben-parent" class="border-2 border-navy text-navy rounded-md px-3 py-1 font-semibold disabled:opacity-40 disabled:cursor-not-allowed" disabled>+ Parent</button>
+      <span id="mf-ben-note" class="text-slate" aria-live="polite"></span>
+    </div>
     {[1, 2].map(i => (
       <div class="grid grid-cols-2 md:grid-cols-[2fr_1.2fr_1.5fr_0.7fr] gap-2 items-end">
         <div>
@@ -405,6 +412,53 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       // (PDF places the org name on its own labelled line; the "relationship" branch needs a specifier too).
       assocOrgRow?.classList.toggle('hidden', !q || q === 'organization');
     }));
+
+    // ---- "Same as present home address" keeps the permanent address in step with the present one ----
+    const presentAddr = document.getElementById('mf-paddr') as HTMLInputElement | null;
+    const homeAddr = document.getElementById('mf-haddr') as HTMLInputElement | null;
+    const sameAddr = document.getElementById('mf-sameaddr') as HTMLInputElement | null;
+    function syncAddr() {
+      if (!homeAddr || !sameAddr) return;
+      homeAddr.readOnly = sameAddr.checked;
+      if (sameAddr.checked) homeAddr.value = presentAddr?.value ?? '';
+    }
+    sameAddr?.addEventListener('change', syncAddr);
+    presentAddr?.addEventListener('input', syncAddr);
+    form.addEventListener('reset', () => { if (homeAddr) homeAddr.readOnly = false; });
+
+    // ---- Beneficiaries: copy the spouse or parent from Family information into the first empty row ----
+    const field = (f: string) => form!.querySelector(`[data-field="${f}"]`) as HTMLInputElement | null;
+    const benNote = document.getElementById('mf-ben-note');
+    const copyButtons = [
+      { btn: document.getElementById('mf-ben-spouse') as HTMLButtonElement | null, name: 'spouseName', dob: 'spouseDob', rel: 'Spouse' },
+      { btn: document.getElementById('mf-ben-parent') as HTMLButtonElement | null, name: 'parentName', dob: 'parentDob', rel: 'Parent' },
+    ];
+    function syncCopyButtons() {
+      for (const c of copyButtons) if (c.btn) c.btn.disabled = !field(c.name)?.value.trim();
+    }
+    for (const c of copyButtons) {
+      field(c.name)?.addEventListener('input', syncCopyButtons);
+      c.btn?.addEventListener('click', () => {
+        const name = field(c.name)?.value.trim() ?? '';
+        const dob = field(c.dob)?.value ?? '';
+        if (!name) return;
+        const rows = [1, 2];
+        if (rows.some(i => field(`ben${i}Name`)?.value.trim().toLowerCase() === name.toLowerCase())) {
+          if (benNote) benNote.textContent = `${name} is already listed.`;
+          return;
+        }
+        const row = rows.find(i => !field(`ben${i}Name`)?.value.trim());
+        if (!row) { if (benNote) benNote.textContent = 'Both beneficiary rows are filled. Clear one first.'; return; }
+        field(`ben${row}Name`)!.value = name;
+        field(`ben${row}Dob`)!.value = dob;
+        field(`ben${row}Rel`)!.value = c.rel;
+        const age = dob ? Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000) : NaN;
+        field(`ben${row}Age`)!.value = age >= 0 ? String(age) : '';
+        if (benNote) benNote.textContent = `Added ${name} as beneficiary ${row}.`;
+      });
+    }
+    form.addEventListener('reset', () => setTimeout(syncCopyButtons));
+    syncCopyButtons();
 
     // ---- cooldown lockout ----
     function applyCooldown() {
