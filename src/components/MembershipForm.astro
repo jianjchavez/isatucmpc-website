@@ -43,15 +43,9 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           <option value="">Select campus…</option>
           {CAMPUSES.map(c => <option value={c}>{c}</option>)}
         </select>
-        <div class="grid md:grid-cols-2 gap-3 mt-3">
-          <div>
-            <label for="mf-empno" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">ISAT U employee no.</label>
-            <input id="mf-empno" data-field="employeeNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-          </div>
-          <div>
-            <label for="mf-office" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Office or college</label>
-            <input id="mf-office" data-field="office" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
-          </div>
+        <div class="mt-3 max-w-xs">
+          <label for="mf-office" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Office or college</label>
+          <input id="mf-office" data-field="office" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
         </div>
         <p class="text-xs text-slate mt-2">You will sign an Authority to Deduct from Salary at the office: any shares you subscribe above {PAID_WITH_APPLICATION} and, ages 18 to 55, the Welfare Fund (PHP {formatAmount(WELFARE_MONTHLY)} a month) are deducted from your ISAT U salary.</p>
         <p id="mf-deduction" class="text-sm text-navy font-semibold mt-1" aria-live="polite"></p>
@@ -384,6 +378,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       if (!isReg && isatuChk) {
         isatuChk.checked = false;
         campusRow?.classList.add('hidden');
+        (document.getElementById('mf-campus') as HTMLSelectElement | null)?.removeAttribute('required');
       }
     }
     form.querySelectorAll('input[name="mf-membertype"]').forEach(el => el.addEventListener('change', syncType));
@@ -398,7 +393,12 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       if (spouse) spouse.required = false;
       document.getElementById('mf-spname-star')?.classList.add('hidden');
     });
-    isatuChk?.addEventListener('change', () => campusRow?.classList.toggle('hidden', !isatuChk.checked));
+    // Campus is required once the applicant says they are an ISAT U employee (hidden fields are skipped by the check below).
+    const campusSel = document.getElementById('mf-campus') as HTMLSelectElement | null;
+    isatuChk?.addEventListener('change', () => {
+      campusRow?.classList.toggle('hidden', !isatuChk.checked);
+      if (campusSel) campusSel.required = isatuChk.checked;
+    });
     form.querySelectorAll('input[name="mf-assocqual"]').forEach(el => el.addEventListener('change', () => {
       const q = (form!.querySelector('input[name="mf-assocqual"]:checked') as HTMLInputElement | null)?.value;
       // Show the "specify" textbox unless the user is in the SEC-registered-organization branch
@@ -558,6 +558,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       try {
         const formData = Object.fromEntries(new FormData(form!).entries());
         formData['cf-turnstile-response'] = formData['cf-turnstile-response'] || val('[name="cf-turnstile-response"]');
+        if (!formData['cf-turnstile-response']) throw new Error('no-turnstile');
         const response = await fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -570,7 +571,12 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         applicationNo = json.applicationNo;
         localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       } catch (err) {
-        showResult((err as Error).message === 'invalid-mobile'
+        const code = (err as Error).message;
+        showResult(code === 'no-turnstile' || code === 'turnstile-failed' || code === 'missing-fields'
+          ? 'The "Verify you are human" check above did not load or did not finish. Please wait for its checkmark, or refresh the page. If it still does not show, try another browser or turn off ad or script blockers for this site.'
+          : code === 'rate-limited'
+            ? 'Too many tries from this connection. Please wait a minute and submit again.'
+          : (err as Error).message === 'invalid-mobile'
           ? 'Please enter your mobile number as 09XX XXX XXXX. We use it to confirm your identity at the PMES.'
           : (err as Error).message === 'invalid-applicant'
             ? 'Please check your entries and try again. Some details could not be read.'
