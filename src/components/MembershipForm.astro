@@ -355,6 +355,26 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const resultEl = document.getElementById('mf-result');
     let submitting = false;
 
+    // Every submit failure says what went wrong and what to do next. The code is shown so the office can tell which one it was.
+    const CONTACT = 'call (033) 330-2586 or email isatucmpc1964@gmail.com';
+    const VERIFY = 'The "Verify you are human" check above did not load or did not finish. Wait for its green checkmark, then submit again. If the box stays grey or empty, refresh the page, turn off ad or script blockers for this site, or use another browser (Chrome, Edge or Safari).';
+    const SUBMIT_ERRORS: Record<string, string> = {
+      'no-turnstile': VERIFY,
+      'turnstile-failed': VERIFY,
+      'missing-fields': VERIFY,
+      'network': 'We could not reach our server. Check your internet connection (open any other website to test), then submit again. Your answers are still on this page.',
+      'rate-limited': 'Too many tries from this connection. Wait one minute, then submit again.',
+      'invalid-mobile': 'Your mobile number could not be read. Enter it as 11 digits starting with 09 (for example 0917 123 4567), then submit again.',
+      'invalid-email': 'Your email address could not be read. Check it (for example juan@gmail.com), then submit again.',
+      'invalid-subscription': 'Check the share subscription: at least 50 shares and at least 1 year to pay, both whole numbers. Then submit again.',
+      'invalid-applicant': 'Some details could not be read. Check that your birth date shows you are 18 or older, and that your name, mobile number and email are filled in, then submit again.',
+      'invalid-body': 'Some details could not be read. Refresh the page, fill in the form again, and submit.',
+      'forbidden': 'This form only works on isatucmpc.coop. Open isatucmpc.coop/membership in your browser and fill it in there.',
+      'storage-failed': `Our server could not save your application right now. Wait a few minutes and submit again. If it keeps happening, ${CONTACT}.`,
+      'send-failed': `Your application may have been saved, but our email did not go out. Please do not submit again yet: ${CONTACT} and we will check it for you.`,
+      unknown: `Something went wrong on our side. Wait a few minutes and submit again. If it keeps happening, ${CONTACT}.`,
+    };
+
     function showResult(text: string, success: boolean) {
       if (!resultEl) return;
       resultEl.style.background = success ? '#23CD63' : '#FF3F00';
@@ -563,8 +583,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(formData),
-        });
-        const json = await response.json();
+        }).catch(() => { throw new Error('network'); });
+        const json = await response.json().catch(() => ({ error: `http-${response.status}` }));
         if (!response.ok || !json.ok || typeof json.applicationNo !== 'string' || !/^APP-\d{4}-\d{4,}$/.test(json.applicationNo)) {
           throw new Error(json.error || 'submit-failed');
         }
@@ -572,15 +592,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         localStorage.setItem(COOLDOWN_KEY, String(Date.now()));
       } catch (err) {
         const code = (err as Error).message;
-        showResult(code === 'no-turnstile' || code === 'turnstile-failed' || code === 'missing-fields'
-          ? 'The "Verify you are human" check above did not load or did not finish. Please wait for its checkmark, or refresh the page. If it still does not show, try another browser or turn off ad or script blockers for this site.'
-          : code === 'rate-limited'
-            ? 'Too many tries from this connection. Please wait a minute and submit again.'
-          : (err as Error).message === 'invalid-mobile'
-          ? 'Please enter your mobile number as 09XX XXX XXXX. We use it to confirm your identity at the PMES.'
-          : (err as Error).message === 'invalid-applicant'
-            ? 'Please check your entries and try again. Some details could not be read.'
-            : "We couldn't send your message. Please try again or email isatucmpc1964@gmail.com.", false);
+        showResult(`${SUBMIT_ERRORS[code] ?? SUBMIT_ERRORS.unknown} (Error code: ${code})`, false);
+        resultEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
         submitting = false;
         if (submitBtn) {
