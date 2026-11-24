@@ -15,7 +15,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       {PMES_SELF_PACED && <PmesOnline />}
 
       <!-- 1. Identity + session code -->
-      <form id="pmes-form" class="bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-5" novalidate>
+      <form id="pmes-form" class="scroll-mt-28 bg-white border-t-[3px] border-orange rounded-b-lg p-6 md:p-8 space-y-5" novalidate>
         <div>
           <Eyebrow>PMES</Eyebrow>
           <h1 class="mt-2 text-3xl">Certification Quiz</h1>
@@ -60,7 +60,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       </form>
 
       <!-- 2. Quiz -->
-      <div id="pmes-quiz" class="hidden bg-white border-t-[3px] border-navy rounded-b-lg p-6 md:p-8 space-y-5">
+      <div id="pmes-quiz" class="hidden scroll-mt-28 bg-white border-t-[3px] border-navy rounded-b-lg p-6 md:p-8 space-y-5">
         <p id="pq-name" class="font-display font-semibold text-navy"></p>
         <div class="flex items-center justify-between text-sm">
           <div id="pq-progress" class="font-display font-bold text-navy" aria-live="polite"></div>
@@ -81,7 +81,7 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
       </div>
 
       <!-- 3. Result -->
-      <div id="pmes-result" class="hidden bg-white border-t-[3px] rounded-b-lg p-6 md:p-8 space-y-4" role="status" aria-live="polite">
+      <div id="pmes-result" class="hidden scroll-mt-28 bg-white border-t-[3px] rounded-b-lg p-6 md:p-8 space-y-4" role="status" aria-live="polite">
         <Eyebrow>Result</Eyebrow>
         <h2 id="pr-headline" class="text-2xl"></h2>
         <p id="pr-detail" class="text-sm"></p>
@@ -155,7 +155,9 @@ const label = 'block text-xs font-display font-bold text-navy uppercase tracking
 
   function show(screen: HTMLElement) {
     for (const el of [form, quiz, result]) el.classList.toggle('hidden', el !== screen);
-    window.scrollTo({ top: 0 });
+    // Bring the card itself to the top of the view (below the sticky header), not the page top:
+    // on desktop the banner pushes the quiz down, so scrolling to 0 hid each new question.
+    screen.scrollIntoView({ block: 'start' });
   }
   function setError(el: HTMLElement, msg: string | null) {
     el.textContent = msg ?? '';
