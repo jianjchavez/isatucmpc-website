@@ -42,7 +42,7 @@ LETTERHEAD = (
     '<img class="lh-seal" src="seal.png" alt="ISATUCMPC seal"><div style="flex:1">'
     '<p class="lh-name">Iloilo Science and Technology University and<br>Community Multi-Purpose Cooperative (ISATUCMPC)</p>'
     '<div class="lh-meta"><div>Burgos St., La Paz, Iloilo City<br>Phone: 330-2586<br>Registered with CDA Iloilo Extension Office</div>'
-    '<div>CDA Reg. No.: 9520-0600-8210 &middot; CIN: 106060939<br>TIN: 005-440-349<br>isatucmpc1964@gmail.com &middot; www.isatucmpc.coop</div></div>'
+    '<div>CDA Reg. No.: 9520-06008210 &middot; CIN: 106060939<br>TIN: 005-440-349<br>isatucmpc1964@gmail.com &middot; www.isatucmpc.coop</div></div>'
     '</div>SIDE</div>' + BAR.format(cls='lh-rule') + '</header>'
 )
 
