@@ -178,12 +178,18 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         <input id="mf-vid" data-field="validIdNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       {!staff && <div class="md:col-span-2">
-        <label for="mf-photo" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your photo (optional)</label>
+        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your photo (optional)</span>
+        <ul class="text-xs text-slate mb-2 list-disc pl-4 space-y-0.5">
+          <li>If possible, stand against a <strong>plain, light-colored background</strong>, like a white wall.</li>
+          <li>Take a <strong>new photo now</strong> with your phone camera: face the camera, no cap or sunglasses.</li>
+          <li>It goes in the 2 × 2 ID picture box of your printed form. Your photo stays on your phone and is not uploaded.</li>
+        </ul>
         <div class="flex items-center gap-3">
-          <img id="mf-photo-preview" alt="Your photo" class="hidden w-16 h-16 object-cover rounded border-2 border-rule" />
-          <input id="mf-photo" type="file" accept="image/*" capture="user" class="text-sm" />
+          <img id="mf-photo-preview" alt="Your photo" class="hidden w-20 h-20 object-cover rounded border-2 border-rule" />
+          <button type="button" id="mf-photo-take" class="border-2 border-navy text-navy font-display font-bold text-sm rounded-md px-3 py-2">Take photo</button>
+          <button type="button" id="mf-photo-remove" class="hidden text-sm underline text-slate">Remove</button>
+          <input id="mf-photo" type="file" accept="image/*" capture="user" class="hidden" aria-label="Your photo" />
         </div>
-        <p class="text-xs text-slate mt-1">Face the camera with a plain background. It goes in the 2 × 2 ID picture box of your printed form. Your photo stays on your phone and is not uploaded.</p>
       </div>}
     </div>
   </fieldset>
@@ -368,13 +374,20 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const photoInput = document.getElementById('mf-photo') as HTMLInputElement | null;
     const photoPreview = document.getElementById('mf-photo-preview') as HTMLImageElement | null;
     let photoJpeg: Uint8Array | undefined;
+    const photoTake = document.getElementById('mf-photo-take');
+    const photoRemove = document.getElementById('mf-photo-remove');
     const clearPhoto = () => {
       photoJpeg = undefined;
+      if (photoInput) photoInput.value = '';
       if (photoPreview) { photoPreview.removeAttribute('src'); photoPreview.classList.add('hidden'); }
+      if (photoTake) photoTake.textContent = 'Take photo';
+      photoRemove?.classList.add('hidden');
     };
+    photoTake?.addEventListener('click', () => photoInput?.click());
+    photoRemove?.addEventListener('click', clearPhoto);
     photoInput?.addEventListener('change', async () => {
       const file = photoInput.files?.[0];
-      if (!file) return clearPhoto();
+      if (!file) return; // retake cancelled: keep the current photo
       try {
         const img = await createImageBitmap(file, { imageOrientation: 'from-image' });
         const W = 288, H = 288; // PHOTO_BOX 36 × 36 pt at 8 px/pt
@@ -385,9 +398,10 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         if (!blob) throw new Error('encode');
         photoJpeg = new Uint8Array(await blob.arrayBuffer());
         if (photoPreview) { photoPreview.src = canvas.toDataURL('image/jpeg', 0.85); photoPreview.classList.remove('hidden'); }
+        if (photoTake) photoTake.textContent = 'Retake photo';
+        photoRemove?.classList.remove('hidden');
       } catch {
         clearPhoto();
-        photoInput.value = '';
         alert('That photo could not be read. Please try another photo, or leave it blank and attach a printed 2 × 2 photo at the office.');
       }
     });
