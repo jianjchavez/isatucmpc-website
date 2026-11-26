@@ -4,7 +4,7 @@
 > site's architecture. Whenever you change the stack, hosting, build/deploy,
 > site structure, components/data, integrations, or security configuration,
 > **update the relevant section here in the same change** (see `CLAUDE.md`).
-> Last verified against the codebase: 2026-11-16.
+> Last verified against the codebase: 2026-11-27.
 
 ---
 
@@ -108,7 +108,7 @@ The five `/pmes/` pages are static shells; all data comes from the Worker (`/api
 - **Data (`src/data/`, typed TS):** `services` (10), `benefits`, `board`, `faq`, `goals` (9), `principles` (7), `stats`, `timeline`. `stats` and `timeline` auto-compute from the 1964 founding year.
 - **PMES question bank (`src/data/pmes-questions.json`):** 10 sections, 63 questions, each with four options, the correct index, the deck slide and a `status` (`draft` → `approved` by the committee). The Worker bundles this same file (`worker/src/pmes/bank.ts`); `tests/pmes-questions.test.ts` enforces ≥4 questions per section. Correct answers never ship to the browser: the site build does not render them, and the Worker strips them before returning a draw.
 - **Content collection:** `src/content/news/` (MDX articles).
-- **Lib (`src/lib/`):** `brand.ts` (color/font tokens), `pdf-fill.ts` (PDF coordinate maps for Regular + Associate forms; appends the filled Subscription Agreement from `subscription-fields.json`), `subscription.ts` (PHP 50 par, 500-share minimum, amounts in words), `seo.ts` (schema.org Organization + LocalBusiness builders), `letterhead.ts` (organization identity strings copied from the `isatucmpc-letterhead` skill — two-line uppercase name, address, CDA/CIN/TIN, signature captions; never retype the name).
+- **Lib (`src/lib/`):** `brand.ts` (color/font tokens), `pdf-fill.ts` (PDF coordinate maps for Regular + Associate forms; places the optional applicant photo, center-cropped in the browser and never uploaded, in the 2 × 2 ID picture box (`PHOTO_BOX`); appends the filled Subscription Agreement from `subscription-fields.json`), `subscription.ts` (PHP 50 par, 500-share minimum, amounts in words), `seo.ts` (schema.org Organization + LocalBusiness builders), `letterhead.ts` (organization identity strings copied from the `isatucmpc-letterhead` skill — two-line uppercase name, address, CDA/CIN/TIN, signature captions; never retype the name).
 
 ## 8. Design system
 

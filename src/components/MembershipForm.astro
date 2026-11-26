@@ -177,6 +177,14 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         <label for="mf-vid" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Valid ID number (presented)</label>
         <input id="mf-vid" data-field="validIdNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
+      {!staff && <div class="md:col-span-2">
+        <label for="mf-photo" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your photo (optional)</label>
+        <div class="flex items-center gap-3">
+          <img id="mf-photo-preview" alt="Your photo" class="hidden w-16 h-16 object-cover rounded border-2 border-rule" />
+          <input id="mf-photo" type="file" accept="image/*" capture="user" class="text-sm" />
+        </div>
+        <p class="text-xs text-slate mt-1">Face the camera with a plain background. It goes in the 2 × 2 ID picture box of your printed form. Your photo stays on your phone and is not uploaded.</p>
+      </div>}
     </div>
   </fieldset>
 
@@ -355,6 +363,34 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const cooldownEl = document.getElementById('mf-cooldown');
     const associate = document.getElementById('mf-associate-block');
     const regular = document.getElementById('mf-regular-block');
+
+    // Applicant photo: center-crop to the PDF photo box's shape, kept in memory only.
+    const photoInput = document.getElementById('mf-photo') as HTMLInputElement | null;
+    const photoPreview = document.getElementById('mf-photo-preview') as HTMLImageElement | null;
+    let photoJpeg: Uint8Array | undefined;
+    const clearPhoto = () => {
+      photoJpeg = undefined;
+      if (photoPreview) { photoPreview.removeAttribute('src'); photoPreview.classList.add('hidden'); }
+    };
+    photoInput?.addEventListener('change', async () => {
+      const file = photoInput.files?.[0];
+      if (!file) return clearPhoto();
+      try {
+        const img = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        const W = 288, H = 288; // PHOTO_BOX 36 × 36 pt at 8 px/pt
+        const scale = Math.max(W / img.width, H / img.height);
+        const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
+        canvas.getContext('2d')!.drawImage(img, (W - img.width * scale) / 2, (H - img.height * scale) / 2, img.width * scale, img.height * scale);
+        const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.85));
+        if (!blob) throw new Error('encode');
+        photoJpeg = new Uint8Array(await blob.arrayBuffer());
+        if (photoPreview) { photoPreview.src = canvas.toDataURL('image/jpeg', 0.85); photoPreview.classList.remove('hidden'); }
+      } catch {
+        clearPhoto();
+        photoInput.value = '';
+        alert('That photo could not be read. Please try another photo, or leave it blank and attach a printed 2 × 2 photo at the office.');
+      }
+    });
     const isatuChk = document.getElementById('mf-isatu') as HTMLInputElement | null;
     const campusRow = document.getElementById('mf-campus-row');
     const recommender = document.getElementById('mf-recname') as HTMLInputElement | null;
@@ -706,6 +742,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         sharesSubscribed: Number(val('#mf-shares')),
         yearsToPay: Number(val('#mf-years')),
         dateAccomplished: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD in the applicant's time zone
+        photoJpeg,
       };
 
       try {
@@ -724,6 +761,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           resultEl.append(link);
         }
         form!.reset();
+        clearPhoto();
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } catch (err) {
         console.error('PDF fill failed', err);
