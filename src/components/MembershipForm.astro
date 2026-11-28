@@ -178,7 +178,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         <input id="mf-vid" data-field="validIdNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       {!staff && <div class="md:col-span-2">
-        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your photo (optional)</span>
+        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your photo <span class="text-orange" aria-hidden="true">*</span></span>
         <ul class="text-xs text-slate mb-2 list-disc pl-4 space-y-0.5">
           <li>If possible, stand against a <strong>plain, light-colored background</strong>, like a white wall.</li>
           <li>Take a <strong>new photo now</strong> with your phone camera: face the camera, no cap or sunglasses.</li>
@@ -402,7 +402,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         photoRemove?.classList.remove('hidden');
       } catch {
         clearPhoto();
-        alert('That photo could not be read. Please try another photo, or leave it blank and attach a printed 2 × 2 photo at the office.');
+        alert('That photo could not be read. Please take the photo again.');
       }
     });
     const isatuChk = document.getElementById('mf-isatu') as HTMLInputElement | null;
@@ -597,7 +597,10 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           ? { el: yearsInput, text: `Please choose 1 to ${MAX_YEARS} years to pay your subscription (whole number).` }
           : !isAdultApplicant(val('[data-field="dob"]'))
             ? { el: form!.querySelector('[data-field="dob"]') as HTMLInputElement | null, text: 'Applicants must be at least 18 years old.' }
-            : null;
+            // Owner 2026-11-28: the photo is required on the public form (it fills the 2 × 2 box).
+            : !form!.dataset.staff && !photoJpeg
+              ? { el: photoTake as HTMLInputElement | null, text: 'Please take your photo (Take photo button, under Valid ID). It goes in the 2 × 2 ID picture box.' }
+              : null;
       if (!problem) return;
       e.preventDefault();
       e.stopImmediatePropagation();
