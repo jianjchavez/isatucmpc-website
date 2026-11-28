@@ -1,6 +1,6 @@
 ---
 import Button from '~/components/Button.astro';
-import { MIN_SHARES, PAR_VALUE, PAID_WITH_APPLICATION, MEMBERSHIP_FEE, WELFARE_MONTHLY, formatAmount } from '~/lib/subscription';
+import { MIN_SHARES, PAR_VALUE, PAID_WITH_APPLICATION, MEMBERSHIP_FEE, WELFARE_MONTHLY, MAX_YEARS, DEFAULT_YEARS, formatAmount } from '~/lib/subscription';
 import { PMES_SELF_PACED } from '~/data/pmes-online';
 import { VALID_ID_TYPES, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
@@ -177,6 +177,20 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         <label for="mf-vid" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Valid ID number (presented)</label>
         <input id="mf-vid" data-field="validIdNumber" type="text" maxlength="200" class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
+      {!staff && <div class="md:col-span-2">
+        <span class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Your photo <span class="text-orange" aria-hidden="true">*</span></span>
+        <ul class="text-xs text-slate mb-2 list-disc pl-4 space-y-0.5">
+          <li>If possible, stand against a <strong>plain, light-colored background</strong>, like a white wall.</li>
+          <li>Take a <strong>new photo now</strong> with your phone camera: face the camera, no cap or sunglasses.</li>
+          <li>It goes in the 2 × 2 ID picture box of your printed form. Your photo stays on your phone and is not uploaded.</li>
+        </ul>
+        <div class="flex items-center gap-3">
+          <img id="mf-photo-preview" alt="Your photo" class="hidden w-20 h-20 object-cover rounded border-2 border-rule" />
+          <button type="button" id="mf-photo-take" class="border-2 border-navy text-navy font-display font-bold text-sm rounded-md px-3 py-2">Take photo</button>
+          <button type="button" id="mf-photo-remove" class="hidden text-sm underline text-slate">Remove</button>
+          <input id="mf-photo" type="file" accept="image/*" capture="user" class="hidden" aria-label="Your photo" />
+        </div>
+      </div>}
     </div>
   </fieldset>
 
@@ -229,15 +243,15 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
   <fieldset class="space-y-3">
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">6. Share subscription <span class="text-orange" aria-hidden="true">*</span></legend>
-    <p class="text-xs text-slate">Shares are PHP {PAR_VALUE}.00 each. Subscribe at least {MIN_SHARES} shares (PHP {formatAmount(MIN_SHARES * PAR_VALUE)}). At your office visit you pay the PHP {formatAmount(MEMBERSHIP_FEE)} membership fee and at least {PAID_WITH_APPLICATION} shares (PHP {formatAmount(PAID_WITH_APPLICATION * PAR_VALUE)}); shares above that are paid over the years you choose.</p>
+    <p class="text-xs text-slate">Shares are PHP {PAR_VALUE}.00 each. Subscribe at least {MIN_SHARES} shares (PHP {formatAmount(MIN_SHARES * PAR_VALUE)}). At your office visit you pay the PHP {formatAmount(MEMBERSHIP_FEE)} membership fee and at least {PAID_WITH_APPLICATION} shares (PHP {formatAmount(PAID_WITH_APPLICATION * PAR_VALUE)}); shares above that are paid over up to {MAX_YEARS} years ({DEFAULT_YEARS} if you leave it blank).</p>
     <div class="grid md:grid-cols-3 gap-3 items-end">
       <div>
         <label for="mf-shares" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Number of shares <span class="text-orange" aria-hidden="true">*</span></label>
         <input id="mf-shares" name="shares" data-field="sharesSubscribed" type="number" min={MIN_SHARES} step="1" value={MIN_SHARES} required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
-        <label for="mf-years" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Paid over (years) <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-years" name="years" data-field="yearsToPay" type="number" min="1" step="1" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <label for="mf-years" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Paid over (years, up to {MAX_YEARS})</label>
+        <input id="mf-years" name="years" data-field="yearsToPay" type="number" min="1" max={MAX_YEARS} step="1" value={DEFAULT_YEARS} placeholder={String(DEFAULT_YEARS)} class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <p id="mf-amount" class="text-sm text-navy font-semibold pb-2" aria-live="polite"></p>
     </div>
@@ -341,7 +355,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
 <script>
   import { fillApplicationPdf, triggerPdfDownload, type PdfFieldData } from '~/lib/pdf-fill';
-  import { MIN_SHARES, PAR_VALUE, formatAmount } from '~/lib/subscription';
+  import { MIN_SHARES, PAR_VALUE, MAX_YEARS, DEFAULT_YEARS, formatAmount } from '~/lib/subscription';
   import { buildApplicantRecord, buildApplicantMessage, deductionLine, isAdultApplicant, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
   const COOLDOWN_KEY = 'mf-last-submit-ts';
@@ -355,6 +369,42 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const cooldownEl = document.getElementById('mf-cooldown');
     const associate = document.getElementById('mf-associate-block');
     const regular = document.getElementById('mf-regular-block');
+
+    // Applicant photo: center-crop to the PDF photo box's shape, kept in memory only.
+    const photoInput = document.getElementById('mf-photo') as HTMLInputElement | null;
+    const photoPreview = document.getElementById('mf-photo-preview') as HTMLImageElement | null;
+    let photoJpeg: Uint8Array | undefined;
+    const photoTake = document.getElementById('mf-photo-take');
+    const photoRemove = document.getElementById('mf-photo-remove');
+    const clearPhoto = () => {
+      photoJpeg = undefined;
+      if (photoInput) photoInput.value = '';
+      if (photoPreview) { photoPreview.removeAttribute('src'); photoPreview.classList.add('hidden'); }
+      if (photoTake) photoTake.textContent = 'Take photo';
+      photoRemove?.classList.add('hidden');
+    };
+    photoTake?.addEventListener('click', () => photoInput?.click());
+    photoRemove?.addEventListener('click', clearPhoto);
+    photoInput?.addEventListener('change', async () => {
+      const file = photoInput.files?.[0];
+      if (!file) return; // retake cancelled: keep the current photo
+      try {
+        const img = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        const W = 288, H = 288; // PHOTO_BOX 36 × 36 pt at 8 px/pt
+        const scale = Math.max(W / img.width, H / img.height);
+        const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
+        canvas.getContext('2d')!.drawImage(img, (W - img.width * scale) / 2, (H - img.height * scale) / 2, img.width * scale, img.height * scale);
+        const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, 'image/jpeg', 0.85));
+        if (!blob) throw new Error('encode');
+        photoJpeg = new Uint8Array(await blob.arrayBuffer());
+        if (photoPreview) { photoPreview.src = canvas.toDataURL('image/jpeg', 0.85); photoPreview.classList.remove('hidden'); }
+        if (photoTake) photoTake.textContent = 'Retake photo';
+        photoRemove?.classList.remove('hidden');
+      } catch {
+        clearPhoto();
+        alert('That photo could not be read. Please take the photo again.');
+      }
+    });
     const isatuChk = document.getElementById('mf-isatu') as HTMLInputElement | null;
     const campusRow = document.getElementById('mf-campus-row');
     const recommender = document.getElementById('mf-recname') as HTMLInputElement | null;
@@ -373,7 +423,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       'rate-limited': 'Too many tries from this connection. Wait one minute, then submit again.',
       'invalid-mobile': 'Your mobile number could not be read. Enter it as 11 digits starting with 09 (for example 0917 123 4567), then submit again.',
       'invalid-email': 'Your email address could not be read. Check it (for example juan@gmail.com), then submit again.',
-      'invalid-subscription': 'Check the share subscription: at least 50 shares and at least 1 year to pay, both whole numbers. Then submit again.',
+      'invalid-subscription': 'Check the share subscription: at least 50 shares and 1 to 3 years to pay, both whole numbers. Then submit again.',
       'invalid-applicant': 'Some details could not be read. Check that your birth date shows you are 18 or older, and that your name, mobile number and email are filled in, then submit again.',
       'invalid-body': 'Some details could not be read. Refresh the page, fill in the form again, and submit.',
       'forbidden': 'This form only works on isatucmpc.coop. Open isatucmpc.coop/membership in your browser and fill it in there.',
@@ -504,6 +554,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const yearsInput = document.getElementById('mf-years') as HTMLInputElement | null;
     const amountEl = document.getElementById('mf-amount');
     const wholeNumber = (el: HTMLInputElement | null) => (/^\d+$/.test(el?.value.trim() ?? '') ? Number(el!.value) : NaN);
+    // A blank years box means the default (owner 2026-11-28).
+    const yearsToPay = () => (yearsInput?.value.trim() ? wholeNumber(yearsInput) : DEFAULT_YEARS);
     function showAmount() {
       const shares = wholeNumber(sharesInput);
       if (amountEl) amountEl.textContent = shares >= MIN_SHARES ? `= PHP ${formatAmount(shares * PAR_VALUE)}` : '';
@@ -516,7 +568,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const dobInput = form.querySelector('[data-field="dob"]') as HTMLInputElement | null;
     function showDeduction() {
       const line = deductionLine({
-        isatuEmployee: !!isatuChk?.checked, shares: wholeNumber(sharesInput), years: wholeNumber(yearsInput), dateOfBirth: dobInput?.value ?? '',
+        isatuEmployee: !!isatuChk?.checked, shares: wholeNumber(sharesInput), years: yearsToPay(), dateOfBirth: dobInput?.value ?? '',
       });
       if (deductionEl) deductionEl.textContent = line ? `Monthly salary deduction: ${line}` : '';
     }
@@ -526,6 +578,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
     // Runs first (capture phase on the form): invalid values stop the submit and PDF.
     form.addEventListener('submit', e => {
+      if (yearsInput && !yearsInput.value.trim()) yearsInput.value = String(DEFAULT_YEARS);
       const shares = wholeNumber(sharesInput);
       const years = wholeNumber(yearsInput);
       // First visible required field left empty (hidden branches such as the associate block are skipped).
@@ -540,11 +593,14 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           : `Please fill in the required field${missingLabel ? `: ${missingLabel}` : ''}.` }
         : !(shares >= MIN_SHARES)
         ? { el: sharesInput, text: `Please subscribe to at least ${MIN_SHARES} shares (whole number).` }
-        : !(years >= 1)
-          ? { el: yearsInput, text: 'Please enter how many years you will pay your subscription (whole number).' }
+        : !(years >= 1 && years <= MAX_YEARS)
+          ? { el: yearsInput, text: `Please choose 1 to ${MAX_YEARS} years to pay your subscription (whole number).` }
           : !isAdultApplicant(val('[data-field="dob"]'))
             ? { el: form!.querySelector('[data-field="dob"]') as HTMLInputElement | null, text: 'Applicants must be at least 18 years old.' }
-            : null;
+            // Owner 2026-11-28: the photo is required on the public form (it fills the 2 × 2 box).
+            : !form!.dataset.staff && !photoJpeg
+              ? { el: photoTake as HTMLInputElement | null, text: 'Please take your photo (Take photo button, under Valid ID). It goes in the 2 × 2 ID picture box.' }
+              : null;
       if (!problem) return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -706,6 +762,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
         sharesSubscribed: Number(val('#mf-shares')),
         yearsToPay: Number(val('#mf-years')),
         dateAccomplished: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD in the applicant's time zone
+        photoJpeg,
       };
 
       try {
@@ -724,6 +781,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           resultEl.append(link);
         }
         form!.reset();
+        clearPhoto();
         (window as unknown as { turnstile?: { reset(el: Element): void } }).turnstile?.reset(form!.querySelector('.cf-turnstile')!);
       } catch (err) {
         console.error('PDF fill failed', err);

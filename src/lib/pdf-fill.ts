@@ -55,7 +55,14 @@ export interface PdfFieldData {
   yearsToPay?: number;
   // Submitted
   dateAccomplished?: string;
+  // Applicant photo, already cropped to PHOTO_BOX's shape (JPEG bytes). Never leaves the browser.
+  photoJpeg?: Uint8Array;
 }
+
+// The "2 × 2 ID PICTURE" box, top-right of page 1 — same spot on both templates.
+// Measured 2026-11-27 from a 288-dpi render: x 520.75–560.75, top 29.25–69.5 (a 40 pt square).
+// Inset 2pt so the photo sits inside the rounded border.
+export const PHOTO_BOX = { x: 522.75, top: 31.25, width: 36, height: 36 };
 
 // Approximate field positions. PDF coords need iterative visual tuning —
 // operator should inspect a test fill and report needed adjustments.
@@ -296,6 +303,12 @@ export async function fillApplicationPdf(
   const page = pdf.getPage(0);
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   drawApplicationNo(page, font, data.applicationNo, 96);
+
+  if (data.photoJpeg) {
+    const photo = await pdf.embedJpg(data.photoJpeg);
+    const { x, top, width, height } = PHOTO_BOX;
+    page.drawImage(photo, { x, y: PAGE_HEIGHT - top - height, width, height });
+  }
 
   const isRegular = variant === 'Regular';
   const coords: Record<string, Coord> = isRegular ? REGULAR_COORDS : ASSOCIATE_COORDS;

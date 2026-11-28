@@ -45,7 +45,7 @@ beforeEach(async () => {
   const application = { ...start, idType: 'application', idNumber: no };
   paths = {
     contact: { path: '/api/submit', body: contact, tokenField: 'cf-turnstile-response' },
-    membership: { path: '/api/submit', body: { ...contact, 'form-source': 'membership', shares: '500', years: '5', applicant: JSON.stringify(record) }, tokenField: 'cf-turnstile-response' },
+    membership: { path: '/api/submit', body: { ...contact, 'form-source': 'membership', shares: '500', years: '3', applicant: JSON.stringify(record) }, tokenField: 'cf-turnstile-response' },
     'member quiz': { path: '/api/pmes/start', body: start, tokenField: 'turnstile' },
     'application quiz': { path: '/api/pmes/start', body: application, tokenField: 'turnstile' },
     'face-to-face check-in': { path: '/api/pmes/start', body: { ...application, code: attendance.code }, tokenField: 'turnstile' },

@@ -10,6 +10,7 @@ import { PAR_VALUE, type Deduction } from './deduction';
 
 // Same rule as src/lib/subscription.ts; the form checks it first, this is the server copy.
 export const MIN_SHARES = 50;
+export const MAX_YEARS = 3; // owner 2026-11-28; same as src/lib/subscription.ts
 // Version of the website Privacy Notice the online consent checkbox refers to.
 export const PRIVACY_NOTICE_VERSION = '2026-11';
 
@@ -53,10 +54,11 @@ export function parseApplicant(raw: unknown): Applicant | null {
   return out.firstName && out.lastName ? out : null;
 }
 
-/** A whole number of shares at or above the minimum, and at least one year to pay. */
+/** A whole number of shares at or above the minimum, and 1 to MAX_YEARS years to pay. */
 export function validSubscription(shares: unknown, years: unknown): boolean {
   const whole = (x: unknown) => (typeof x === 'string' && /^\d{1,9}$/.test(x.trim()) ? Number(x) : NaN);
-  return whole(shares) >= MIN_SHARES && whole(years) >= 1;
+  const y = whole(years);
+  return whole(shares) >= MIN_SHARES && y >= 1 && y <= MAX_YEARS;
 }
 
 type Field = { page: number; x: number; top: number; maxWidth: number; size: number };

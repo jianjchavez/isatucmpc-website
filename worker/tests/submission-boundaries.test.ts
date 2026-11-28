@@ -15,7 +15,7 @@ const record = () => ({ ...applicantFixture(), firstName: 'Test', lastName: 'Mem
 const body = (patch: Record<string, unknown> = {}) => ({
   name: 'Test Member A', email: 'member@example.com', message: 'Test application',
   'form-source': 'membership', 'cf-turnstile-response': 'test-token',
-  shares: '500', years: '5', applicant: JSON.stringify(record()), ...patch,
+  shares: '500', years: '3', applicant: JSON.stringify(record()), ...patch,
 });
 const snapshot = async () => Promise.all(tables.map(async table =>
   (await env.PMES_DB.prepare(`SELECT * FROM ${table} ORDER BY rowid`).all()).results));

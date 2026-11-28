@@ -15,7 +15,7 @@ export const applicationRecord = {
   parent: { name: '', dateOfBirth: '', contact: '' },
   beneficiaries: [{ fullName: 'Fixture Child', dateOfBirth: '2015-01-01', relationship: 'Child' }],
   emergencyContact: { name: 'Fixture Contact', phone: '09170000000', relationship: 'Sibling' },
-  notes: '', shares: 500, years: 5, privacyConsent: true,
+  notes: '', shares: 500, years: 3, privacyConsent: true,
 } as const;
 
 export function applicantFixture(): WebsiteApplicationRecordInput {
