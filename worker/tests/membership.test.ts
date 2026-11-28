@@ -34,7 +34,7 @@ const fullRecord = {
   parent: { name: '', dateOfBirth: '', contact: '' },
   beneficiaries: [{ fullName: 'Fixture Child', dateOfBirth: '2015-01-01', relationship: 'Child' }],
   emergencyContact: { name: 'Fixture Contact', phone: '09170000002', relationship: 'Sibling' },
-  notes: '', shares: 500, years: 5, privacyConsent: true,
+  notes: '', shares: 500, years: 3, privacyConsent: true,
 };
 
 function submit(extra: Record<string, string>) {
@@ -59,14 +59,15 @@ async function clearApplications() {
 }
 
 describe('membership subscription rules', () => {
-  it('needs at least 50 whole shares and at least one year', () => {
-    expect(validSubscription('50', '5')).toBe(true);
-    expect(validSubscription('500', '5')).toBe(true);
+  it('needs at least 50 whole shares and 1 to 3 years', () => {
+    expect(validSubscription('50', '3')).toBe(true);
+    expect(validSubscription('500', '2')).toBe(true);
     expect(validSubscription('1200', '1')).toBe(true);
-    expect(validSubscription('49', '5')).toBe(false);
-    expect(validSubscription('500.5', '5')).toBe(false);
+    expect(validSubscription('500', '4')).toBe(false);
+    expect(validSubscription('49', '3')).toBe(false);
+    expect(validSubscription('500.5', '3')).toBe(false);
     expect(validSubscription('500', '0')).toBe(false);
-    expect(validSubscription(undefined, '5')).toBe(false);
+    expect(validSubscription(undefined, '3')).toBe(false);
   });
 });
 
@@ -114,7 +115,7 @@ describe('office packet', () => {
 
   it('rejects a subscription under 50 shares before checking Turnstile', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    const res = await submit({ shares: '40', years: '5', applicant: JSON.stringify(applicant) });
+    const res = await submit({ shares: '40', years: '3', applicant: JSON.stringify(applicant) });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid-subscription' });
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -129,7 +130,7 @@ describe('office packet', () => {
       sent.push(JSON.parse(String(init?.body)));
       return Response.json({ id: 'x' });
     });
-    const res = await submit({ name: 'Juan Dela Cruz', shares: '500', years: '5', applicant: JSON.stringify(applicant) });
+    const res = await submit({ name: 'Juan Dela Cruz', shares: '500', years: '3', applicant: JSON.stringify(applicant) });
     expect(res.status).toBe(200);
     const { applicationNo } = await res.json() as { applicationNo: string };
     expect(applicationNo).toBe('APP-2026-0001');
@@ -167,7 +168,7 @@ describe('office packet', () => {
       const url = String(input instanceof Request ? input.url : input);
       return Response.json(url.includes('turnstile') ? { success: true } : { error: 'failure' }, { status: url.includes('turnstile') ? 200 : 500 });
     });
-    const res = await submit({ shares: '500', years: '5', applicant: JSON.stringify(fullRecord) });
+    const res = await submit({ shares: '500', years: '3', applicant: JSON.stringify(fullRecord) });
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ error: 'send-failed' });
   });
@@ -175,7 +176,7 @@ describe('office packet', () => {
   it.each(['', '12345', 'garbled'])('rejects invalid applicant mobile %j before Turnstile or numbering', async mobile => {
     await clearApplications();
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ success: true, id: 'x' }));
-    const res = await submit({ shares: '500', years: '5', applicant: mobile === 'garbled' ? mobile : JSON.stringify({ ...fullRecord, contactNumber: mobile }) });
+    const res = await submit({ shares: '500', years: '3', applicant: mobile === 'garbled' ? mobile : JSON.stringify({ ...fullRecord, contactNumber: mobile }) });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid-mobile' });
     expect(fetchSpy).not.toHaveBeenCalled();

@@ -6,6 +6,9 @@ export const PAR_VALUE = 50; // PHP per share, as printed on the application for
 export const MIN_SHARES = 50;
 export const PAID_WITH_APPLICATION = 50;
 export const MEMBERSHIP_FEE = 500;
+// Owner ruling 2026-11-28: shares above the first 50 are paid over at most 3 years; a blank box means 2.
+export const MAX_YEARS = 3;
+export const DEFAULT_YEARS = 2;
 export const WELFARE_MONTHLY = 200; // Expanded Welfare Fund Policy, ages 18-55
 
 /** Age in whole years on `today` (YYYY-MM-DD strings). */

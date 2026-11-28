@@ -1,6 +1,6 @@
 ---
 import Button from '~/components/Button.astro';
-import { MIN_SHARES, PAR_VALUE, PAID_WITH_APPLICATION, MEMBERSHIP_FEE, WELFARE_MONTHLY, formatAmount } from '~/lib/subscription';
+import { MIN_SHARES, PAR_VALUE, PAID_WITH_APPLICATION, MEMBERSHIP_FEE, WELFARE_MONTHLY, MAX_YEARS, DEFAULT_YEARS, formatAmount } from '~/lib/subscription';
 import { PMES_SELF_PACED } from '~/data/pmes-online';
 import { VALID_ID_TYPES, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
@@ -243,15 +243,15 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
   <fieldset class="space-y-3">
     <legend class="font-display font-bold text-navy text-sm uppercase tracking-wider">6. Share subscription <span class="text-orange" aria-hidden="true">*</span></legend>
-    <p class="text-xs text-slate">Shares are PHP {PAR_VALUE}.00 each. Subscribe at least {MIN_SHARES} shares (PHP {formatAmount(MIN_SHARES * PAR_VALUE)}). At your office visit you pay the PHP {formatAmount(MEMBERSHIP_FEE)} membership fee and at least {PAID_WITH_APPLICATION} shares (PHP {formatAmount(PAID_WITH_APPLICATION * PAR_VALUE)}); shares above that are paid over the years you choose.</p>
+    <p class="text-xs text-slate">Shares are PHP {PAR_VALUE}.00 each. Subscribe at least {MIN_SHARES} shares (PHP {formatAmount(MIN_SHARES * PAR_VALUE)}). At your office visit you pay the PHP {formatAmount(MEMBERSHIP_FEE)} membership fee and at least {PAID_WITH_APPLICATION} shares (PHP {formatAmount(PAID_WITH_APPLICATION * PAR_VALUE)}); shares above that are paid over up to {MAX_YEARS} years ({DEFAULT_YEARS} if you leave it blank).</p>
     <div class="grid md:grid-cols-3 gap-3 items-end">
       <div>
         <label for="mf-shares" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Number of shares <span class="text-orange" aria-hidden="true">*</span></label>
         <input id="mf-shares" name="shares" data-field="sharesSubscribed" type="number" min={MIN_SHARES} step="1" value={MIN_SHARES} required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <div>
-        <label for="mf-years" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Paid over (years) <span class="text-orange" aria-hidden="true">*</span></label>
-        <input id="mf-years" name="years" data-field="yearsToPay" type="number" min="1" step="1" required class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
+        <label for="mf-years" class="block text-xs font-display font-bold text-navy uppercase tracking-wider mb-1">Paid over (years, up to {MAX_YEARS})</label>
+        <input id="mf-years" name="years" data-field="yearsToPay" type="number" min="1" max={MAX_YEARS} step="1" value={DEFAULT_YEARS} placeholder={String(DEFAULT_YEARS)} class="w-full border-2 border-rule focus:border-navy rounded-md px-3 py-2 text-sm" />
       </div>
       <p id="mf-amount" class="text-sm text-navy font-semibold pb-2" aria-live="polite"></p>
     </div>
@@ -355,7 +355,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
 <script>
   import { fillApplicationPdf, triggerPdfDownload, type PdfFieldData } from '~/lib/pdf-fill';
-  import { MIN_SHARES, PAR_VALUE, formatAmount } from '~/lib/subscription';
+  import { MIN_SHARES, PAR_VALUE, MAX_YEARS, DEFAULT_YEARS, formatAmount } from '~/lib/subscription';
   import { buildApplicantRecord, buildApplicantMessage, deductionLine, isAdultApplicant, EMPLOYMENT_STATUSES } from '~/lib/membership-record';
 
   const COOLDOWN_KEY = 'mf-last-submit-ts';
@@ -423,7 +423,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
       'rate-limited': 'Too many tries from this connection. Wait one minute, then submit again.',
       'invalid-mobile': 'Your mobile number could not be read. Enter it as 11 digits starting with 09 (for example 0917 123 4567), then submit again.',
       'invalid-email': 'Your email address could not be read. Check it (for example juan@gmail.com), then submit again.',
-      'invalid-subscription': 'Check the share subscription: at least 50 shares and at least 1 year to pay, both whole numbers. Then submit again.',
+      'invalid-subscription': 'Check the share subscription: at least 50 shares and 1 to 3 years to pay, both whole numbers. Then submit again.',
       'invalid-applicant': 'Some details could not be read. Check that your birth date shows you are 18 or older, and that your name, mobile number and email are filled in, then submit again.',
       'invalid-body': 'Some details could not be read. Refresh the page, fill in the form again, and submit.',
       'forbidden': 'This form only works on isatucmpc.coop. Open isatucmpc.coop/membership in your browser and fill it in there.',
@@ -554,6 +554,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const yearsInput = document.getElementById('mf-years') as HTMLInputElement | null;
     const amountEl = document.getElementById('mf-amount');
     const wholeNumber = (el: HTMLInputElement | null) => (/^\d+$/.test(el?.value.trim() ?? '') ? Number(el!.value) : NaN);
+    // A blank years box means the default (owner 2026-11-28).
+    const yearsToPay = () => (yearsInput?.value.trim() ? wholeNumber(yearsInput) : DEFAULT_YEARS);
     function showAmount() {
       const shares = wholeNumber(sharesInput);
       if (amountEl) amountEl.textContent = shares >= MIN_SHARES ? `= PHP ${formatAmount(shares * PAR_VALUE)}` : '';
@@ -566,7 +568,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
     const dobInput = form.querySelector('[data-field="dob"]') as HTMLInputElement | null;
     function showDeduction() {
       const line = deductionLine({
-        isatuEmployee: !!isatuChk?.checked, shares: wholeNumber(sharesInput), years: wholeNumber(yearsInput), dateOfBirth: dobInput?.value ?? '',
+        isatuEmployee: !!isatuChk?.checked, shares: wholeNumber(sharesInput), years: yearsToPay(), dateOfBirth: dobInput?.value ?? '',
       });
       if (deductionEl) deductionEl.textContent = line ? `Monthly salary deduction: ${line}` : '';
     }
@@ -576,6 +578,7 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
 
     // Runs first (capture phase on the form): invalid values stop the submit and PDF.
     form.addEventListener('submit', e => {
+      if (yearsInput && !yearsInput.value.trim()) yearsInput.value = String(DEFAULT_YEARS);
       const shares = wholeNumber(sharesInput);
       const years = wholeNumber(yearsInput);
       // First visible required field left empty (hidden branches such as the associate block are skipped).
@@ -590,8 +593,8 @@ const EMPLOYMENT_CATS = ['Employed', 'Self-Employed', 'Retired', 'Unemployed', '
           : `Please fill in the required field${missingLabel ? `: ${missingLabel}` : ''}.` }
         : !(shares >= MIN_SHARES)
         ? { el: sharesInput, text: `Please subscribe to at least ${MIN_SHARES} shares (whole number).` }
-        : !(years >= 1)
-          ? { el: yearsInput, text: 'Please enter how many years you will pay your subscription (whole number).' }
+        : !(years >= 1 && years <= MAX_YEARS)
+          ? { el: yearsInput, text: `Please choose 1 to ${MAX_YEARS} years to pay your subscription (whole number).` }
           : !isAdultApplicant(val('[data-field="dob"]'))
             ? { el: form!.querySelector('[data-field="dob"]') as HTMLInputElement | null, text: 'Applicants must be at least 18 years old.' }
             : null;

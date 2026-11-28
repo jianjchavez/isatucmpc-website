@@ -108,7 +108,7 @@ describe('structured membership submissions', () => {
     return worker.fetch(new Request('https://forms.isatucmpc.coop/api/submit', {
       method: 'POST', headers: { origin: env.SITE_ORIGIN.split(',')[0], 'content-type': 'application/json' },
       body: JSON.stringify({ name: 'Fixture Applicant', email: 'fixture@example.com', message: 'Fixture application',
-        shares: '500', years: '5', 'cf-turnstile-response': 'token', 'form-source': 'membership', applicant: raw, ...extra }),
+        shares: '500', years: '3', 'cf-turnstile-response': 'token', 'form-source': 'membership', applicant: raw, ...extra }),
     }), { ...env, PMES_DB: testEnv.PMES_DB, WEBSITE_APP_PULL: flag, PMES_SELF_PACED: selfPacedFlag }, {} as any);
   }
   function externalCalls() {
